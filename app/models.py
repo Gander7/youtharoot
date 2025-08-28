@@ -1,11 +1,7 @@
-
-from pydantic import BaseModel
-from typing import Optional
-import datetime
-
 import abc
 from pydantic import BaseModel
-from typing import Optional
+from pydantic import field_validator, ValidationError
+from typing import List, Dict, Optional
 import datetime
 
 class Person(BaseModel, abc.ABC):
@@ -31,3 +27,19 @@ class Youth(Person):
 class Leader(Person):
 	role: str
 	birth_date: Optional[datetime.date] = None
+
+class EventPerson(BaseModel):
+	person_id: int
+	check_in: datetime.datetime
+	check_out: Optional[datetime.datetime] = None
+
+class Event(BaseModel):
+	id: int
+	date: str
+	name: str = "Youth Group"
+	desc: str = ""
+	start_time: str = "19:00"
+	end_time: str = "21:00"
+	location: Optional[str] = None
+	youth: List[EventPerson] = []
+	leaders: List[EventPerson] = []
