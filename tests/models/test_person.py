@@ -41,7 +41,6 @@ def test_leader_inherits_person():
         birth_date="1990-02-15",
         phone_number="555-2468",
         role="Mentor"
-        # grade, school_name, emergency_contact fields not required for leaders
     )
     assert isinstance(leader, Person)
     assert leader.role == "Mentor"

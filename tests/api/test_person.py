@@ -33,12 +33,24 @@ def valid_leader_payload():
     "first_name",
     "last_name",
     "birth_date",
+    "grade",
     "emergency_contact_name",
     "emergency_contact_phone",
     "emergency_contact_relationship"
 ])
-def test_missing_required_field_returns_422(missing_field):
-    payload = valid_person_payload()
+def test_missing_required_youth_field_returns_422(missing_field):
+    payload = valid_youth_payload()
+    del payload[missing_field]
+    response = client.post(PERSON_ENDPOINT, json=payload)
+    print(f"DEBUG: Response status code: {response.status_code}")
+    assert response.status_code == 422
+
+@pytest.mark.parametrize("missing_field", [
+    "first_name",
+    "last_name",
+])
+def test_missing_required_leader_field_returns_422(missing_field):
+    payload = valid_leader_payload()
     del payload[missing_field]
     response = client.post(PERSON_ENDPOINT, json=payload)
     assert response.status_code == 422
@@ -97,8 +109,7 @@ def test_archive_youth():
     # Archive youth
     delete_resp = client.delete(f"{PERSON_ENDPOINT}/{person_id}")
     assert delete_resp.status_code == 200
-    data = delete_resp.json()
-    assert data["archived"] is True
+    assert delete_resp.json() == {}
 
 def test_read_leader():
     # Create leader
@@ -136,5 +147,64 @@ def test_archive_leader():
     # Archive leader
     delete_resp = client.delete(f"{PERSON_ENDPOINT}/{person_id}")
     assert delete_resp.status_code == 200
-    data = delete_resp.json()
-    assert data["archived"] is True
+    assert delete_resp.json() == {}
+
+def test_get_nonexistent_person_returns_404():
+    response = client.get(f"{PERSON_ENDPOINT}/9999")
+    assert response.status_code == 404
+
+def test_update_nonexistent_person_returns_404():
+    payload = valid_youth_payload()
+    response = client.put(f"{PERSON_ENDPOINT}/9999", json=payload)
+    assert response.status_code == 404
+
+def test_delete_nonexistent_person_returns_200():
+    response = client.delete(f"{PERSON_ENDPOINT}/9999")
+    assert response.status_code == 200
+
+def test_get_archived_person_returns_404():
+    payload = valid_youth_payload()
+    post_resp = client.post(PERSON_ENDPOINT, json=payload)
+    person_id = post_resp.json()["id"]
+    # Archive person
+    client.delete(f"{PERSON_ENDPOINT}/{person_id}")
+    # Try to get archived person
+    get_resp = client.get(f"{PERSON_ENDPOINT}/{person_id}")
+    assert get_resp.status_code == 404
+
+def test_update_archived_person_returns_404():
+    payload = valid_youth_payload()
+
+    post_resp = client.post(PERSON_ENDPOINT, json=payload)
+    person_id = post_resp.json()["id"]
+    del_resp = client.delete(f"{PERSON_ENDPOINT}/{person_id}")
+    updated = payload.copy()
+    updated["first_name"] = "UpdatedName"
+    put_resp = client.put(f"{PERSON_ENDPOINT}/{person_id}", json=updated)
+
+    assert put_resp.status_code == 404
+
+def test_create_person_with_archived_on_fails():
+    payload = valid_youth_payload()
+    import datetime
+    payload["archived_on"] = datetime.datetime.now(datetime.timezone.utc).isoformat()
+    response = client.post(PERSON_ENDPOINT, json=payload)
+    assert response.status_code == 422
+
+def test_update_does_not_unarchive_person():
+    payload = valid_youth_payload()
+
+    # Create
+    post_resp = client.post(PERSON_ENDPOINT, json=payload)
+    person_id = post_resp.json()["id"]
+    # Delete person
+    client.delete(f"{PERSON_ENDPOINT}/{person_id}")
+    # Attempt to update archived person
+    updated = payload.copy()
+    updated["first_name"] = "UpdatedName"
+    put_resp = client.put(f"{PERSON_ENDPOINT}/{person_id}", json=updated)
+    # Confirm update is blocked
+    assert put_resp.status_code == 404
+    # Confirm archived_on is still set
+    get_resp = client.get(f"{PERSON_ENDPOINT}/{person_id}")
+    assert get_resp.status_code == 404

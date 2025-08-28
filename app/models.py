@@ -12,9 +12,8 @@ class Person(BaseModel, abc.ABC):
 	id: int
 	first_name: str
 	last_name: str
-	birth_date: datetime.date
 	phone_number: Optional[str] = None
-	archived: bool = False
+	archived_on: Optional[datetime.datetime] = None
 
 	def __new__(cls, *args, **kwargs):
 		if cls is Person:
@@ -24,9 +23,11 @@ class Person(BaseModel, abc.ABC):
 class Youth(Person):
 	grade: int
 	school_name: str
+	birth_date: datetime.date
 	emergency_contact_name: str
 	emergency_contact_phone: str
 	emergency_contact_relationship: str
 
 class Leader(Person):
 	role: str
+	birth_date: Optional[datetime.date] = None
