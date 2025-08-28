@@ -208,3 +208,28 @@ def test_update_does_not_unarchive_person():
     # Confirm archived_on is still set
     get_resp = client.get(f"{PERSON_ENDPOINT}/{person_id}")
     assert get_resp.status_code == 404
+
+def test_get_all_non_archived_youth():
+    # Create two youth, one archived
+    payload1 = valid_youth_payload()
+    payload2 = valid_youth_payload()
+    payload2["id"] = 2
+    payload2["first_name"] = "Taylor"
+    post_resp1 = client.post(PERSON_ENDPOINT, json=payload1)
+    post_resp2 = client.post(PERSON_ENDPOINT, json=payload2)
+    assert post_resp1.status_code in (200, 201)
+    assert post_resp2.status_code in (200, 201)
+    # Archive one youth
+    client.delete(f"{PERSON_ENDPOINT}/{payload1['id']}")
+
+    # Get all non-archived youth
+    resp = client.get(f"{PERSON_ENDPOINT}/youth")
+    assert resp.status_code == 200
+    data = resp.json()
+
+    # Only non-archived youth should be returned
+    assert isinstance(data, list)
+    assert len(data) == 1
+    assert data[0]["id"] == payload2["id"]
+    # archived_on should not be present in the returned youth
+    assert "archived_on" not in data[0] or data[0]["archived_on"] is None
