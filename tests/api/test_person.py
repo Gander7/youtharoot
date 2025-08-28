@@ -233,3 +233,24 @@ def test_get_all_non_archived_youth():
     assert data[0]["id"] == payload2["id"]
     # archived_on should not be present in the returned youth
     assert "archived_on" not in data[0] or data[0]["archived_on"] is None
+
+def test_update_person_with_archived_on_fails():
+    # Create youth
+    payload = valid_youth_payload()
+    post_resp = client.post(PERSON_ENDPOINT, json=payload)
+    person_id = post_resp.json()["id"]
+    # Try to update with archived_on set
+    import datetime
+    updated = payload.copy()
+    updated["archived_on"] = datetime.datetime.now(datetime.timezone.utc).isoformat()
+    put_resp = client.put(f"{PERSON_ENDPOINT}/{person_id}", json=updated)
+    assert put_resp.status_code == 422
+
+    # Create leader
+    leader_payload = valid_leader_payload()
+    post_resp_leader = client.post(PERSON_ENDPOINT, json=leader_payload)
+    leader_id = post_resp_leader.json()["id"]
+    updated_leader = leader_payload.copy()
+    updated_leader["archived_on"] = datetime.datetime.now(datetime.timezone.utc).isoformat()
+    put_resp_leader = client.put(f"{PERSON_ENDPOINT}/{leader_id}", json=updated_leader)
+    assert put_resp_leader.status_code == 422
