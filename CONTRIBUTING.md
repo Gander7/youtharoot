@@ -1,4 +1,4 @@
-# Contributing to Youth Attendance App
+# Contributing to Youtharoot
 
 Thank you for your interest in contributing! We welcome all improvements, bug fixes, and new features.
 

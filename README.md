@@ -1,5 +1,3 @@
-# 🚀 Youtharoot
-
 ![Build Status](https://img.shields.io/github/actions/workflow/status/Gander7/Youtharoot/ci.yml)
 ![Coverage](https://img.shields.io/codecov/c/github/Gander7/Youtharoot)
 ![License](https://img.shields.io/github/license/Gander7/Youtharoot)
