@@ -374,8 +374,8 @@ export default function EventList() {
       );
     }
     
-    // Sort by date (most recent first)
-    filtered.sort((a, b) => new Date(b.date) - new Date(a.date));
+    // Sort by date (most recent first) - date strings in YYYY-MM-DD format sort correctly
+    filtered.sort((a, b) => b.date.localeCompare(a.date));
     
     setFilteredEvents(filtered);
   }, [events, searchTerm]);
@@ -420,7 +420,10 @@ export default function EventList() {
   };
 
   const formatDate = (dateStr) => {
-    return new Date(dateStr).toLocaleDateString('en-US', {
+    // Parse as local date to avoid timezone issues
+    const [year, month, day] = dateStr.split('-').map(Number);
+    const date = new Date(year, month - 1, day); // month is 0-indexed
+    return date.toLocaleDateString('en-US', {
       weekday: 'long',
       year: 'numeric',
       month: 'long',
@@ -433,7 +436,10 @@ export default function EventList() {
   };
 
   const isEventCheckInEligible = (event) => {
-    const eventDate = new Date(event.date);
+    // Parse event date as local date to avoid timezone issues
+    const [year, month, day] = event.date.split('-').map(Number);
+    const eventDate = new Date(year, month - 1, day);
+    
     const today = new Date();
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
