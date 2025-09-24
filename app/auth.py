@@ -1,5 +1,5 @@
 """
-Authentication and authorization utilities for the Youth Attendance system.
+Authentication and authorization utilities for the Youtharoot system.
 """
 from datetime import datetime, timedelta
 from typing import Optional, Union

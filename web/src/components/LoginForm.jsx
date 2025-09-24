@@ -52,7 +52,7 @@ export default function LoginForm() {
       }}>
         <Box display="flex" flexDirection="column" alignItems="center">
           <Typography variant="h4" component="h1" gutterBottom sx={{ color: '#333', fontWeight: 'bold' }}>
-            Youth Attendance
+            Youtharoot
           </Typography>
           
           <Typography variant="h6" component="h2" gutterBottom sx={{ color: '#666', mb: 3 }}>
@@ -108,17 +108,19 @@ export default function LoginForm() {
             </Button>
           </Box>
 
-          <Box sx={{ mt: 2, textAlign: 'center' }}>
-            <Typography variant="body2" sx={{ color: '#666', mb: 1 }}>
-              Demo Credentials:
-            </Typography>
-            <Typography variant="body2" sx={{ color: '#666' }}>
-              Admin: <strong>admin</strong> / <strong>admin123</strong>
-            </Typography>
-            <Typography variant="body2" sx={{ color: '#666' }}>
-              User: <strong>user</strong> / <strong>user123</strong>
-            </Typography>
-          </Box>
+          {import.meta.env.DEV && (
+            <Box sx={{ mt: 2, textAlign: 'center' }}>
+              <Typography variant="body2" sx={{ color: '#666', mb: 1 }}>
+                Demo Credentials:
+              </Typography>
+              <Typography variant="body2" sx={{ color: '#666' }}>
+                Admin: <strong>admin</strong> / <strong>admin123</strong>
+              </Typography>
+              <Typography variant="body2" sx={{ color: '#666' }}>
+                User: <strong>user</strong> / <strong>user123</strong>
+              </Typography>
+            </Box>
+          )}
         </Box>
       </Paper>
     </Container>

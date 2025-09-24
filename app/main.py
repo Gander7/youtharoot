@@ -9,7 +9,7 @@ from app.database import init_database
 from app.repositories import init_repositories
 from app.config import settings
 
-app = FastAPI(title="Youth Attendance API", description="API for managing youth group attendance")
+app = FastAPI(title="Youtharoot API", description="API for managing youth group attendance")
 
 # Configure CORS
 cors_origins = [
@@ -37,7 +37,7 @@ app.add_middleware(
 # Initialize database and repositories on startup
 @app.on_event("startup")
 async def startup_event():
-    print(f"🚀 Starting Youth Attendance API")
+    print(f"🚀 Starting Youtharoot API")
     print(f"📊 Database type: {settings.DATABASE_TYPE}")
     print(f"🔧 Debug mode: {settings.DEBUG}")
     print(f"💾 Database URL present: {'Yes' if settings.DATABASE_URL else 'No'}")
@@ -56,7 +56,7 @@ app.include_router(user_router)
 @app.get("/")
 async def root():
     """Simple root endpoint to test API connectivity"""
-    return {"message": "Youth Attendance API is running", "status": "ok"}
+    return {"message": "Youtharoot API is running", "status": "ok"}
 
 @app.get("/health")
 async def health_check():

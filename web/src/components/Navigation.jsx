@@ -117,7 +117,7 @@ export default function Navigation() {
             component="div" 
             sx={{ flexGrow: 1, fontWeight: 'bold', color: 'primary.main' }}
           >
-            Youth Attendance
+            Youtharoot
           </Typography>
           <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
             <Button 
