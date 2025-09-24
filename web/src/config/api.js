@@ -1,7 +1,15 @@
 // API Configuration
-const API_BASE_URL = import.meta.env.PUBLIC_API_URL || 
-  (typeof window !== 'undefined' && window.location.hostname === 'localhost' 
-    ? 'http://localhost:8000' 
-    : 'https://your-app-name.up.railway.app');
+const getApiBaseUrl = () => {
+  // Check for environment variable first (production)
+  if (import.meta.env.PUBLIC_API_URL) {
+    console.log('Using PUBLIC_API_URL:', import.meta.env.PUBLIC_API_URL);
+    return import.meta.env.PUBLIC_API_URL;
+  }
+  
+  // Fallback
+  console.log('Using localhost API URL');
+  return 'http://localhost:8000';
+};
 
-export { API_BASE_URL };
+export const API_BASE_URL = getApiBaseUrl();
+console.log('Final API_BASE_URL:', API_BASE_URL);
