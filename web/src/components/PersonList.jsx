@@ -114,7 +114,9 @@ const PersonForm = ({ open, onClose, person, onSave, personType }) => {
       emergency_contact_phone: '',
       emergency_contact_relationship: '',
       role: '',
-      ...(person || {})
+      ...(person || {}),
+      // Ensure grade is always a string for the form
+      grade: person?.grade ? String(person.grade) : ''
     });
   }, [person]);
 
@@ -133,7 +135,9 @@ const PersonForm = ({ open, onClose, person, onSave, personType }) => {
         emergency_contact_phone: '',
         emergency_contact_relationship: '',
         role: '',
-        ...(person || {})
+        ...(person || {}),
+        // Ensure grade is always a string for the form
+        grade: person?.grade ? String(person.grade) : ''
       });
     }
   }, [open, person]);
@@ -156,7 +160,7 @@ const PersonForm = ({ open, onClose, person, onSave, personType }) => {
 
     if (personType === 'youth') {
       // Only set grade if provided and valid
-      if (formData.grade && formData.grade.trim() !== '') {
+      if (formData.grade && formData.grade.toString().trim() !== '') {
         personData.grade = parseInt(formData.grade);
       }
       // Only set school_name if provided
