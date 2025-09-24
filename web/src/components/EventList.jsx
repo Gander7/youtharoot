@@ -36,7 +36,8 @@ import {
   LocationOn as LocationIcon,
   AccessTime as TimeIcon,
   CalendarMonth as CalendarIcon,
-  People as PeopleIcon
+  People as PeopleIcon,
+  CheckCircle as CheckInIcon
 } from '@mui/icons-material';
 import { API_BASE_URL } from '../config/api.js';
 
@@ -431,6 +432,27 @@ export default function EventList() {
     return (event.youth?.length || 0) + (event.leaders?.length || 0);
   };
 
+  const isEventCheckInEligible = (event) => {
+    const eventDate = new Date(event.date);
+    const today = new Date();
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    
+    // Reset time to compare dates only
+    eventDate.setHours(0, 0, 0, 0);
+    today.setHours(0, 0, 0, 0);
+    tomorrow.setHours(0, 0, 0, 0);
+    
+    return eventDate.getTime() === today.getTime() || eventDate.getTime() === tomorrow.getTime();
+  };
+
+  const handleCheckIn = (event) => {
+    // Navigate to check-in page
+    if (typeof window !== 'undefined') {
+      window.location.href = `/checkin/${event.id}`;
+    }
+  };
+
   return (
     <ThemeProvider theme={darkTheme}>
       <Box sx={{ maxWidth: 800, margin: '0 auto', padding: 2 }}>
@@ -527,6 +549,18 @@ export default function EventList() {
                   />
                   <ListItemSecondaryAction>
                     <Box sx={{ display: 'flex', gap: 0.5 }}>
+                      {isEventCheckInEligible(event) && (
+                        <Button
+                          variant="contained"
+                          color="success"
+                          size="small"
+                          startIcon={<CheckInIcon />}
+                          onClick={() => handleCheckIn(event)}
+                          sx={{ mr: 1 }}
+                        >
+                          Check In
+                        </Button>
+                      )}
                       <IconButton
                         edge="end"
                         onClick={() => handleEditEvent(event)}

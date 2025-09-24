@@ -1,7 +1,7 @@
 from typing import List, Optional, Union
 from sqlalchemy.orm import Session
 from app.repositories.base import PersonRepository, EventRepository
-from app.models import Youth, Leader, Event
+from app.models import Youth, Leader, Event, EventPerson
 from app.db_models import PersonDB, EventDB
 from datetime import datetime
 import datetime as dt
@@ -141,6 +141,28 @@ class PostgreSQLEventRepository(EventRepository):
     
     def _db_to_pydantic(self, db_event: EventDB) -> Event:
         """Convert database model to Pydantic model"""
+        from app.db_models import EventPersonDB
+        
+        # Load attendance records
+        event_persons = self.db.query(EventPersonDB).filter(
+            EventPersonDB.event_id == db_event.id
+        ).all()
+        
+        youth = []
+        leaders = []
+        
+        for ep in event_persons:
+            event_person = EventPerson(
+                person_id=ep.person_id,
+                check_in=ep.check_in,
+                check_out=ep.check_out
+            )
+            
+            if ep.person_type == "youth":
+                youth.append(event_person)
+            else:
+                leaders.append(event_person)
+        
         return Event(
             id=db_event.id,
             date=db_event.date,
@@ -149,8 +171,8 @@ class PostgreSQLEventRepository(EventRepository):
             start_time=db_event.start_time,
             end_time=db_event.end_time,
             location=db_event.location,
-            youth=[],  # TODO: Load from EventPersonDB
-            leaders=[]  # TODO: Load from EventPersonDB
+            youth=youth,
+            leaders=leaders
         )
     
     async def create_event(self, event: Event) -> Event:

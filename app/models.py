@@ -5,7 +5,7 @@ from typing import List, Dict, Optional
 import datetime
 
 class Person(BaseModel, abc.ABC):
-	id: int
+	id: Optional[int] = None  # Optional for creation, will be set by database
 	first_name: str
 	last_name: str
 	phone_number: Optional[str] = None

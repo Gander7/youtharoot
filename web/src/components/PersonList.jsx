@@ -100,6 +100,44 @@ const PersonForm = ({ open, onClose, person, onSave, personType }) => {
     ...person
   });
 
+  // Reset form data when person prop changes
+  useEffect(() => {
+    console.log('PersonForm useEffect triggered, person:', person);
+    setFormData({
+      first_name: '',
+      last_name: '',
+      phone_number: '',
+      grade: '',
+      school_name: '',
+      birth_date: '',
+      emergency_contact_name: '',
+      emergency_contact_phone: '',
+      emergency_contact_relationship: '',
+      role: '',
+      ...(person || {})
+    });
+  }, [person]);
+
+  // Also reset form when dialog opens
+  useEffect(() => {
+    if (open) {
+      console.log('PersonForm dialog opened, person:', person);
+      setFormData({
+        first_name: '',
+        last_name: '',
+        phone_number: '',
+        grade: '',
+        school_name: '',
+        birth_date: '',
+        emergency_contact_name: '',
+        emergency_contact_phone: '',
+        emergency_contact_relationship: '',
+        role: '',
+        ...(person || {})
+      });
+    }
+  }, [open, person]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -131,8 +169,17 @@ const PersonForm = ({ open, onClose, person, onSave, personType }) => {
     }
 
     try {
-      const response = await fetch(`${API_BASE_URL}/person`, {
-        method: person ? 'PUT' : 'POST',
+      let url = `${API_BASE_URL}/person`;
+      let method = 'POST';
+      
+      // If editing existing person, use PUT with person ID in URL
+      if (person && person.id) {
+        url = `${API_BASE_URL}/person/${person.id}`;
+        method = 'PUT';
+      }
+      
+      const response = await fetch(url, {
+        method: method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(personData),
       });

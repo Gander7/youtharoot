@@ -8,10 +8,17 @@ class InMemoryPersonRepository(PersonRepository):
     
     def __init__(self):
         self.store = {}
+        self.next_person_id = 1
     
     async def create_person(self, person: Union[Youth, Leader]) -> Union[Youth, Leader]:
         if person.archived_on is not None:
             raise ValueError("Cannot create archived person")
+        
+        # Generate ID if not provided
+        if person.id is None:
+            person.id = self.next_person_id
+            self.next_person_id += 1
+        
         self.store[person.id] = person
         return person
     

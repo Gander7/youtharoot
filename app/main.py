@@ -3,6 +3,7 @@ from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from app.routers.person import router as person_router
 from app.routers.event import router as event_router
+from app.routers.attendance import router as attendance_router
 from app.database import init_database
 from app.repositories import init_repositories
 from app.config import settings
@@ -48,6 +49,7 @@ async def startup_event():
 
 app.include_router(person_router)
 app.include_router(event_router)
+app.include_router(attendance_router)
 
 @app.get("/")
 async def root():
