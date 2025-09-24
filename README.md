@@ -1,4 +1,6 @@
-![Build Status](https://img.shields.io/github/actions/workflow/status/Gander7/Youtharoot/ci.yml)
+![Build Status](https://img.shields.io/github/a  - ✅ Support for both memory and PostgreSQL storage
+
+### Important Enhancementsworkflow/status/Gander7/Youtharoot/ci.yml)
 ![Coverage](https://img.shields.io/codecov/c/github/Gander7/Youtharoot)
 ![License](https://img.shields.io/github/license/Gander7/Youtharoot)
 ![Python Version](https://img.shields.io/badge/python-3.12-blue)
@@ -14,49 +16,57 @@ An API-first, mobile-friendly platform for managing youth group events, attendan
 
 ## 🌟 Features & Roadmap
 
-### Core Features (Essential for MVP) ✅
-- **Person Management:** Create, update, and view Youth and Leader profiles ✅
-  - Modern PersonList component with search and filtering
-  - Streamlined PersonForm with context-aware fields
-  - Mobile-first design with floating action buttons
-  - Smart search by name, school, or role
-  - **Data Validation Requirements:**
-    - Schools should be selected from a predefined list (not freeform text)
-    - Birthday dates must be in ISO format (YYYY-MM-DD)
-- **Event Management:** Create, update, and view events (basic and overnight) ✅
-  - EventList component with "Add Event" functionality
-  - Mobile-optimized event display
-- **Navigation System:** Seamless navigation between pages ✅
-  - Desktop app bar navigation
-  - Mobile bottom navigation bar
-  - Responsive design patterns
-- **Dark Mode UI:** Consistent dark theme across all pages ✅
-  - Material Design 3 color system
-  - Mobile-first responsive layouts
-- **Attendance Tracking:** Record attendance for each event, including overnight attributes (waivers, forms) 🚧
-- **Waiver/Form Tracking:** Store and track signed waivers for overnight events 🚧
-- **Permissions/Roles:** Differentiate access for leaders and admins 🚧
-- **Emergency Contact Validation:** Make emergency contact fields required again for youth profiles 🔮
+### Core Features (Essential for MVP)
+
+**🔮 Still To Do:**
+- 🔮 **Authentication:** User login and permission system
+- 🔮 **Waiver/Form Tracking:** Store and track signed waivers for overnight events
+- 🔮 **Permissions/Roles:** Differentiate access for leaders and admins
+- 🔮 **Emergency Contact Validation:** Make emergency contact fields required again for youth profiles
+- 🔮 **Schools Dropdown:** Replace freeform school text field with dropdown selection
 
 ### Important Enhancements
-- **Groups/Teams:** Organize youths and leaders into groups 🔮
-- **Reporting:** Generate attendance reports and statistics 🔮
-- **Notes/Incidents:** Allow leaders to record notes per youth/event 🔮
-- **Person Detail Pages:** Individual person profiles with history 🔮
-- **Bulk Import:** Import people from CSV/Excel files 🔮
-- **Advanced Filtering:** Filter by grade, school, attendance history 🔮
-- **School Management:** Admin interface to manage the predefined school list 🔮
-- **Data Validation Enhancements:** 
-  - Phone number formatting and validation 🔮
-  - Address validation 🔮
-  - Emergency contact relationship presets 🔮
+- 🔮 **Groups/Teams:** Organize youths and leaders into groups
+- 🔮 **Reporting:** Generate attendance reports and statistics
+- 🔮 **Notes/Incidents:** Allow leaders to record notes per youth/event
+- 🔮 **Person Detail Pages:** Individual person profiles with history
+- 🔮 **Bulk Import:** Import people from CSV/Excel files
+- 🔮 **Advanced Filtering:** Filter by grade, school, attendance history
+- 🔮 **School Management:** Admin interface to manage the predefined school list
+- 🔮 **Data Validation Enhancements:** 
+  - 🔮 Phone number formatting and validation
+  - 🔮 Address validation
+  - 🔮 Emergency contact relationship presets
 
 ### Optional/Advanced Features
-- **Check-in/Check-out:** Digital check-in/out (QR code/manual)
-- **Notifications:** Send reminders or updates to users
-- **Integration:** Sync events with external calendars
-- **Audit Trail:** Track changes to attendance and user data
+- 🔮 **QR Code Check-in:** Digital check-in/out using QR codes
+- 🔮 **Notifications:** Send reminders or updates to users
+- 🔮 **Integration:** Sync events with external calendars
+- 🔮 **Audit Trail:** Track changes to attendance and user data
 
+### Completed
+- ✅ **Person Management:** Create, update, and view Youth and Leader profiles
+  - ✅ Modern PersonList component with search and filtering
+  - ✅ Streamlined PersonForm with context-aware fields
+  - ✅ Mobile-first design with floating action buttons
+  - ✅ Smart search by name, school, or role
+  - ✅ Birthday dates must be in ISO format (YYYY-MM-DD)
+- ✅ **Event Management:** Create, update, and view events (basic and overnight)
+  - ✅ EventList component with "Add Event" functionality
+  - ✅ Mobile-optimized event display
+  - ✅ Check-in button for today/tomorrow events
+- ✅ **Navigation System:** Seamless navigation between pages
+  - ✅ Desktop app bar navigation
+  - ✅ Mobile bottom navigation bar
+  - ✅ Responsive design patterns
+- ✅ **Dark Mode UI:** Consistent dark theme across all pages
+  - ✅ Material Design 3 color system
+  - ✅ Mobile-first responsive layouts
+- ✅ **Attendance Tracking:** Record attendance for each event
+  - ✅ Check-in/Check-out functionality
+  - ✅ Available/Checked In/Checked Out filters
+  - ✅ Real-time attendance updates
+  - ✅ Support for both memory and PostgreSQL storage
 ---
 
 ## ⚡ Installation
