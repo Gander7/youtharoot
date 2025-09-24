@@ -435,7 +435,7 @@ export default function CheckIn({ eventId }) {
                         <Typography variant="body2" color="text.secondary">
                           Grade {person.grade} • {person.school_name}
                         </Typography>
-                        {filter === 'checked-in' && person.check_in && (
+                        {(filter === 'checked-in' || filter === 'checked-out') && person.check_in && (
                           <Typography variant="body2" color="text.secondary">
                             ⏰ In: {formatTime(person.check_in)}
                             {person.check_out && ` • Out: ${formatTime(person.check_out)}`}
