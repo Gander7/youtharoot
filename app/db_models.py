@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Date, DateTime, Text, Boolean
+from sqlalchemy import Column, Integer, BigInteger, String, Date, DateTime, Text, Boolean
 from sqlalchemy.sql import func
 from app.database import Base
 from datetime import datetime, date
@@ -7,7 +7,7 @@ from typing import Optional
 class PersonDB(Base):
     __tablename__ = "persons"
     
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(BigInteger, primary_key=True, autoincrement=True, index=True)
     first_name = Column(String(100), nullable=False)
     last_name = Column(String(100), nullable=False)
     phone_number = Column(String(20), nullable=True)
@@ -31,7 +31,7 @@ class PersonDB(Base):
 class EventDB(Base):
     __tablename__ = "events"
     
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(BigInteger, primary_key=True, autoincrement=True, index=True)
     date = Column(String(10), nullable=False)  # ISO date string
     name = Column(String(200), nullable=False, default="Youth Group")
     desc = Column(Text, default="")
@@ -45,9 +45,9 @@ class EventDB(Base):
 class EventPersonDB(Base):
     __tablename__ = "event_persons"
     
-    id = Column(Integer, primary_key=True, index=True)
-    event_id = Column(Integer, nullable=False)
-    person_id = Column(Integer, nullable=False)
+    id = Column(BigInteger, primary_key=True, autoincrement=True, index=True)
+    event_id = Column(BigInteger, nullable=False)
+    person_id = Column(BigInteger, nullable=False)
     check_in = Column(DateTime, nullable=False)
     check_out = Column(DateTime, nullable=True)
     person_type = Column(String(20), nullable=False)  # "youth" or "leader"

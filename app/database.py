@@ -16,7 +16,7 @@ def init_database():
         engine = create_engine(settings.database_url)
         SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
         
-        # Create tables
+        # Create tables (this will update schema if needed)
         Base.metadata.create_all(bind=engine)
         
         print(f"✅ Connected to PostgreSQL: {settings.database_url}")

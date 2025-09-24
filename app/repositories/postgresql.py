@@ -42,7 +42,7 @@ class PostgreSQLPersonRepository(PersonRepository):
     def _pydantic_to_db(self, person: Union[Youth, Leader]) -> PersonDB:
         """Convert Pydantic model to database model"""
         db_person = PersonDB(
-            id=person.id,
+            # Don't set ID, let PostgreSQL auto-generate it
             first_name=person.first_name,
             last_name=person.last_name,
             phone_number=person.phone_number,

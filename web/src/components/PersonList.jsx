@@ -87,7 +87,6 @@ const darkTheme = createTheme({
 
 const PersonForm = ({ open, onClose, person, onSave, personType }) => {
   const [formData, setFormData] = useState({
-    id: Date.now(), // Simple ID generation
     first_name: '',
     last_name: '',
     phone_number: '',
@@ -106,11 +105,16 @@ const PersonForm = ({ open, onClose, person, onSave, personType }) => {
     
     // Prepare data based on person type
     const personData = {
-      id: formData.id,
+      // Don't include ID for new persons, let backend auto-generate
       first_name: formData.first_name,
       last_name: formData.last_name,
       phone_number: formData.phone_number || null,
     };
+
+    // Include ID only if editing existing person
+    if (person && person.id) {
+      personData.id = person.id;
+    }
 
     if (personType === 'youth') {
       personData.grade = parseInt(formData.grade);

@@ -10,17 +10,26 @@ from app.config import settings
 app = FastAPI(title="Youth Attendance API", description="API for managing youth group attendance")
 
 # Configure CORS
+cors_origins = [
+    "http://localhost:4321",  # Local Astro dev server
+    "http://localhost:3000",  # Alternative local dev
+    "http://localhost:8000",  # Local API testing
+    "https://youtharoot.vercel.app",  # Your Vercel deployment
+]
+
+# In production, be more permissive for now
+if not settings.DEBUG or settings.DATABASE_URL:  # Railway usually sets DATABASE_URL
+    cors_origins.append("*")
+
+print(f"🌐 CORS Origins: {cors_origins}")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:4321",  # Local Astro dev server
-        "http://localhost:3000",  # Alternative local dev
-        "http://localhost:8000",  # Local API testing
-        "https://youtharoot.vercel.app",  # Your Vercel deployment
-    ] if not settings.DEBUG else ["*"],  # Allow all origins in debug mode
+    allow_origins=cors_origins,
     allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD"],
     allow_headers=["*"],
+    expose_headers=["*"],
 )
 
 # Initialize database and repositories on startup
@@ -61,4 +70,13 @@ async def cors_test():
         "message": "CORS is working!",
         "debug_mode": settings.DEBUG,
         "timestamp": "2025-09-24"
+    }
+
+@app.post("/cors-test")
+async def cors_test_post():
+    """Test CORS configuration for POST requests"""
+    return {
+        "message": "CORS POST is working!",
+        "debug_mode": settings.DEBUG,
+        "database_type": settings.DATABASE_TYPE
     }
