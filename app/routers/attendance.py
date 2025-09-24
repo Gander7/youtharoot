@@ -30,29 +30,59 @@ async def check_in_person(event_id: int, request: CheckInRequest, db: Session = 
         if not person:
             raise HTTPException(status_code=404, detail="Person not found")
         
-        # Check if already checked in
-        all_attendees = event.youth + event.leaders
-        for attendee in all_attendees:
-            if attendee.person_id == request.person_id:
+        from app.config import settings
+        
+        if settings.DATABASE_TYPE == "memory":
+            # Handle in-memory repository
+            # Check if already checked in
+            all_attendees = event.youth + event.leaders
+            for attendee in all_attendees:
+                if attendee.person_id == request.person_id:
+                    raise HTTPException(status_code=409, detail="Person is already checked in to this event")
+            
+            # Create event_person record
+            from app.models import EventPerson
+            event_person = EventPerson(
+                person_id=request.person_id,
+                check_in=datetime.datetime.now()
+            )
+            
+            # Add to appropriate list based on person type
+            if hasattr(person, 'grade'):  # Youth
+                event.youth.append(event_person)
+            else:  # Leader
+                event.leaders.append(event_person)
+            
+            # Update the event in the repository
+            await event_repo.update_event(event_id, event)
+            
+            return {"message": "Person checked in successfully", "check_in": event_person.check_in}
+            
+        else:
+            # Handle PostgreSQL database directly
+            from app.db_models import EventPersonDB
+            
+            # Check if already checked in
+            existing = db.query(EventPersonDB).filter(
+                EventPersonDB.event_id == event_id,
+                EventPersonDB.person_id == request.person_id
+            ).first()
+            
+            if existing:
                 raise HTTPException(status_code=409, detail="Person is already checked in to this event")
-        
-        # Create event_person record
-        from app.models import EventPerson
-        event_person = EventPerson(
-            person_id=request.person_id,
-            check_in=datetime.datetime.now()
-        )
-        
-        # Add to appropriate list based on person type
-        if hasattr(person, 'grade'):  # Youth
-            event.youth.append(event_person)
-        else:  # Leader
-            event.leaders.append(event_person)
-        
-        # Update the event in the repository
-        await event_repo.update_event(event_id, event)
-        
-        return {"message": "Person checked in successfully", "check_in": event_person.check_in}
+            
+            # Create new check-in record
+            event_person = EventPersonDB(
+                event_id=event_id,
+                person_id=request.person_id,
+                check_in=datetime.datetime.now(),
+                person_type="youth" if hasattr(person, 'grade') else "leader"
+            )
+            
+            db.add(event_person)
+            db.commit()
+            
+            return {"message": "Person checked in successfully", "check_in": event_person.check_in}
         
     except HTTPException:
         raise
@@ -70,27 +100,52 @@ async def check_out_person(event_id: int, request: CheckOutRequest, db: Session 
         if not event:
             raise HTTPException(status_code=404, detail="Event not found")
         
-        # Find the event_person record
-        all_attendees = event.youth + event.leaders
-        event_person = None
-        for attendee in all_attendees:
-            if attendee.person_id == request.person_id:
-                event_person = attendee
-                break
+        from app.config import settings
         
-        if not event_person:
-            raise HTTPException(status_code=404, detail="Person is not checked in to this event")
-        
-        if event_person.check_out:
-            raise HTTPException(status_code=409, detail="Person is already checked out")
-        
-        # Update check-out time
-        event_person.check_out = datetime.datetime.now()
-        
-        # Update the event in the repository
-        await event_repo.update_event(event_id, event)
-        
-        return {"message": "Person checked out successfully", "check_out": event_person.check_out}
+        if settings.DATABASE_TYPE == "memory":
+            # Handle in-memory repository
+            # Find the event_person record
+            all_attendees = event.youth + event.leaders
+            event_person = None
+            for attendee in all_attendees:
+                if attendee.person_id == request.person_id:
+                    event_person = attendee
+                    break
+            
+            if not event_person:
+                raise HTTPException(status_code=404, detail="Person is not checked in to this event")
+            
+            if event_person.check_out:
+                raise HTTPException(status_code=409, detail="Person is already checked out")
+            
+            # Update check-out time
+            event_person.check_out = datetime.datetime.now()
+            
+            # Update the event in the repository
+            await event_repo.update_event(event_id, event)
+            
+            return {"message": "Person checked out successfully", "check_out": event_person.check_out}
+            
+        else:
+            # Handle PostgreSQL database directly
+            from app.db_models import EventPersonDB
+            
+            event_person = db.query(EventPersonDB).filter(
+                EventPersonDB.event_id == event_id,
+                EventPersonDB.person_id == request.person_id
+            ).first()
+            
+            if not event_person:
+                raise HTTPException(status_code=404, detail="Person is not checked in to this event")
+            
+            if event_person.check_out:
+                raise HTTPException(status_code=409, detail="Person is already checked out")
+            
+            # Update check-out time
+            event_person.check_out = datetime.datetime.now()
+            db.commit()
+            
+            return {"message": "Person checked out successfully", "check_out": event_person.check_out}
         
     except HTTPException:
         raise
