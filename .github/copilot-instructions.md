@@ -66,6 +66,13 @@ COMMUNICATION RULES:
 - Do not explain project structure unless asked.
 - Keep explanations concise and focused.
 
+SECURITY RULES:
+- NEVER commit secret values, API keys, passwords, or database URLs to version control
+- Always use environment variables for sensitive configuration
+- Use .env.example files to show required variables without actual values
+- Ensure .env files are properly added to .gitignore
+- When creating config files, use placeholder values like "your-secret-here" or environment variable references
+
 DEVELOPMENT RULES:
 - Use '.' as the working directory unless user specifies otherwise.
 - Avoid adding media or external links unless explicitly requested.

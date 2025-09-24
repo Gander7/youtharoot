@@ -9,6 +9,11 @@ __pycache__/
 # Virtual environments
 venv/
 .env
+.env.local
+.env.development
+.env.production
+
+# SECURITY: Never commit environment files with secrets!
 
 # Test and coverage outputs
 .coverage
