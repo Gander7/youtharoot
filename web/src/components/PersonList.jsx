@@ -43,6 +43,7 @@ import {
   Email as EmailIcon,
   FilterList as FilterIcon
 } from '@mui/icons-material';
+import { API_BASE_URL } from '../config/api.js';
 
 const darkTheme = createTheme({
   palette: {
@@ -126,7 +127,7 @@ const PersonForm = ({ open, onClose, person, onSave, personType }) => {
     }
 
     try {
-      const response = await fetch('/person', {
+      const response = await fetch(`${API_BASE_URL}/person`, {
         method: person ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(personData),
@@ -313,7 +314,7 @@ export default function PersonList() {
   const fetchPersons = async () => {
     try {
       // For now, we'll fetch youth since that endpoint exists
-      const response = await fetch('/person/youth');
+      const response = await fetch(`${API_BASE_URL}/person/youth`);
       if (response.ok) {
         const data = await response.json();
         setPersons(data.map(p => ({ ...p, type: 'youth' })));

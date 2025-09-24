@@ -5,6 +5,7 @@ import ListItem from '@mui/material/ListItem';
 import ListItemText from '@mui/material/ListItemText';
 import Typography from '@mui/material/Typography';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
+import { API_BASE_URL } from '../config/api.js';
 
 const darkTheme = createTheme({
   palette: {
@@ -23,7 +24,7 @@ export default function EventList() {
   const [events, setEvents] = useState([]);
 
   useEffect(() => {
-    fetch('/events')
+    fetch(`${API_BASE_URL}/events`)
       .then(res => res.json())
       .then(data => setEvents(data));
   }, []);
