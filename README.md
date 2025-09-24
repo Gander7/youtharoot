@@ -26,6 +26,12 @@ An API-first, mobile-friendly platform for managing youth group events, attendan
 - 🔮 **Schools Dropdown:** Replace freeform school text field with dropdown selection
 
 ### Important Enhancements
+- 🔮 **Emergency Contact Alerts:** Visual warning (red background/danger styling) for youth missing emergency contact information
+- 🔮 **Birthday Notifications:** Display birthday alerts/notifications when it's a youth's birthday
+- 🔮 **Contact Information Expansion:**
+  - 🔮 Add email address field for youth profiles
+  - 🔮 Split emergency contact name into separate first name and last name fields
+  - 🔮 Add email address field for emergency contacts
 - 🔮 **Groups/Teams:** Organize youths and leaders into groups
 - 🔮 **Reporting:** Generate attendance reports and statistics
 - 🔮 **Notes/Incidents:** Allow leaders to record notes per youth/event
