@@ -93,6 +93,38 @@ An API-first, mobile-friendly platform for managing youth group events, attendan
 
 ---
 
+## 🗄️ Database Configuration
+
+The application supports **configurable storage** for development and production:
+
+### **Development Mode (Default)**
+- **In-Memory Storage**: Data stored in Python dictionaries
+- **No setup required**: Just run the application
+- **Data is temporary**: Lost on server restart
+- **Perfect for**: Testing, UI development, experimentation
+
+### **Production Mode**
+- **PostgreSQL Database**: Persistent, scalable storage
+- **Automatic setup**: Railway provides managed PostgreSQL
+- **Data persistence**: Survives server restarts
+- **Perfect for**: Live deployments, real user data
+
+### **Environment Variables**
+```bash
+# Development (default)
+DATABASE_TYPE=memory
+DEBUG=true
+
+# Production  
+DATABASE_TYPE=postgresql
+DATABASE_URL=postgresql://user:pass@host:port/db
+DEBUG=false
+```
+
+See [DEPLOYMENT.md](DEPLOYMENT.md) for detailed deployment instructions.
+
+---
+
 ## 🧪 Testing
 
 Run all tests with:
