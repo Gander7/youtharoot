@@ -33,7 +33,7 @@ import {
   Event as EventIcon,
   ArrowBack as BackIcon
 } from '@mui/icons-material';
-import { API_BASE_URL } from '../config/api.js';
+import { apiRequest } from '../stores/auth';
 
 const darkTheme = createTheme({
   palette: {
@@ -90,21 +90,21 @@ export default function CheckIn({ eventId }) {
     setLoading(true);
     try {
       // Fetch event details
-      const eventResponse = await fetch(`${API_BASE_URL}/event/${eventId}`);
+      const eventResponse = await apiRequest(`/event/${eventId}`);
       if (eventResponse.ok) {
         const eventData = await eventResponse.json();
         setEvent(eventData);
       }
 
       // Fetch attendance data
-      const attendanceResponse = await fetch(`${API_BASE_URL}/event/${eventId}/attendance`);
+      const attendanceResponse = await apiRequest(`/event/${eventId}/attendance`);
       if (attendanceResponse.ok) {
         const attendanceData = await attendanceResponse.json();
         setAttendees(attendanceData);
       }
 
       // Fetch all youth
-      const youthResponse = await fetch(`${API_BASE_URL}/person/youth`);
+      const youthResponse = await apiRequest('/person/youth');
       if (youthResponse.ok) {
         const youthData = await youthResponse.json();
         setAllYouth(youthData);
@@ -216,7 +216,7 @@ export default function CheckIn({ eventId }) {
 
   const handleCheckIn = async (person) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/event/${eventId}/checkin`, {
+      const response = await apiRequest(`/event/${eventId}/checkin`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ person_id: person.id })
@@ -244,7 +244,7 @@ export default function CheckIn({ eventId }) {
 
   const handleCheckOut = async (person) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/event/${eventId}/checkout`, {
+      const response = await apiRequest(`/event/${eventId}/checkout`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ person_id: person.id })

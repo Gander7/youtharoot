@@ -32,6 +32,7 @@ import {
   Stack
 } from '@mui/material';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
+import { apiRequest } from '../stores/auth';
 import {
   Search as SearchIcon,
   Person as PersonIcon,
@@ -43,7 +44,6 @@ import {
   Email as EmailIcon,
   FilterList as FilterIcon
 } from '@mui/icons-material';
-import { API_BASE_URL } from '../config/api.js';
 
 const darkTheme = createTheme({
   palette: {
@@ -175,16 +175,16 @@ const PersonForm = ({ open, onClose, person, onSave, personType }) => {
     }
 
     try {
-      let url = `${API_BASE_URL}/person`;
+      let url = '/person';
       let method = 'POST';
       
       // If editing existing person, use PUT with person ID in URL
       if (person && person.id) {
-        url = `${API_BASE_URL}/person/${person.id}`;
+        url = `/person/${person.id}`;
         method = 'PUT';
       }
       
-      const response = await fetch(url, {
+      const response = await apiRequest(url, {
         method: method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(personData),
@@ -371,7 +371,7 @@ export default function PersonList() {
   const fetchPersons = async () => {
     try {
       // For now, we'll fetch youth since that endpoint exists
-      const response = await fetch(`${API_BASE_URL}/person/youth`);
+      const response = await apiRequest('/person/youth');
       if (response.ok) {
         const data = await response.json();
         setPersons(data.map(p => ({ ...p, type: 'youth' })));

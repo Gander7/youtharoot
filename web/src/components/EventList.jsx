@@ -39,7 +39,7 @@ import {
   People as PeopleIcon,
   CheckCircle as CheckInIcon
 } from '@mui/icons-material';
-import { API_BASE_URL } from '../config/api.js';
+import { apiRequest } from '../stores/auth';
 import { apiRequest } from '../stores/auth';
 
 const darkTheme = createTheme({
@@ -114,10 +114,10 @@ const EventForm = ({ open, onClose, event, onSave }) => {
     }
 
     try {
-      const url = event && event.id ? `${API_BASE_URL}/event/${event.id}` : `${API_BASE_URL}/event`;
+      const url = event && event.id ? `/event/${event.id}` : '/event';
       const method = event && event.id ? 'PUT' : 'POST';
       
-      const response = await fetch(url, {
+      const response = await apiRequest(url, {
         method: method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(eventData),
@@ -247,7 +247,7 @@ const DeleteConfirmDialog = ({ open, onClose, event, onConfirm }) => {
   const checkCanDelete = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/event/${event.id}/can-delete`);
+      const response = await apiRequest(`/event/${event.id}/can-delete`);
       if (response.ok) {
         const data = await response.json();
         setCanDelete(data);
@@ -312,7 +312,7 @@ export default function EventList() {
     
     try {
       const fetchStart = performance.now();
-      console.log(`📡 Making fetch request to: ${API_BASE_URL}/events`);
+      console.log(`📡 Making API request to: /events`);
       
       const response = await apiRequest(`/events`);
       const fetchEnd = performance.now();
@@ -400,7 +400,7 @@ export default function EventList() {
     if (!deletingEvent) return;
     
     try {
-      const response = await fetch(`${API_BASE_URL}/event/${deletingEvent.id}`, {
+      const response = await apiRequest(`/event/${deletingEvent.id}`, {
         method: 'DELETE',
       });
       
