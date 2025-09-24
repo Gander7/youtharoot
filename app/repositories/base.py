@@ -40,3 +40,16 @@ class EventRepository(ABC):
     @abstractmethod
     async def get_events(self, days: Optional[int] = None, name: Optional[str] = None) -> List[Event]:
         pass
+    
+    @abstractmethod
+    async def update_event(self, event_id: int, event: Event) -> Event:
+        pass
+    
+    @abstractmethod
+    async def delete_event(self, event_id: int) -> bool:
+        pass
+    
+    @abstractmethod
+    async def has_event_persons(self, event_id: int) -> bool:
+        """Check if event has any event_persons attached"""
+        pass

@@ -22,10 +22,15 @@ export default function Navigation() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [value, setValue] = React.useState(0);
-
-  // Get current page from URL
-  const currentPath = typeof window !== 'undefined' ? window.location.pathname : '/';
+  const [currentPath, setCurrentPath] = React.useState('/'); // Initialize with default
   
+  React.useEffect(() => {
+    // Update current path on client side only
+    if (typeof window !== 'undefined') {
+      setCurrentPath(window.location.pathname);
+    }
+  }, []);
+
   React.useEffect(() => {
     if (currentPath.includes('/Events')) setValue(1);
     else if (currentPath.includes('/People')) setValue(2);

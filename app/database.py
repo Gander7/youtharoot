@@ -26,11 +26,19 @@ def init_database():
 def get_db():
     """Dependency to get database session"""
     if SessionLocal:
+        import time
+        start_time = time.time()
+        
         db = SessionLocal()
+        db_time = time.time()
+        print(f"💾 Database session creation took {db_time - start_time:.3f}s")
+        
         try:
             yield db
         finally:
+            close_time = time.time()
             db.close()
+            print(f"💾 Database session close took {close_time - db_time:.3f}s")
     else:
         # For in-memory mode, we don't need a session
         yield None

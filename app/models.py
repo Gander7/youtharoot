@@ -34,7 +34,7 @@ class EventPerson(BaseModel):
 	check_out: Optional[datetime.datetime] = None
 
 class Event(BaseModel):
-	id: int
+	id: Optional[int] = None  # Optional for creation, will be set by database
 	date: str
 	name: str = "Youth Group"
 	desc: str = ""

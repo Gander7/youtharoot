@@ -73,6 +73,16 @@ SECURITY RULES:
 - Ensure .env files are properly added to .gitignore
 - When creating config files, use placeholder values like "your-secret-here" or environment variable references
 
+DATABASE RULES:
+- ALL database schema changes MUST be backwards compatible
+- NEVER modify existing columns in a way that breaks existing data
+- NEVER drop columns or tables that contain data
+- Use additive changes only (add new columns, tables, or indexes)
+- When making schema changes, ensure existing data remains intact and accessible
+- Use database migrations for any schema modifications
+- Test all database changes against existing data before deployment
+- If destructive changes are absolutely necessary, require explicit user confirmation and data backup
+
 DEVELOPMENT RULES:
 - Use '.' as the working directory unless user specifies otherwise.
 - Avoid adding media or external links unless explicitly requested.

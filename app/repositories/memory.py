@@ -53,8 +53,14 @@ class InMemoryEventRepository(EventRepository):
     
     def __init__(self):
         self.store = {}
+        self.next_id = 1
     
     async def create_event(self, event: Event) -> Event:
+        # Generate ID if not provided
+        if event.id is None:
+            event.id = self.next_id
+            self.next_id += 1
+        
         self.store[event.id] = event
         return event
     
@@ -62,7 +68,11 @@ class InMemoryEventRepository(EventRepository):
         return self.store.get(event_id)
     
     async def get_events(self, days: Optional[int] = None, name: Optional[str] = None) -> List[Event]:
+        import time
+        start_time = time.time()
+        
         events = list(self.store.values())
+        list_time = time.time()
         
         if days is not None:
             cutoff = datetime.date.today() - datetime.timedelta(days=days)
@@ -71,4 +81,37 @@ class InMemoryEventRepository(EventRepository):
         if name:
             events = [e for e in events if name.lower() in e.name.lower()]
         
+        filter_time = time.time()
+        
+        print(f"🧠 Memory repo: list creation took {list_time - start_time:.3f}s, filtering took {filter_time - list_time:.3f}s, total: {filter_time - start_time:.3f}s")
+        print(f"🧠 Memory repo: {len(events)} events in store")
+        
         return events
+    
+    async def update_event(self, event_id: int, event: Event) -> Event:
+        if event_id not in self.store:
+            raise ValueError(f"Event with ID {event_id} not found")
+        
+        event.id = event_id  # Ensure ID matches
+        self.store[event_id] = event
+        return event
+    
+    async def delete_event(self, event_id: int) -> bool:
+        if event_id not in self.store:
+            return False
+        
+        # Check if event has any event_persons
+        if await self.has_event_persons(event_id):
+            raise ValueError("Cannot delete event that has attendance records")
+        
+        del self.store[event_id]
+        return True
+    
+    async def has_event_persons(self, event_id: int) -> bool:
+        """Check if event has any event_persons attached"""
+        event = self.store.get(event_id)
+        if not event:
+            return False
+        
+        # Check if there are any youth or leaders with check-in records
+        return len(event.youth) > 0 or len(event.leaders) > 0

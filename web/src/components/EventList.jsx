@@ -1,71 +1,589 @@
 import React, { useState, useEffect } from 'react';
-import Button from '@mui/material/Button';
-import List from '@mui/material/List';
-import ListItem from '@mui/material/ListItem';
-import ListItemText from '@mui/material/ListItemText';
-import Typography from '@mui/material/Typography';
+import {
+  Box,
+  Card,
+  CardContent,
+  Typography,
+  Button,
+  TextField,
+  InputAdornment,
+  Chip,
+  IconButton,
+  Avatar,
+  List,
+  ListItem,
+  ListItemAvatar,
+  ListItemText,
+  ListItemSecondaryAction,
+  Fab,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Grid,
+  Paper,
+  Divider,
+  Stack,
+  Alert
+} from '@mui/material';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
+import {
+  Search as SearchIcon,
+  Event as EventIcon,
+  Add as AddIcon,
+  Edit as EditIcon,
+  Delete as DeleteIcon,
+  LocationOn as LocationIcon,
+  AccessTime as TimeIcon,
+  CalendarMonth as CalendarIcon,
+  People as PeopleIcon
+} from '@mui/icons-material';
 import { API_BASE_URL } from '../config/api.js';
 
 const darkTheme = createTheme({
   palette: {
     mode: 'dark',
+    primary: {
+      main: '#90caf9',
+    },
+    secondary: {
+      main: '#f48fb1',
+    },
     background: {
       default: '#181818',
-      paper: '#222',
+      paper: '#242424',
     },
     text: {
       primary: '#f5f5f5',
+      secondary: '#b0b0b0',
+    },
+  },
+  shape: {
+    borderRadius: 12,
+  },
+  components: {
+    MuiCard: {
+      styleOverrides: {
+        root: {
+          boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+        },
+      },
+    },
+    MuiButton: {
+      styleOverrides: {
+        root: {
+          textTransform: 'none',
+          fontWeight: 600,
+        },
+      },
     },
   },
 });
 
-export default function EventList() {
-  const [events, setEvents] = useState([]);
+const EventForm = ({ open, onClose, event, onSave }) => {
+  // Get today's date in YYYY-MM-DD format
+  const today = new Date().toISOString().split('T')[0];
+  
+  const [formData, setFormData] = useState({
+    date: today,
+    name: 'Youth Group',
+    desc: '',
+    start_time: '19:00',
+    end_time: '21:00',
+    location: 'BLT',
+    ...event
+  });
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    const eventData = {
+      date: formData.date,
+      name: formData.name,
+      desc: formData.desc,
+      start_time: formData.start_time,
+      end_time: formData.end_time,
+      location: formData.location || null,
+    };
+
+    // Include ID only if editing existing event
+    if (event && event.id) {
+      eventData.id = event.id;
+    }
+
+    try {
+      const url = event && event.id ? `${API_BASE_URL}/event/${event.id}` : `${API_BASE_URL}/event`;
+      const method = event && event.id ? 'PUT' : 'POST';
+      
+      const response = await fetch(url, {
+        method: method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(eventData),
+      });
+      
+      if (response.ok) {
+        onSave();
+        onClose();
+      } else {
+        console.error('Failed to save event:', await response.text());
+      }
+    } catch (error) {
+      console.error('Error saving event:', error);
+    }
+  };
+
+  return (
+    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+      <form onSubmit={handleSubmit}>
+        <DialogTitle>
+          {event ? 'Edit Event' : 'Create New Event'}
+        </DialogTitle>
+        <DialogContent>
+          <Stack spacing={3} sx={{ mt: 1 }}>
+            <TextField
+              label="Event Name"
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              required
+              fullWidth
+            />
+            
+            <TextField
+              label="Date"
+              type="date"
+              value={formData.date}
+              onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+              required
+              fullWidth
+              InputLabelProps={{ shrink: true }}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <CalendarIcon />
+                  </InputAdornment>
+                ),
+              }}
+            />
+
+            <Grid container spacing={2}>
+              <Grid item xs={6}>
+                <TextField
+                  label="Start Time"
+                  type="time"
+                  value={formData.start_time}
+                  onChange={(e) => setFormData({ ...formData, start_time: e.target.value })}
+                  required
+                  fullWidth
+                  InputLabelProps={{ shrink: true }}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <TimeIcon />
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+              </Grid>
+              <Grid item xs={6}>
+                <TextField
+                  label="End Time"
+                  type="time"
+                  value={formData.end_time}
+                  onChange={(e) => setFormData({ ...formData, end_time: e.target.value })}
+                  required
+                  fullWidth
+                  InputLabelProps={{ shrink: true }}
+                />
+              </Grid>
+            </Grid>
+            
+            <TextField
+              label="Location"
+              value={formData.location}
+              onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+              fullWidth
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <LocationIcon />
+                  </InputAdornment>
+                ),
+              }}
+            />
+
+            <TextField
+              label="Description"
+              value={formData.desc}
+              onChange={(e) => setFormData({ ...formData, desc: e.target.value })}
+              multiline
+              rows={3}
+              fullWidth
+            />
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={onClose}>Cancel</Button>
+          <Button type="submit" variant="contained">
+            {event ? 'Update Event' : 'Create Event'}
+          </Button>
+        </DialogActions>
+      </form>
+    </Dialog>
+  );
+};
+
+const DeleteConfirmDialog = ({ open, onClose, event, onConfirm }) => {
+  const [canDelete, setCanDelete] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    fetch(`${API_BASE_URL}/events`)
-      .then(res => res.json())
-      .then(data => setEvents(data));
+    if (open && event) {
+      checkCanDelete();
+    }
+  }, [open, event]);
+
+  const checkCanDelete = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/event/${event.id}/can-delete`);
+      if (response.ok) {
+        const data = await response.json();
+        setCanDelete(data);
+      }
+    } catch (error) {
+      console.error('Error checking if event can be deleted:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onClose={onClose} maxWidth="sm">
+      <DialogTitle>Delete Event</DialogTitle>
+      <DialogContent>
+        <Typography gutterBottom>
+          Are you sure you want to delete "{event?.name}"?
+        </Typography>
+        
+        {loading ? (
+          <Typography color="text.secondary">Checking attendance records...</Typography>
+        ) : canDelete !== null && !canDelete.can_delete ? (
+          <Alert severity="warning" sx={{ mt: 2 }}>
+            This event cannot be deleted because it has attendance records. 
+            You must remove all attendees first.
+          </Alert>
+        ) : (
+          <Typography color="text.secondary" sx={{ mt: 1 }}>
+            This action cannot be undone.
+          </Typography>
+        )}
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={onClose}>Cancel</Button>
+        {canDelete?.can_delete && (
+          <Button 
+            onClick={onConfirm} 
+            color="error" 
+            variant="contained"
+            disabled={loading}
+          >
+            Delete Event
+          </Button>
+        )}
+      </DialogActions>
+    </Dialog>
+  );
+};
+
+export default function EventList() {
+  const [events, setEvents] = useState([]);
+  const [filteredEvents, setFilteredEvents] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [formOpen, setFormOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [editingEvent, setEditingEvent] = useState(null);
+  const [deletingEvent, setDeletingEvent] = useState(null);
+
+  const fetchEvents = async () => {
+    const startTime = performance.now();
+    console.log('🔄 Starting to fetch events...');
+    
+    try {
+      const fetchStart = performance.now();
+      console.log(`📡 Making fetch request to: ${API_BASE_URL}/events`);
+      
+      const response = await fetch(`${API_BASE_URL}/events`);
+      const fetchEnd = performance.now();
+      console.log(`📡 Fetch completed in ${fetchEnd - fetchStart}ms, status: ${response.status}`);
+      
+      if (response.ok) {
+        const jsonStart = performance.now();
+        const data = await response.json();
+        const jsonEnd = performance.now();
+        console.log(`📋 JSON parsing took ${jsonEnd - jsonStart}ms, got ${data.length} events`);
+        
+        setEvents(data);
+        const totalTime = performance.now() - startTime;
+        console.log(`✅ Total fetchEvents took ${totalTime}ms`);
+      }
+    } catch (error) {
+      console.error('Error fetching events:', error);
+      // Set some mock data for demo
+      setEvents([
+        {
+          id: 1,
+          date: '2025-09-27',
+          name: 'Friday Night Youth Group',
+          desc: 'Fun games and fellowship',
+          start_time: '19:00',
+          end_time: '21:00',
+          location: 'Youth Room',
+          youth: [],
+          leaders: []
+        },
+        {
+          id: 2,
+          date: '2025-10-04',
+          name: 'Youth Group',
+          desc: '',
+          start_time: '19:00',
+          end_time: '21:00',
+          location: null,
+          youth: [{ person_id: 1, check_in: '2025-10-04T19:05:00' }],
+          leaders: []
+        }
+      ]);
+    }
+  };
+
+  useEffect(() => {
+    console.log('🔄 EventList useEffect triggered at:', new Date().toISOString());
+    console.log('🔄 About to call fetchEvents...');
+    fetchEvents();
   }, []);
+
+  useEffect(() => {
+    let filtered = events;
+    
+    if (searchTerm) {
+      filtered = events.filter(e => 
+        e.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        e.desc.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (e.location && e.location.toLowerCase().includes(searchTerm.toLowerCase()))
+      );
+    }
+    
+    // Sort by date (most recent first)
+    filtered.sort((a, b) => new Date(b.date) - new Date(a.date));
+    
+    setFilteredEvents(filtered);
+  }, [events, searchTerm]);
+
+  const handleAddEvent = () => {
+    setEditingEvent(null);
+    setFormOpen(true);
+  };
+
+  const handleEditEvent = (event) => {
+    setEditingEvent(event);
+    setFormOpen(true);
+  };
+
+  const handleDeleteEvent = (event) => {
+    setDeletingEvent(event);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!deletingEvent) return;
+    
+    try {
+      const response = await fetch(`${API_BASE_URL}/event/${deletingEvent.id}`, {
+        method: 'DELETE',
+      });
+      
+      if (response.ok) {
+        fetchEvents(); // Refresh the list
+        setDeleteDialogOpen(false);
+        setDeletingEvent(null);
+      } else {
+        console.error('Failed to delete event:', await response.text());
+      }
+    } catch (error) {
+      console.error('Error deleting event:', error);
+    }
+  };
+
+  const handleSave = () => {
+    fetchEvents();
+  };
+
+  const formatDate = (dateStr) => {
+    return new Date(dateStr).toLocaleDateString('en-US', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  };
+
+  const getAttendeeCount = (event) => {
+    return (event.youth?.length || 0) + (event.leaders?.length || 0);
+  };
 
   return (
     <ThemeProvider theme={darkTheme}>
-      <div className="event-list" style={{ maxWidth: 600, margin: '0 auto', padding: '1rem' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-          <Typography variant="h5" component="h1" gutterBottom>
+      <Box sx={{ maxWidth: 800, margin: '0 auto', padding: 2 }}>
+        {/* Header */}
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+          <Typography variant="h4" component="h1" fontWeight="bold">
             Events
           </Typography>
           <Button
             variant="contained"
-            color="primary"
-            size="medium"
-            style={{ fontWeight: 600, borderRadius: 8, boxShadow: '0 2px 8px rgba(0,0,0,0.15)' }}
-            startIcon={<span style={{ fontSize: 20, fontWeight: 700 }}>+</span>}
-            aria-label="Add new event"
-            onClick={() => alert('Add Event dialog coming soon!')}
+            startIcon={<AddIcon />}
+            onClick={handleAddEvent}
+            sx={{ borderRadius: 2 }}
           >
-            Add Event
+            Create Event
           </Button>
+        </Box>
 
-        </div>
-        <List>
-          {events.length === 0 ? (
-            <Typography variant="body1">No events found.</Typography>
-          ) : (
-            events.map(event => (
-              <ListItem key={event.id} secondaryAction={
-                <Button variant="contained" size="small">View</Button>
-              }>
-                <ListItemText
-                  primary={event.name}
-                  secondary={new Date(event.date).toLocaleDateString()}
-                />
-              </ListItem>
-            ))
-          )}
-        </List>
-      </div>
+        {/* Search */}
+        <Paper sx={{ p: 2, mb: 3 }}>
+          <TextField
+            placeholder="Search events..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon />
+                </InputAdornment>
+              ),
+            }}
+            fullWidth
+          />
+        </Paper>
+
+        {/* Event List */}
+        {filteredEvents.length === 0 ? (
+          <Paper sx={{ p: 4, textAlign: 'center' }}>
+            <EventIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }} />
+            <Typography variant="h6" color="text.secondary">
+              {searchTerm ? 'No events found' : 'No events scheduled'}
+            </Typography>
+            <Typography color="text.secondary" sx={{ mb: 2 }}>
+              {searchTerm ? 'Try adjusting your search' : 'Create your first event to get started'}
+            </Typography>
+          </Paper>
+        ) : (
+          <List>
+            {filteredEvents.map((event) => (
+              <Card key={event.id} sx={{ mb: 1.5 }}>
+                <ListItem>
+                  <ListItemAvatar>
+                    <Avatar sx={{ bgcolor: 'primary.main' }}>
+                      <EventIcon />
+                    </Avatar>
+                  </ListItemAvatar>
+                  <ListItemText
+                    primary={
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Typography variant="subtitle1" fontWeight="medium">
+                          {event.name}
+                        </Typography>
+                        {getAttendeeCount(event) > 0 && (
+                          <Chip
+                            icon={<PeopleIcon />}
+                            label={getAttendeeCount(event)}
+                            size="small"
+                            color="secondary"
+                            variant="outlined"
+                          />
+                        )}
+                      </Box>
+                    }
+                    secondary={
+                      <>
+                        📅 {formatDate(event.date)}
+                        <br />
+                        ⏰ {event.start_time} - {event.end_time}
+                        {event.location && (
+                          <>
+                            <br />
+                            📍 {event.location}
+                          </>
+                        )}
+                        {event.desc && (
+                          <>
+                            <br />
+                            <br />
+                            {event.desc}
+                          </>
+                        )}
+                      </>
+                    }
+                  />
+                  <ListItemSecondaryAction>
+                    <Box sx={{ display: 'flex', gap: 0.5 }}>
+                      <IconButton
+                        edge="end"
+                        onClick={() => handleEditEvent(event)}
+                        size="small"
+                      >
+                        <EditIcon />
+                      </IconButton>
+                      <IconButton
+                        edge="end"
+                        onClick={() => handleDeleteEvent(event)}
+                        size="small"
+                        color="error"
+                      >
+                        <DeleteIcon />
+                      </IconButton>
+                    </Box>
+                  </ListItemSecondaryAction>
+                </ListItem>
+              </Card>
+            ))}
+          </List>
+        )}
+
+        {/* Event Form Dialog */}
+        <EventForm
+          open={formOpen}
+          onClose={() => setFormOpen(false)}
+          event={editingEvent}
+          onSave={handleSave}
+        />
+
+        {/* Delete Confirmation Dialog */}
+        <DeleteConfirmDialog
+          open={deleteDialogOpen}
+          onClose={() => {
+            setDeleteDialogOpen(false);
+            setDeletingEvent(null);
+          }}
+          event={deletingEvent}
+          onConfirm={confirmDelete}
+        />
+
+        {/* Floating Action Button for Mobile */}
+        <Box sx={{ display: { xs: 'block', sm: 'none' } }}>
+          <Fab
+            color="primary"
+            sx={{
+              position: 'fixed',
+              bottom: 16,
+              right: 16,
+            }}
+            onClick={handleAddEvent}
+          >
+            <AddIcon />
+          </Fab>
+        </Box>
+      </Box>
     </ThemeProvider>
   );
 }

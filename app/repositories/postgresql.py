@@ -155,7 +155,7 @@ class PostgreSQLEventRepository(EventRepository):
     
     async def create_event(self, event: Event) -> Event:
         db_event = EventDB(
-            id=event.id,
+            # Don't set ID, let PostgreSQL auto-generate it
             date=event.date,
             name=event.name,
             desc=event.desc,
@@ -177,6 +177,9 @@ class PostgreSQLEventRepository(EventRepository):
         return None
     
     async def get_events(self, days: Optional[int] = None, name: Optional[str] = None) -> List[Event]:
+        import time
+        start_time = time.time()
+        
         query = self.db.query(EventDB)
         
         if days is not None:
@@ -187,4 +190,48 @@ class PostgreSQLEventRepository(EventRepository):
             query = query.filter(EventDB.name.ilike(f"%{name}%"))
         
         db_events = query.all()
-        return [self._db_to_pydantic(db_event) for db_event in db_events]
+        query_time = time.time()
+        
+        result = [self._db_to_pydantic(db_event) for db_event in db_events]
+        end_time = time.time()
+        
+        print(f"⏱️ Event query took {query_time - start_time:.3f}s, conversion took {end_time - query_time:.3f}s, total: {end_time - start_time:.3f}s")
+        return result
+    
+    async def update_event(self, event_id: int, event: Event) -> Event:
+        db_event = self.db.query(EventDB).filter(EventDB.id == event_id).first()
+        if not db_event:
+            raise ValueError(f"Event with ID {event_id} not found")
+        
+        # Update fields
+        db_event.date = event.date
+        db_event.name = event.name
+        db_event.desc = event.desc
+        db_event.start_time = event.start_time
+        db_event.end_time = event.end_time
+        db_event.location = event.location
+        
+        self.db.commit()
+        self.db.refresh(db_event)
+        
+        return self._db_to_pydantic(db_event)
+    
+    async def delete_event(self, event_id: int) -> bool:
+        db_event = self.db.query(EventDB).filter(EventDB.id == event_id).first()
+        if not db_event:
+            return False
+        
+        # Check if event has any event_persons
+        if await self.has_event_persons(event_id):
+            raise ValueError("Cannot delete event that has attendance records")
+        
+        self.db.delete(db_event)
+        self.db.commit()
+        return True
+    
+    async def has_event_persons(self, event_id: int) -> bool:
+        """Check if event has any event_persons attached"""
+        from app.db_models import EventPersonDB
+        
+        count = self.db.query(EventPersonDB).filter(EventPersonDB.event_id == event_id).count()
+        return count > 0

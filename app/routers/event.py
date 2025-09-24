@@ -23,5 +23,43 @@ async def get_event(event_id: int, db: Session = Depends(get_db)):
 
 @router.get("/events", response_model=list[Event])
 async def get_events(days: Optional[int] = Query(None), name: Optional[str] = Query(None), db: Session = Depends(get_db)):
+    import time
+    start_time = time.time()
+    
     repo = get_event_repository(db)
-    return await repo.get_events(days=days, name=name)
+    repo_time = time.time()
+    
+    result = await repo.get_events(days=days, name=name)
+    end_time = time.time()
+    
+    print(f"🔍 Events endpoint: repo creation took {repo_time - start_time:.3f}s, query took {end_time - repo_time:.3f}s, total: {end_time - start_time:.3f}s")
+    return result
+
+@router.put("/event/{event_id}", response_model=Event)
+async def update_event(event_id: int, event: Event, db: Session = Depends(get_db)):
+    repo = get_event_repository(db)
+    try:
+        return await repo.update_event(event_id, event)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+@router.delete("/event/{event_id}")
+async def delete_event(event_id: int, db: Session = Depends(get_db)):
+    repo = get_event_repository(db)
+    try:
+        success = await repo.delete_event(event_id)
+        if not success:
+            raise HTTPException(status_code=404, detail="Event not found")
+        return {"message": "Event deleted successfully"}
+    except ValueError as e:
+        raise HTTPException(status_code=409, detail=str(e))  # 409 Conflict
+
+@router.get("/event/{event_id}/can-delete")
+async def can_delete_event(event_id: int, db: Session = Depends(get_db)):
+    repo = get_event_repository(db)
+    event = await repo.get_event(event_id)
+    if not event:
+        raise HTTPException(status_code=404, detail="Event not found")
+    
+    has_attendees = await repo.has_event_persons(event_id)
+    return {"can_delete": not has_attendees, "has_attendees": has_attendees}
