@@ -15,11 +15,11 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:4321",  # Local Astro dev server
         "http://localhost:3000",  # Alternative local dev
+        "http://localhost:8000",  # Local API testing
         "https://youtharoot.vercel.app",  # Your Vercel deployment
-        "https://*.vercel.app",  # Allow all Vercel preview deployments
-    ],
+    ] if not settings.DEBUG else ["*"],  # Allow all origins in debug mode
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
 
@@ -29,6 +29,8 @@ async def startup_event():
     print(f"🚀 Starting Youth Attendance API")
     print(f"📊 Database type: {settings.DATABASE_TYPE}")
     print(f"🔧 Debug mode: {settings.DEBUG}")
+    print(f"💾 Database URL present: {'Yes' if settings.DATABASE_URL else 'No'}")
+    print(f"🔗 Effective database URL: {settings.database_url}")
     
     init_database()
     init_repositories()
@@ -50,4 +52,13 @@ async def health_check():
         "status": "healthy",
         "database_type": settings.DATABASE_TYPE,
         "debug": settings.DEBUG
+    }
+
+@app.get("/cors-test")
+async def cors_test():
+    """Test CORS configuration"""
+    return {
+        "message": "CORS is working!",
+        "debug_mode": settings.DEBUG,
+        "timestamp": "2025-09-24"
     }

@@ -19,11 +19,14 @@ class Settings:
     @property
     def database_url(self) -> Optional[str]:
         """Get the appropriate database URL based on environment"""
-        if self.DATABASE_TYPE == "memory":
-            return None
-        elif self.DATABASE_URL:
-            return self.DATABASE_URL
+        # Only use database if explicitly set to postgresql mode
+        if self.DATABASE_TYPE == "postgresql":
+            if self.DATABASE_URL:
+                return self.DATABASE_URL
+            else:
+                return self.DEV_DATABASE_URL
         else:
-            return self.DEV_DATABASE_URL
+            # Default to memory mode
+            return None
 
 settings = Settings()
