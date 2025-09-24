@@ -1,0 +1,14 @@
+#!/bin/bash
+
+failed_checks=()
+
+# Run tests
+# pytest
+# if [ $? -ne 0 ]; then
+#   failed_checks+=("tests")
+# fi
+
+# if [ ${#failed_checks[@]} -ne 0 ]; then
+#   echo "Commit aborted. The following checks failed: ${failed_checks[*]}"
+#   exit 1
+# fi

@@ -1,0 +1,30 @@
+htmlcov/
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pyc
+
+# Virtual environments
+venv/
+.env
+
+# Test and coverage outputs
+.coverage
+htmlcov/
+*.cover
+*.log
+
+# IDE/editor files
+.vscode/
+.idea/
+*.swp
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Misc
+*.bak
+*.tmp
