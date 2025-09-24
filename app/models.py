@@ -20,9 +20,9 @@ class Youth(Person):
 	grade: int
 	school_name: str
 	birth_date: datetime.date
-	emergency_contact_name: str
-	emergency_contact_phone: str
-	emergency_contact_relationship: str
+	emergency_contact_name: Optional[str] = ""
+	emergency_contact_phone: Optional[str] = ""
+	emergency_contact_relationship: Optional[str] = ""
 
 class Leader(Person):
 	role: str

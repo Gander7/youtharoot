@@ -20,6 +20,9 @@ An API-first, mobile-friendly platform for managing youth group events, attendan
   - Streamlined PersonForm with context-aware fields
   - Mobile-first design with floating action buttons
   - Smart search by name, school, or role
+  - **Data Validation Requirements:**
+    - Schools should be selected from a predefined list (not freeform text)
+    - Birthday dates must be in ISO format (YYYY-MM-DD)
 - **Event Management:** Create, update, and view events (basic and overnight) ✅
   - EventList component with "Add Event" functionality
   - Mobile-optimized event display
@@ -33,6 +36,7 @@ An API-first, mobile-friendly platform for managing youth group events, attendan
 - **Attendance Tracking:** Record attendance for each event, including overnight attributes (waivers, forms) 🚧
 - **Waiver/Form Tracking:** Store and track signed waivers for overnight events 🚧
 - **Permissions/Roles:** Differentiate access for leaders and admins 🚧
+- **Emergency Contact Validation:** Make emergency contact fields required again for youth profiles 🔮
 
 ### Important Enhancements
 - **Groups/Teams:** Organize youths and leaders into groups 🔮
@@ -41,6 +45,11 @@ An API-first, mobile-friendly platform for managing youth group events, attendan
 - **Person Detail Pages:** Individual person profiles with history 🔮
 - **Bulk Import:** Import people from CSV/Excel files 🔮
 - **Advanced Filtering:** Filter by grade, school, attendance history 🔮
+- **School Management:** Admin interface to manage the predefined school list 🔮
+- **Data Validation Enhancements:** 
+  - Phone number formatting and validation 🔮
+  - Address validation 🔮
+  - Emergency contact relationship presets 🔮
 
 ### Optional/Advanced Features
 - **Check-in/Check-out:** Digital check-in/out (QR code/manual)

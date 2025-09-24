@@ -115,9 +115,9 @@ const PersonForm = ({ open, onClose, person, onSave, personType }) => {
       personData.grade = parseInt(formData.grade);
       personData.school_name = formData.school_name;
       personData.birth_date = formData.birth_date;
-      personData.emergency_contact_name = formData.emergency_contact_name;
-      personData.emergency_contact_phone = formData.emergency_contact_phone;
-      personData.emergency_contact_relationship = formData.emergency_contact_relationship;
+      personData.emergency_contact_name = formData.emergency_contact_name || '';
+      personData.emergency_contact_phone = formData.emergency_contact_phone || '';
+      personData.emergency_contact_relationship = formData.emergency_contact_relationship || '';
     } else {
       personData.role = formData.role;
       if (formData.birth_date) {
@@ -232,29 +232,26 @@ const PersonForm = ({ open, onClose, person, onSave, personType }) => {
                 <Grid container spacing={2}>
                   <Grid item xs={12} sm={6}>
                     <TextField
-                      label="Contact Name"
+                      label="Contact Name (Optional)"
                       value={formData.emergency_contact_name}
                       onChange={(e) => setFormData({ ...formData, emergency_contact_name: e.target.value })}
-                      required
                       fullWidth
                     />
                   </Grid>
                   <Grid item xs={12} sm={6}>
                     <TextField
-                      label="Relationship"
+                      label="Relationship (Optional)"
                       value={formData.emergency_contact_relationship}
                       onChange={(e) => setFormData({ ...formData, emergency_contact_relationship: e.target.value })}
-                      required
                       fullWidth
                     />
                   </Grid>
                 </Grid>
                 
                 <TextField
-                  label="Emergency Contact Phone"
+                  label="Emergency Contact Phone (Optional)"
                   value={formData.emergency_contact_phone}
                   onChange={(e) => setFormData({ ...formData, emergency_contact_phone: e.target.value })}
-                  required
                   fullWidth
                   InputProps={{
                     startAdornment: (
