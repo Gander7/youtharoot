@@ -40,7 +40,6 @@ import {
   CheckCircle as CheckInIcon
 } from '@mui/icons-material';
 import { apiRequest } from '../stores/auth';
-import { apiRequest } from '../stores/auth';
 
 const darkTheme = createTheme({
   palette: {
