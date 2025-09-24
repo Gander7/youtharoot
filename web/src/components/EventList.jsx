@@ -453,9 +453,9 @@ export default function EventList() {
   };
 
   const handleCheckIn = (event) => {
-    // Navigate to check-in page
+    // Navigate to check-in page with eventId as query parameter
     if (typeof window !== 'undefined') {
-      window.location.href = `/checkin/${event.id}`;
+      window.location.href = `/checkin?eventId=${event.id}`;
     }
   };
 
