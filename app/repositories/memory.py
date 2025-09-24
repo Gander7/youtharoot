@@ -54,6 +54,13 @@ class InMemoryPersonRepository(PersonRepository):
             if isinstance(person, Youth) and person.archived_on is None:
                 result.append(person)
         return result
+    
+    async def get_all_leaders(self) -> List[Leader]:
+        result = []
+        for person in self.store.values():
+            if isinstance(person, Leader) and person.archived_on is None:
+                result.append(person)
+        return result
 
 class InMemoryEventRepository(EventRepository):
     """In-memory implementation for development"""

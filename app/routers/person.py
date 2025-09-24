@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Request, HTTPException, Depends
-from typing import Union
+from typing import Union, List
 from app.models import Youth, Leader, Person, User
 from app.database import get_db
 from app.repositories import get_person_repository
@@ -32,6 +32,26 @@ async def get_all_non_archived_youth(
 		data.pop("archived_on", None)
 		result.append(data)
 	return result
+
+@router.get("/person/leaders", response_model=list[Leader])
+async def get_all_non_archived_leaders(
+	db: Session = Depends(get_db),
+	current_user: User = Depends(get_current_user)
+):
+	try:
+		repo = get_person_repository(db)
+		leaders_list = await repo.get_all_leaders()
+		
+		# Return leaders dicts without archived_on field
+		result = []
+		for leader in leaders_list:
+			data = leader.model_dump()
+			data.pop("archived_on", None)
+			result.append(data)
+		return result
+	except Exception as e:
+		print(f"Error in get_all_non_archived_leaders: {e}")
+		raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 @router.post("/person", response_model=Union[Youth, Leader])
 async def create_person(

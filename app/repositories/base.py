@@ -25,6 +25,10 @@ class PersonRepository(ABC):
     @abstractmethod
     async def get_all_youth(self) -> List[Youth]:
         pass
+    
+    @abstractmethod
+    async def get_all_leaders(self) -> List[Leader]:
+        pass
 
 class EventRepository(ABC):
     """Abstract interface for event storage"""

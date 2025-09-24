@@ -103,11 +103,10 @@ const PersonForm = ({ open, onClose, person, onSave, personType }) => {
   // Reset form data when person prop changes
   useEffect(() => {
     console.log('PersonForm useEffect triggered, person:', person);
-    setFormData({
+    const baseData = {
       first_name: '',
       last_name: '',
       phone_number: '',
-      grade: '',
       school_name: '',
       birth_date: '',
       emergency_contact_name: '',
@@ -115,16 +114,16 @@ const PersonForm = ({ open, onClose, person, onSave, personType }) => {
       emergency_contact_relationship: '',
       role: '',
       ...(person || {}),
-      // Ensure grade is always a string for the form
-      grade: person?.grade ? String(person.grade) : ''
-    });
+    };
+    baseData.grade = person?.grade ? String(person.grade) : '';
+    setFormData(baseData);
   }, [person]);
 
   // Also reset form when dialog opens
   useEffect(() => {
     if (open) {
       console.log('PersonForm dialog opened, person:', person);
-      setFormData({
+      const baseData = {
         first_name: '',
         last_name: '',
         phone_number: '',
@@ -136,14 +135,25 @@ const PersonForm = ({ open, onClose, person, onSave, personType }) => {
         emergency_contact_relationship: '',
         role: '',
         ...(person || {}),
-        // Ensure grade is always a string for the form
-        grade: person?.grade ? String(person.grade) : ''
-      });
+      };
+      baseData.grade = person?.grade ? String(person.grade) : '';
+      setFormData(baseData);
     }
   }, [open, person]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Validate required fields
+    if (!formData.first_name?.trim() || !formData.last_name?.trim()) {
+      alert('First name and last name are required');
+      return;
+    }
+    
+    if (personType === 'leader' && !formData.role?.trim()) {
+      alert('Role is required for leaders');
+      return;
+    }
     
     // Prepare data based on person type
     const personData = {
@@ -172,6 +182,7 @@ const PersonForm = ({ open, onClose, person, onSave, personType }) => {
       personData.emergency_contact_phone = formData.emergency_contact_phone || '';
       personData.emergency_contact_relationship = formData.emergency_contact_relationship || '';
     } else {
+      console.log(formData);
       personData.role = formData.role;
       if (formData.birth_date) {
         personData.birth_date = formData.birth_date;
@@ -188,18 +199,44 @@ const PersonForm = ({ open, onClose, person, onSave, personType }) => {
         method = 'PUT';
       }
       
+      console.log('🚀 About to send request:', {
+        url,
+        method,
+        personType,
+        payload: personData
+      });
+      
       const response = await apiRequest(url, {
         method: method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(personData),
       });
       
+      console.log('📡 Response received:', {
+        ok: response.ok,
+        status: response.status,
+        statusText: response.statusText
+      });
+      
       if (response.ok) {
+        const responseData = await response.json();
+        console.log('✅ Person saved successfully:', responseData);
         onSave();
         onClose();
+      } else {
+        // Log the error response for debugging
+        const errorText = await response.text();
+        console.error('❌ Failed to save person:', {
+          status: response.status,
+          statusText: response.statusText,
+          error: errorText,
+          payload: personData
+        });
+        alert(`Failed to save ${personType}: ${response.status} - ${response.statusText}\n\nError: ${errorText}`);
       }
     } catch (error) {
-      console.error('Error saving person:', error);
+      console.error('❌ Network error saving person:', error);
+      alert(`Network error saving ${personType}: ${error.message}`);
     }
   };
 
@@ -367,19 +404,30 @@ export default function PersonList() {
   const [persons, setPersons] = useState([]);
   const [filteredPersons, setFilteredPersons] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [filter, setFilter] = useState('all');
+  const [filter, setFilter] = useState('youth');
   const [formOpen, setFormOpen] = useState(false);
   const [editingPerson, setEditingPerson] = useState(null);
   const [personType, setPersonType] = useState('youth');
 
   const fetchPersons = async () => {
     try {
-      // For now, we'll fetch youth since that endpoint exists
-      const response = await apiRequest('/person/youth');
-      if (response.ok) {
-        const data = await response.json();
-        setPersons(data.map(p => ({ ...p, type: 'youth' })));
+      const allPersons = [];
+      
+      // Fetch youth
+      const youthResponse = await apiRequest('/person/youth');
+      if (youthResponse.ok) {
+        const youthData = await youthResponse.json();
+        allPersons.push(...youthData.map(p => ({ ...p, type: 'youth' })));
       }
+      
+      // Fetch leaders
+      const leadersResponse = await apiRequest('/person/leaders');
+      if (leadersResponse.ok) {
+        const leadersData = await leadersResponse.json();
+        allPersons.push(...leadersData.map(p => ({ ...p, type: 'leader' })));
+      }
+      
+      setPersons(allPersons);
     } catch (error) {
       console.error('Error fetching persons:', error);
       // Set some mock data for demo
@@ -410,11 +458,8 @@ export default function PersonList() {
   }, []);
 
   useEffect(() => {
-    let filtered = persons;
-    
-    if (filter !== 'all') {
-      filtered = persons.filter(p => p.type === filter);
-    }
+    // Filter by person type (youth or leader)
+    let filtered = persons.filter(p => p.type === filter);
     
     if (searchTerm) {
       filtered = filtered.filter(p => 
@@ -508,7 +553,6 @@ export default function PersonList() {
               onChange={(e, newFilter) => newFilter && setFilter(newFilter)}
               size="small"
             >
-              <ToggleButton value="all">All ({persons.length})</ToggleButton>
               <ToggleButton value="youth">
                 Youth ({persons.filter(p => p.type === 'youth').length})
               </ToggleButton>

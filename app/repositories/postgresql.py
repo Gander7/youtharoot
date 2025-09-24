@@ -132,6 +132,14 @@ class PostgreSQLPersonRepository(PersonRepository):
         ).all()
         
         return [self._db_to_pydantic(db_person) for db_person in db_persons]
+    
+    async def get_all_leaders(self) -> List[Leader]:
+        db_persons = self.db.query(PersonDB).filter(
+            PersonDB.person_type == "leader",
+            PersonDB.archived_on.is_(None)
+        ).all()
+        
+        return [self._db_to_pydantic(db_person) for db_person in db_persons]
 
 class PostgreSQLEventRepository(EventRepository):
     """PostgreSQL implementation for production"""
