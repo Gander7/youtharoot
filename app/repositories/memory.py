@@ -1,6 +1,6 @@
 from typing import List, Optional, Union
-from app.repositories.base import PersonRepository, EventRepository
-from app.models import Youth, Leader, Event
+from app.repositories.base import PersonRepository, EventRepository, UserRepository
+from app.models import Youth, Leader, Event, User
 import datetime
 
 class InMemoryPersonRepository(PersonRepository):
@@ -122,3 +122,89 @@ class InMemoryEventRepository(EventRepository):
         
         # Check if there are any youth or leaders with check-in records
         return len(event.youth) > 0 or len(event.leaders) > 0
+
+class InMemoryUserRepository(UserRepository):
+    """In-memory implementation for user management"""
+    
+    def __init__(self):
+        self.store = {}
+        self.next_id = 1
+        # Initialize with seed data
+        self._initialize_seed_data()
+    
+    def _initialize_seed_data(self):
+        """Initialize with admin and user seed data"""
+        # Note: These are proper bcrypt hashes for demo purposes
+        # In production, initial users should be created through secure setup process
+        
+        # Admin user - password: "admin123"
+        admin_user = User(
+            id=1,
+            username="admin",
+            password_hash="$2b$12$UgEizDPb.75.tE6qHLPR7.LCISLwlLGnoCyb/ummRVs07sGLBY2nu",
+            role="admin",
+            created_at=datetime.datetime.now(datetime.timezone.utc)
+        )
+        
+        # Regular user - password: "user123"  
+        regular_user = User(
+            id=2,
+            username="user",
+            password_hash="$2b$12$IEUDH2tE8c1qh.XziSOa5OanTf9cdeDOYgFPtpk4J719zVh3YcWUK",
+            role="user",
+            created_at=datetime.datetime.now(datetime.timezone.utc)
+        )
+        
+        self.store[1] = admin_user
+        self.store[2] = regular_user
+        self.next_id = 3
+    
+    async def create_user(self, user: User) -> User:
+        # Generate ID if not provided
+        if user.id is None:
+            user.id = self.next_id
+            self.next_id += 1
+        
+        # Set created_at if not provided
+        if user.created_at is None:
+            user.created_at = datetime.datetime.now(datetime.timezone.utc)
+        
+        # Check for duplicate username
+        for existing_user in self.store.values():
+            if existing_user.username == user.username:
+                raise ValueError(f"Username '{user.username}' already exists")
+        
+        self.store[user.id] = user
+        return user
+    
+    async def get_user(self, user_id: int) -> Optional[User]:
+        return self.store.get(user_id)
+    
+    async def get_user_by_username(self, username: str) -> Optional[User]:
+        for user in self.store.values():
+            if user.username == username:
+                return user
+        return None
+    
+    async def get_all_users(self) -> List[User]:
+        return list(self.store.values())
+    
+    async def update_user(self, user_id: int, user: User) -> User:
+        if user_id not in self.store:
+            raise ValueError(f"User with ID {user_id} not found")
+        
+        # Check for duplicate username (excluding current user)
+        for existing_id, existing_user in self.store.items():
+            if existing_id != user_id and existing_user.username == user.username:
+                raise ValueError(f"Username '{user.username}' already exists")
+        
+        user.id = user_id  # Ensure ID matches
+        self.store[user_id] = user
+        return user
+    
+    async def delete_user(self, user_id: int) -> bool:
+        if user_id not in self.store:
+            return False
+        
+        del self.store[user_id]
+        return True

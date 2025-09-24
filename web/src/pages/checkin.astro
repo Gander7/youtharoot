@@ -1,8 +1,12 @@
 ---
 import CheckInPage from "../components/CheckInPage.jsx";
-import BaseLayout from "../layouts/BaseLayout.astro";
+import AuthLayout from "../layouts/AuthLayout.astro";
+import Navigation from "../components/Navigation.jsx";
 ---
 
-<BaseLayout>
-  <CheckInPage client:load />
-</BaseLayout>
+<AuthLayout title="Check-In - Youth Attendance">
+  <Navigation client:load />
+  <main>
+    <CheckInPage client:load />
+  </main>
+</AuthLayout>

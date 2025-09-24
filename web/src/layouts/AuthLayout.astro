@@ -1,0 +1,40 @@
+---
+import AuthGuard from '../components/AuthGuard.jsx';
+
+interface Props {
+  title?: string;
+}
+
+const { title = 'Youth Attendance' } = Astro.props;
+---
+
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{title}</title>
+</head>
+<body>
+  <style is:global>
+    html, body {
+      background: #181818 !important;
+      color: #f5f5f5 !important;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      padding-bottom: 70px; /* Space for mobile navigation */
+    }
+    @media (min-width: 600px) {
+      body {
+        padding-bottom: 0;
+      }
+    }
+  </style>
+  
+  <AuthGuard client:load>
+    <slot />
+  </AuthGuard>
+</body>
+</html>

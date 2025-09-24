@@ -1,8 +1,12 @@
 ---
 import EventList from "../components/EventList.jsx";
-import BaseLayout from "../layouts/BaseLayout.astro";
+import AuthLayout from "../layouts/AuthLayout.astro";
+import Navigation from "../components/Navigation.jsx";
 ---
 
-<BaseLayout>
-  <EventList client:load />
-</BaseLayout>
+<AuthLayout title="Events - Youth Attendance">
+  <Navigation client:load />
+  <main>
+    <EventList client:load />
+  </main>
+</AuthLayout>

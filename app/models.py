@@ -43,3 +43,10 @@ class Event(BaseModel):
 	location: Optional[str] = None
 	youth: List[EventPerson] = []
 	leaders: List[EventPerson] = []
+
+class User(BaseModel):
+	id: Optional[int] = None  # Optional for creation, will be set by database
+	username: str
+	password_hash: str
+	role: str = "user"
+	created_at: Optional[datetime.datetime] = None

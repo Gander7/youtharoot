@@ -40,6 +40,7 @@ import {
   CheckCircle as CheckInIcon
 } from '@mui/icons-material';
 import { API_BASE_URL } from '../config/api.js';
+import { apiRequest } from '../stores/auth';
 
 const darkTheme = createTheme({
   palette: {
@@ -313,7 +314,7 @@ export default function EventList() {
       const fetchStart = performance.now();
       console.log(`📡 Making fetch request to: ${API_BASE_URL}/events`);
       
-      const response = await fetch(`${API_BASE_URL}/events`);
+      const response = await apiRequest(`/events`);
       const fetchEnd = performance.now();
       console.log(`📡 Fetch completed in ${fetchEnd - fetchStart}ms, status: ${response.status}`);
       

@@ -1,4 +1,5 @@
 import React from 'react';
+import { useStore } from '@nanostores/react';
 import {
   AppBar,
   Toolbar,
@@ -10,19 +11,28 @@ import {
   useTheme,
   BottomNavigation,
   BottomNavigationAction,
-  Paper
+  Paper,
+  IconButton,
+  Menu,
+  MenuItem
 } from '@mui/material';
 import {
   Event as EventIcon,
   People as PeopleIcon,
-  Home as HomeIcon
+  Home as HomeIcon,
+  AccountCircle,
+  Logout
 } from '@mui/icons-material';
+import { authStore, logout } from '../stores/auth';
 
 export default function Navigation() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [value, setValue] = React.useState(0);
-  const [currentPath, setCurrentPath] = React.useState('/'); // Initialize with default
+  const [currentPath, setCurrentPath] = React.useState('/');
+  const [anchorEl, setAnchorEl] = React.useState(null);
+  
+  const auth = useStore(authStore);
   
   React.useEffect(() => {
     // Update current path on client side only
@@ -41,6 +51,20 @@ export default function Navigation() {
     if (typeof window !== 'undefined') {
       window.location.href = path;
     }
+  };
+
+  const handleMenu = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleClose = () => {
+    setAnchorEl(null);
+  };
+
+  const handleLogout = () => {
+    logout();
+    handleClose();
+    navigate('/login');
   };
 
   if (isMobile) {
@@ -95,7 +119,7 @@ export default function Navigation() {
           >
             Youth Attendance
           </Typography>
-          <Box sx={{ display: 'flex', gap: 1 }}>
+          <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
             <Button 
               color="inherit" 
               onClick={() => navigate('/')}
@@ -120,6 +144,43 @@ export default function Navigation() {
             >
               People
             </Button>
+            
+            {/* User Menu */}
+            <Box sx={{ ml: 2 }}>
+              <IconButton
+                size="large"
+                aria-label="account of current user"
+                aria-controls="menu-appbar"
+                aria-haspopup="true"
+                onClick={handleMenu}
+                color="inherit"
+              >
+                <AccountCircle />
+              </IconButton>
+              <Menu
+                id="menu-appbar"
+                anchorEl={anchorEl}
+                anchorOrigin={{
+                  vertical: 'top',
+                  horizontal: 'right',
+                }}
+                keepMounted
+                transformOrigin={{
+                  vertical: 'top',
+                  horizontal: 'right',
+                }}
+                open={Boolean(anchorEl)}
+                onClose={handleClose}
+              >
+                <MenuItem disabled>
+                  {auth.user?.username} ({auth.user?.role})
+                </MenuItem>
+                <MenuItem onClick={handleLogout}>
+                  <Logout sx={{ mr: 1 }} />
+                  Logout
+                </MenuItem>
+              </Menu>
+            </Box>
           </Box>
         </Toolbar>
       </Container>

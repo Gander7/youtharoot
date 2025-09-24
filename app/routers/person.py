@@ -1,8 +1,9 @@
 from fastapi import APIRouter, Request, HTTPException, Depends
 from typing import Union
-from app.models import Youth, Leader, Person
+from app.models import Youth, Leader, Person, User
 from app.database import get_db
 from app.repositories import get_person_repository
+from app.auth import get_current_user
 from sqlalchemy.orm import Session
 import datetime
 
@@ -17,7 +18,10 @@ ERRORS = {
 PERSON_NOT_FOUND = "person_not_found"
 
 @router.get("/person/youth", response_model=list[Youth])
-async def get_all_non_archived_youth(db: Session = Depends(get_db)):
+async def get_all_non_archived_youth(
+	db: Session = Depends(get_db),
+	current_user: User = Depends(get_current_user)
+):
 	repo = get_person_repository(db)
 	youth_list = await repo.get_all_youth()
 	
@@ -30,7 +34,11 @@ async def get_all_non_archived_youth(db: Session = Depends(get_db)):
 	return result
 
 @router.post("/person", response_model=Union[Youth, Leader])
-async def create_person(person: Union[Youth, Leader], db: Session = Depends(get_db)):
+async def create_person(
+	person: Union[Youth, Leader], 
+	db: Session = Depends(get_db),
+	current_user: User = Depends(get_current_user)
+):
 	repo = get_person_repository(db)
 	try:
 		created_person = await repo.create_person(person)
@@ -41,7 +49,11 @@ async def create_person(person: Union[Youth, Leader], db: Session = Depends(get_
 		raise HTTPException(status_code=422, detail=str(e))
 
 @router.get("/person/{person_id}", response_model=Union[Youth, Leader])
-async def get_person(person_id: int, db: Session = Depends(get_db)):
+async def get_person(
+	person_id: int, 
+	db: Session = Depends(get_db),
+	current_user: User = Depends(get_current_user)
+):
 	repo = get_person_repository(db)
 	person = await repo.get_person(person_id)
 	
@@ -53,7 +65,12 @@ async def get_person(person_id: int, db: Session = Depends(get_db)):
 	return data
 
 @router.put("/person/{person_id}", response_model=Union[Youth, Leader])
-async def update_person(person_id: int, person: Union[Youth, Leader], db: Session = Depends(get_db)):
+async def update_person(
+	person_id: int, 
+	person: Union[Youth, Leader], 
+	db: Session = Depends(get_db),
+	current_user: User = Depends(get_current_user)
+):
 	repo = get_person_repository(db)
 	try:
 		updated_person = await repo.update_person(person_id, person)
@@ -64,7 +81,11 @@ async def update_person(person_id: int, person: Union[Youth, Leader], db: Sessio
 		raise HTTPException(status_code=404 if "not found" in str(e) else 422, detail=str(e))
 
 @router.delete("/person/{person_id}")
-async def archive_person(person_id: int, db: Session = Depends(get_db)):
+async def archive_person(
+	person_id: int, 
+	db: Session = Depends(get_db),
+	current_user: User = Depends(get_current_user)
+):
 	repo = get_person_repository(db)
 	await repo.archive_person(person_id)
 	return {}

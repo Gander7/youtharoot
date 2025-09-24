@@ -1,8 +1,10 @@
 from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
 from typing import Optional
+from app.models import User
 from app.database import get_db
 from app.repositories import get_event_repository, get_person_repository
+from app.auth import get_current_user
 from sqlalchemy.orm import Session
 import datetime
 
@@ -15,7 +17,12 @@ class CheckOutRequest(BaseModel):
     person_id: int
 
 @router.post("/event/{event_id}/checkin")
-async def check_in_person(event_id: int, request: CheckInRequest, db: Session = Depends(get_db)):
+async def check_in_person(
+    event_id: int, 
+    request: CheckInRequest, 
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
     """Check in a person to an event"""
     try:
         # Verify event exists
@@ -91,7 +98,12 @@ async def check_in_person(event_id: int, request: CheckInRequest, db: Session = 
         raise HTTPException(status_code=500, detail="Internal server error")
 
 @router.put("/event/{event_id}/checkout")
-async def check_out_person(event_id: int, request: CheckOutRequest, db: Session = Depends(get_db)):
+async def check_out_person(
+    event_id: int, 
+    request: CheckOutRequest, 
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
     """Check out a person from an event"""
     try:
         # Verify event exists
@@ -154,7 +166,11 @@ async def check_out_person(event_id: int, request: CheckOutRequest, db: Session 
         raise HTTPException(status_code=500, detail="Internal server error")
 
 @router.get("/event/{event_id}/attendance")
-async def get_event_attendance(event_id: int, db: Session = Depends(get_db)):
+async def get_event_attendance(
+    event_id: int, 
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
     """Get all attendance records for an event"""
     try:
         # Verify event exists

@@ -16,6 +16,9 @@ class Settings:
     # Application Configuration
     DEBUG: bool = os.getenv("DEBUG", "true").lower() == "true"
     
+    # Security Configuration
+    SECRET_KEY: str = os.getenv("SECRET_KEY", "your-secret-key-change-in-production-please-make-it-long-and-random")
+    
     @property
     def database_url(self) -> Optional[str]:
         """Get the appropriate database URL based on environment"""

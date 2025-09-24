@@ -1,25 +1,29 @@
 ---
-import BaseLayout from "../layouts/BaseLayout.astro";
+import AuthLayout from "../layouts/AuthLayout.astro";
+import Navigation from "../components/Navigation.jsx";
 ---
 
-<BaseLayout>
-  <div style="max-width: 600px; margin: 0 auto; padding: 2rem; text-align: center;">
-    <h1>Welcome to Youth Attendance</h1>
-    <p>Manage your youth group events and people efficiently.</p>
-    
-    <div style="display: flex; gap: 1rem; justify-content: center; margin-top: 2rem; flex-wrap: wrap;">
-      <a href="/Events" style="text-decoration: none;">
-        <div style="background: #242424; padding: 2rem; border-radius: 12px; min-width: 200px;">
-          <h3 style="margin: 0 0 1rem 0; color: #90caf9;">📅 Events</h3>
-          <p style="margin: 0; color: #b0b0b0;">View and manage upcoming events</p>
-        </div>
-      </a>
-      <a href="/People" style="text-decoration: none;">
-        <div style="background: #242424; padding: 2rem; border-radius: 12px; min-width: 200px;">
-          <h3 style="margin: 0 0 1rem 0; color: #f48fb1;">👥 People</h3>
-          <p style="margin: 0; color: #b0b0b0;">Manage youth and leaders</p>
-        </div>
-      </a>
+<AuthLayout title="Home - Youth Attendance">
+  <Navigation client:load />
+  <main>
+    <div style="max-width: 600px; margin: 0 auto; padding: 2rem; text-align: center;">
+      <h1>Welcome to Youth Attendance</h1>
+      <p>Manage your youth group events and people efficiently.</p>
+      
+      <div style="display: flex; gap: 1rem; justify-content: center; margin-top: 2rem; flex-wrap: wrap;">
+        <a href="/Events" style="text-decoration: none;">
+          <div style="background: #242424; padding: 2rem; border-radius: 12px; min-width: 200px;">
+            <h3 style="margin: 0 0 1rem 0; color: #90caf9;">📅 Events</h3>
+            <p style="margin: 0; color: #b0b0b0;">View and manage upcoming events</p>
+          </div>
+        </a>
+        <a href="/People" style="text-decoration: none;">
+          <div style="background: #242424; padding: 2rem; border-radius: 12px; min-width: 200px;">
+            <h3 style="margin: 0 0 1rem 0; color: #f48fb1;">👥 People</h3>
+            <p style="margin: 0; color: #b0b0b0;">Manage youth and leaders</p>
+          </div>
+        </a>
+      </div>
     </div>
-  </div>
-</BaseLayout>
+  </main>
+</AuthLayout>

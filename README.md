@@ -124,12 +124,16 @@ The application supports **configurable storage** for development and production
 # Development (default)
 DATABASE_TYPE=memory
 DEBUG=true
+SECRET_KEY=your-dev-secret-key-for-local-testing
 
 # Production  
 DATABASE_TYPE=postgresql
 DATABASE_URL=postgresql://user:pass@host:port/db
 DEBUG=false
+SECRET_KEY=your-secure-production-secret-key-make-it-very-long-and-random
 ```
+
+**Note:** The SECRET_KEY is required for JWT token signing in the authentication system. Use different keys for development and production.
 
 See [DEPLOYMENT.md](DEPLOYMENT.md) for detailed deployment instructions.
 

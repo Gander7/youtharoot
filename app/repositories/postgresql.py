@@ -1,8 +1,8 @@
 from typing import List, Optional, Union
 from sqlalchemy.orm import Session
-from app.repositories.base import PersonRepository, EventRepository
-from app.models import Youth, Leader, Event, EventPerson
-from app.db_models import PersonDB, EventDB
+from app.repositories.base import PersonRepository, EventRepository, UserRepository
+from app.models import Youth, Leader, Event, EventPerson, User
+from app.db_models import PersonDB, EventDB, UserDB
 from datetime import datetime
 import datetime as dt
 
@@ -257,3 +257,89 @@ class PostgreSQLEventRepository(EventRepository):
         
         count = self.db.query(EventPersonDB).filter(EventPersonDB.event_id == event_id).count()
         return count > 0
+
+class PostgreSQLUserRepository(UserRepository):
+    """PostgreSQL implementation for user management"""
+    
+    def __init__(self, db: Session):
+        self.db = db
+    
+    def _db_to_pydantic(self, db_user: UserDB) -> User:
+        """Convert database model to Pydantic model"""
+        return User(
+            id=db_user.id,
+            username=db_user.username,
+            password_hash=db_user.password_hash,
+            role=db_user.role,
+            created_at=db_user.created_at
+        )
+    
+    def _pydantic_to_db(self, user: User) -> UserDB:
+        """Convert Pydantic model to database model"""
+        return UserDB(
+            # Don't set ID, let PostgreSQL auto-generate it
+            username=user.username,
+            password_hash=user.password_hash,
+            role=user.role
+        )
+    
+    async def create_user(self, user: User) -> User:
+        # Check for duplicate username
+        existing = self.db.query(UserDB).filter(UserDB.username == user.username).first()
+        if existing:
+            raise ValueError(f"Username '{user.username}' already exists")
+        
+        db_user = self._pydantic_to_db(user)
+        self.db.add(db_user)
+        self.db.commit()
+        self.db.refresh(db_user)
+        
+        return self._db_to_pydantic(db_user)
+    
+    async def get_user(self, user_id: int) -> Optional[User]:
+        db_user = self.db.query(UserDB).filter(UserDB.id == user_id).first()
+        if db_user:
+            return self._db_to_pydantic(db_user)
+        return None
+    
+    async def get_user_by_username(self, username: str) -> Optional[User]:
+        db_user = self.db.query(UserDB).filter(UserDB.username == username).first()
+        if db_user:
+            return self._db_to_pydantic(db_user)
+        return None
+    
+    async def get_all_users(self) -> List[User]:
+        db_users = self.db.query(UserDB).all()
+        return [self._db_to_pydantic(db_user) for db_user in db_users]
+    
+    async def update_user(self, user_id: int, user: User) -> User:
+        db_user = self.db.query(UserDB).filter(UserDB.id == user_id).first()
+        if not db_user:
+            raise ValueError(f"User with ID {user_id} not found")
+        
+        # Check for duplicate username (excluding current user)
+        existing = self.db.query(UserDB).filter(
+            UserDB.username == user.username,
+            UserDB.id != user_id
+        ).first()
+        if existing:
+            raise ValueError(f"Username '{user.username}' already exists")
+        
+        # Update fields
+        db_user.username = user.username
+        db_user.password_hash = user.password_hash
+        db_user.role = user.role
+        
+        self.db.commit()
+        self.db.refresh(db_user)
+        
+        return self._db_to_pydantic(db_user)
+    
+    async def delete_user(self, user_id: int) -> bool:
+        db_user = self.db.query(UserDB).filter(UserDB.id == user_id).first()
+        if not db_user:
+            return False
+        
+        self.db.delete(db_user)
+        self.db.commit()
+        return True

@@ -8,3 +8,6 @@ sqlalchemy
 psycopg2-binary
 alembic
 python-dotenv
+pyjwt
+passlib[bcrypt]
+python-multipart

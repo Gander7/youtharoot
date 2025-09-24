@@ -33,13 +33,40 @@ Railway has simplified their deployment process. Here's the current workflow:
    DATABASE_TYPE=postgresql
    DEBUG=false
    PORT=8000
+   SECRET_KEY=your-secure-production-secret-key-make-it-very-long-and-random
    ```
    - `DATABASE_URL` is automatically provided by Railway when you add PostgreSQL
+   - **Important**: Generate a secure, random SECRET_KEY for JWT token signing
 
 5. **Deploy:**
    - Railway automatically builds and deploys your app
    - Your API will be available at: `https://your-app-name.up.railway.app`
    - Check the deployment logs for any issues
+
+## Security Configuration
+
+### Generating a Secure SECRET_KEY
+
+For production deployments, you need a strong, random SECRET_KEY for JWT token signing:
+
+**Option 1: Python (Recommended)**
+```bash
+python -c "import secrets; print(secrets.token_urlsafe(32))"
+```
+
+**Option 2: OpenSSL**
+```bash
+openssl rand -base64 32
+```
+
+**Option 3: Online Generator**
+Use a reputable online generator like: https://generate-secret.vercel.app/32
+
+**Important Security Notes:**
+- Never commit SECRET_KEY to version control
+- Use different keys for development and production
+- Store production keys securely in Railway's environment variables
+- Regenerate keys if they may have been compromised
 
 ## Alternative: Railway CLI (Advanced)
 
@@ -94,7 +121,7 @@ Deploy both frontend and backend on Railway using multiple services:
      - **Start Command**: `npm run preview`
 
 3. **Environment Variables:**
-   - Backend service: `DATABASE_TYPE=postgresql`, `DEBUG=false`
+   - Backend service: `DATABASE_TYPE=postgresql`, `DEBUG=false`, `SECRET_KEY=your-secure-secret-key`
    - Frontend service: `PUBLIC_API_URL=https://[backend-service].up.railway.app`
 
 ### **Option 3: Single Railway Service (Not Recommended)**
@@ -125,6 +152,7 @@ If you want to test PostgreSQL locally:
    DATABASE_TYPE=postgresql
    DEV_DATABASE_URL=postgresql://username:password@localhost/youth_attendance_dev
    DEBUG=true
+   SECRET_KEY=your-dev-secret-key-for-local-testing
    ```
 
 4. **Install Dependencies:**
@@ -143,6 +171,7 @@ If you want to test PostgreSQL locally:
 ```
 DATABASE_TYPE=memory
 DEBUG=true
+SECRET_KEY=your-dev-secret-key-for-local-testing
 ```
 
 ### Development (Local PostgreSQL)
@@ -150,11 +179,13 @@ DEBUG=true
 DATABASE_TYPE=postgresql
 DEV_DATABASE_URL=postgresql://user:pass@localhost/youth_attendance_dev
 DEBUG=true
+SECRET_KEY=your-dev-secret-key-for-local-testing
 ```
 
 ### Production (Railway)
 ```
 DATABASE_TYPE=postgresql
 DEBUG=false
+SECRET_KEY=your-secure-production-secret-key-make-it-very-long-and-random
 # DATABASE_URL is automatically set by Railway
 ```

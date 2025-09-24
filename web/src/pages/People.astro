@@ -1,8 +1,12 @@
 ---
 import PersonList from "../components/PersonList.jsx";
-import BaseLayout from "../layouts/BaseLayout.astro";
+import AuthLayout from "../layouts/AuthLayout.astro";
+import Navigation from "../components/Navigation.jsx";
 ---
 
-<BaseLayout>
-  <PersonList client:load />
-</BaseLayout>
+<AuthLayout title="People - Youth Attendance">
+  <Navigation client:load />
+  <main>
+    <PersonList client:load />
+  </main>
+</AuthLayout>
