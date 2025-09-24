@@ -81,7 +81,7 @@ export default function CheckIn({ eventId }) {
   const [attendees, setAttendees] = useState([]);
   const [filteredPeople, setFilteredPeople] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [filter, setFilter] = useState('available'); // 'available' or 'checked-in'
+  const [filter, setFilter] = useState('available'); // 'available', 'checked-in', or 'checked-out'
   const [loading, setLoading] = useState(true);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
 
@@ -146,33 +146,60 @@ export default function CheckIn({ eventId }) {
     let filtered = [];
     
     if (filter === 'available') {
-      // Show youth who are NOT checked in
+      // Show youth who are NOT checked in at all
       const checkedInIds = attendees.map(a => a.person_id);
       filtered = allYouth.filter(youth => !checkedInIds.includes(youth.id));
-    } else {
-      // Show people who ARE checked in
-      const checkedInPeople = attendees.map(attendee => {
-        const person = allYouth.find(p => p.id === attendee.person_id);
-        return person ? { 
-          ...person, 
-          check_in: attendee.check_in, 
-          check_out: attendee.check_out,
-          // Use the data from attendance record if person not found in allYouth
-          first_name: person.first_name || attendee.first_name,
-          last_name: person.last_name || attendee.last_name,
-          grade: person.grade || attendee.grade,
-          school_name: person.school_name || attendee.school_name
-        } : {
-          id: attendee.person_id,
-          first_name: attendee.first_name,
-          last_name: attendee.last_name,
-          grade: attendee.grade,
-          school_name: attendee.school_name,
-          check_in: attendee.check_in,
-          check_out: attendee.check_out
-        };
-      });
+    } else if (filter === 'checked-in') {
+      // Show people who ARE checked in but NOT checked out
+      const checkedInPeople = attendees
+        .filter(attendee => !attendee.check_out) // Only those who haven't checked out
+        .map(attendee => {
+          const person = allYouth.find(p => p.id === attendee.person_id);
+          return person ? { 
+            ...person, 
+            check_in: attendee.check_in, 
+            check_out: attendee.check_out,
+            // Use the data from attendance record if person not found in allYouth
+            first_name: person.first_name || attendee.first_name,
+            last_name: person.last_name || attendee.last_name,
+            grade: person.grade || attendee.grade,
+            school_name: person.school_name || attendee.school_name
+          } : {
+            id: attendee.person_id,
+            first_name: attendee.first_name,
+            last_name: attendee.last_name,
+            grade: attendee.grade,
+            school_name: attendee.school_name,
+            check_in: attendee.check_in,
+            check_out: attendee.check_out
+          };
+        });
       filtered = checkedInPeople;
+    } else if (filter === 'checked-out') {
+      // Show people who ARE checked out
+      const checkedOutPeople = attendees
+        .filter(attendee => attendee.check_out) // Only those who have checked out
+        .map(attendee => {
+          const person = allYouth.find(p => p.id === attendee.person_id);
+          return person ? { 
+            ...person, 
+            check_in: attendee.check_in, 
+            check_out: attendee.check_out,
+            first_name: person.first_name || attendee.first_name,
+            last_name: person.last_name || attendee.last_name,
+            grade: person.grade || attendee.grade,
+            school_name: person.school_name || attendee.school_name
+          } : {
+            id: attendee.person_id,
+            first_name: attendee.first_name,
+            last_name: attendee.last_name,
+            grade: attendee.grade,
+            school_name: attendee.school_name,
+            check_in: attendee.check_in,
+            check_out: attendee.check_out
+          };
+        });
+      filtered = checkedOutPeople;
     }
 
     // Apply search filter
@@ -257,7 +284,13 @@ export default function CheckIn({ eventId }) {
   };
 
   const getCheckedInCount = () => {
-    return attendees.length;
+    // Only count people who are checked in but NOT checked out
+    return attendees.filter(attendee => !attendee.check_out).length;
+  };
+
+  const getCheckedOutCount = () => {
+    // Count people who are checked out
+    return attendees.filter(attendee => attendee.check_out).length;
   };
 
   if (loading) {
@@ -346,6 +379,9 @@ export default function CheckIn({ eventId }) {
               <ToggleButton value="checked-in">
                 Checked In ({getCheckedInCount()})
               </ToggleButton>
+              <ToggleButton value="checked-out">
+                Checked Out ({getCheckedOutCount()})
+              </ToggleButton>
             </ToggleButtonGroup>
           </Stack>
         </Paper>
@@ -356,12 +392,14 @@ export default function CheckIn({ eventId }) {
             <PersonIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }} />
             <Typography variant="h6" color="text.secondary">
               {searchTerm ? 'No people found' : 
-                filter === 'available' ? 'No one available to check in' : 'No one checked in yet'
+                filter === 'available' ? 'No one available to check in' : 
+                filter === 'checked-in' ? 'No one checked in yet' : 'No one checked out yet'
               }
             </Typography>
             <Typography color="text.secondary">
               {searchTerm ? 'Try adjusting your search' : 
-                filter === 'available' ? 'All youth are already checked in' : 'Start checking people in'
+                filter === 'available' ? 'All youth are already checked in' : 
+                filter === 'checked-in' ? 'Start checking people in' : 'No one has checked out yet'
               }
             </Typography>
           </Paper>
