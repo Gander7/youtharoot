@@ -17,8 +17,8 @@ class Person(BaseModel, abc.ABC):
 		return super().__new__(cls)
 
 class Youth(Person):
-	grade: int
-	school_name: str
+	grade: Optional[int] = None
+	school_name: Optional[str] = None
 	birth_date: datetime.date
 	emergency_contact_name: Optional[str] = ""
 	emergency_contact_phone: Optional[str] = ""

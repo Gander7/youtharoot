@@ -433,7 +433,15 @@ export default function CheckIn({ eventId }) {
                     secondary={
                       <Stack spacing={0.5} sx={{ mt: 0.5 }}>
                         <Typography variant="body2" color="text.secondary">
-                          Grade {person.grade} • {person.school_name}
+                          {person.grade || person.school_name ? (
+                            <>
+                              {person.grade && `Grade ${person.grade}`}
+                              {person.grade && person.school_name && ' • '}
+                              {person.school_name}
+                            </>
+                          ) : (
+                            'Youth'
+                          )}
                         </Typography>
                         {(filter === 'checked-in' || filter === 'checked-out') && person.check_in && (
                           <Typography variant="body2" color="text.secondary">

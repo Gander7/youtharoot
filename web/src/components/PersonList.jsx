@@ -155,8 +155,14 @@ const PersonForm = ({ open, onClose, person, onSave, personType }) => {
     }
 
     if (personType === 'youth') {
-      personData.grade = parseInt(formData.grade);
-      personData.school_name = formData.school_name;
+      // Only set grade if provided and valid
+      if (formData.grade && formData.grade.trim() !== '') {
+        personData.grade = parseInt(formData.grade);
+      }
+      // Only set school_name if provided
+      if (formData.school_name && formData.school_name.trim() !== '') {
+        personData.school_name = formData.school_name;
+      }
       personData.birth_date = formData.birth_date;
       personData.emergency_contact_name = formData.emergency_contact_name || '';
       personData.emergency_contact_phone = formData.emergency_contact_phone || '';
@@ -245,9 +251,9 @@ const PersonForm = ({ open, onClose, person, onSave, personType }) => {
                       type="number"
                       value={formData.grade}
                       onChange={(e) => setFormData({ ...formData, grade: e.target.value })}
-                      required
                       fullWidth
                       inputProps={{ min: 1, max: 12 }}
+                      helperText="Optional"
                     />
                   </Grid>
                   <Grid item xs={6}>
@@ -267,8 +273,8 @@ const PersonForm = ({ open, onClose, person, onSave, personType }) => {
                   label="School Name"
                   value={formData.school_name}
                   onChange={(e) => setFormData({ ...formData, school_name: e.target.value })}
-                  required
                   fullWidth
+                  helperText="Optional"
                   InputProps={{
                     startAdornment: (
                       <InputAdornment position="start">
@@ -440,7 +446,10 @@ export default function PersonList() {
 
   const getPersonDetails = (person) => {
     if (person.type === 'youth') {
-      return `Grade ${person.grade} • ${person.school_name}`;
+      const parts = [];
+      if (person.grade) parts.push(`Grade ${person.grade}`);
+      if (person.school_name) parts.push(person.school_name);
+      return parts.length > 0 ? parts.join(' • ') : 'Youth';
     }
     return person.role;
   };
