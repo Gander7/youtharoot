@@ -86,8 +86,8 @@ def user_to_response(user: User) -> UserResponse:
 @router.post("/login", response_model=LoginResponse)
 async def login(login_data: LoginRequest, db: Session = Depends(connect_to_db)):
     """Authenticate user and return access token"""
-    get_password_hash, authenticate_user, create_access_token = get_auth_functions()
-    user = await authenticate_user(login_data.username, login_data.password, db)
+    get_password_hash_func, authenticate_user_func, create_access_token_func = get_auth_functions()
+    user = await authenticate_user_func(login_data.username, login_data.password, db)
     
     if not user:
         raise HTTPException(
@@ -97,7 +97,7 @@ async def login(login_data: LoginRequest, db: Session = Depends(connect_to_db)):
         )
     
     # Create access token
-    access_token = create_access_token(data={"sub": user.username})
+    access_token = create_access_token_func(data={"sub": user.username})
     
     return LoginResponse(
         access_token=access_token,
@@ -149,8 +149,8 @@ async def create_user(
     user_repo = get_user_repository(db)
     
     # Hash the password
-    get_password_hash, authenticate_user, create_access_token = get_auth_functions()
-    hashed_password = get_password_hash(user_data.password)
+    get_password_hash_func, authenticate_user_func, create_access_token_func = get_auth_functions()
+    hashed_password = get_password_hash_func(user_data.password)
     
     # Create user object
     new_user = User(
@@ -189,8 +189,8 @@ async def update_user(
         )
     
     # Hash the new password
-    get_password_hash, authenticate_user, create_access_token = get_auth_functions()
-    hashed_password = get_password_hash(user_data.password)
+    get_password_hash_func, authenticate_user_func, create_access_token_func = get_auth_functions()
+    hashed_password = get_password_hash_func(user_data.password)
     
     # Create updated user object
     updated_user = User(
