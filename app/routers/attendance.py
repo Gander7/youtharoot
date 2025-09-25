@@ -2,34 +2,13 @@ from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
 from typing import Optional
 from app.models import User
+from app.database import get_db
+from app.repositories import get_event_repository, get_person_repository
+from app.auth import get_current_user
 from sqlalchemy.orm import Session
 import datetime
 
 router = APIRouter()
-
-
-def connect_to_db():
-    from app.database import get_db
-    db_generator = get_db()
-    try:
-        db = next(db_generator)
-        yield db
-    finally:
-        try:
-            next(db_generator)
-        except StopIteration:
-            pass
-
-def get_current_user_dependency():
-    from app.auth import get_current_user
-    return get_current_user
-
-# Use this as the actual dependency
-get_current_user_lazy = Depends(get_current_user_dependency())
-
-def get_repositories():
-    from app.repositories import get_event_repository, get_person_repository
-    return get_event_repository, get_person_repository
 
 class CheckInRequest(BaseModel):
     person_id: int
@@ -41,14 +20,11 @@ class CheckOutRequest(BaseModel):
 async def check_in_person(
     event_id: int, 
     request: CheckInRequest, 
-    db: Session = Depends(connect_to_db),
-    current_user: User = get_current_user_lazy
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
     """Check in a person to an event"""
     try:
-        # Get repository functions lazily
-        get_event_repository, get_person_repository = get_repositories()
-        
         # Verify event exists
         event_repo = get_event_repository(db)
         event = await event_repo.get_event(event_id)
@@ -125,14 +101,11 @@ async def check_in_person(
 async def check_out_person(
     event_id: int, 
     request: CheckOutRequest, 
-    db: Session = Depends(connect_to_db),
-    current_user: User = get_current_user_lazy
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
     """Check out a person from an event"""
     try:
-        # Get repository functions lazily
-        get_event_repository, get_person_repository = get_repositories()
-        
         # Verify event exists
         event_repo = get_event_repository(db)
         event = await event_repo.get_event(event_id)
@@ -193,24 +166,23 @@ async def check_out_person(
         raise HTTPException(status_code=500, detail="Internal server error")
 
 @router.get("/event/{event_id}/attendance")
-async def get_attendance_for_event(
+async def get_event_attendance(
     event_id: int, 
-    db: Session = Depends(connect_to_db),
-    current_user: User = get_current_user_lazy
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
     """Get all attendance records for an event"""
     try:
-        # Get repository functions lazily
-        get_event_repository, get_person_repository = get_repositories()
-        
         # Verify event exists
         event_repo = get_event_repository(db)
         event = await event_repo.get_event(event_id)
         if not event:
             raise HTTPException(status_code=404, detail="Event not found")
-
+        
         person_repo = get_person_repository(db)
-        result = []        # Process youth attendees
+        result = []
+        
+        # Process youth attendees
         for event_person in event.youth:
             person = await person_repo.get_person(event_person.person_id)
             if person:

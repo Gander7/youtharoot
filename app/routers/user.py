@@ -5,37 +5,13 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
+
+from app.database import get_db
+from app.repositories import get_user_repository
 from app.models import User
+from app.auth import get_current_admin_user, get_password_hash, authenticate_user, create_access_token
 
 router = APIRouter(prefix="/users", tags=["users"])
-
-
-def connect_to_db():
-    from app.database import get_db
-    db_generator = get_db()
-    try:
-        db = next(db_generator)
-        yield db
-    finally:
-        try:
-            next(db_generator)
-        except StopIteration:
-            pass
-
-def get_current_admin_user_dependency():
-    from app.auth import get_current_admin_user
-    return get_current_admin_user
-
-# Use this as the actual dependency
-get_current_admin_user_lazy = Depends(get_current_admin_user_dependency())
-
-def get_repositories():
-    from app.repositories import get_user_repository
-    return get_user_repository
-
-def get_auth_functions():
-    from app.auth import get_password_hash, authenticate_user, create_access_token
-    return get_password_hash, authenticate_user, create_access_token
 
 
 class UserCreate(BaseModel):
@@ -84,9 +60,8 @@ def user_to_response(user: User) -> UserResponse:
 
 
 @router.post("/login", response_model=LoginResponse)
-async def login(login_data: LoginRequest, db: Session = Depends(connect_to_db)):
+async def login(login_data: LoginRequest, db: Session = Depends(get_db)):
     """Authenticate user and return access token"""
-    get_password_hash, authenticate_user, create_access_token = get_auth_functions()
     user = await authenticate_user(login_data.username, login_data.password, db)
     
     if not user:
@@ -108,11 +83,10 @@ async def login(login_data: LoginRequest, db: Session = Depends(connect_to_db)):
 
 @router.get("/", response_model=List[UserResponse])
 async def get_all_users(
-    current_user: User = get_current_admin_user_lazy,
-    db: Session = Depends(connect_to_db)
+    current_user: User = Depends(get_current_admin_user),
+    db: Session = Depends(get_db)
 ):
     """Get all users (admin only)"""
-    get_user_repository = get_repositories()
     user_repo = get_user_repository(db)
     users = await user_repo.get_all_users()
     return [user_to_response(user) for user in users]
@@ -121,11 +95,10 @@ async def get_all_users(
 @router.get("/{user_id}", response_model=UserResponse)
 async def get_user(
     user_id: int,
-    current_user: User = get_current_admin_user_lazy,
-    db: Session = Depends(connect_to_db)
+    current_user: User = Depends(get_current_admin_user),
+    db: Session = Depends(get_db)
 ):
     """Get a specific user (admin only)"""
-    get_user_repository = get_repositories()
     user_repo = get_user_repository(db)
     user = await user_repo.get_user(user_id)
     
@@ -141,15 +114,13 @@ async def get_user(
 @router.post("/", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 async def create_user(
     user_data: UserCreate,
-    current_user: User = get_current_admin_user_lazy,
-    db: Session = Depends(connect_to_db)
+    current_user: User = Depends(get_current_admin_user),
+    db: Session = Depends(get_db)
 ):
     """Create a new user (admin only)"""
-    get_user_repository = get_repositories()
     user_repo = get_user_repository(db)
     
     # Hash the password
-    get_password_hash, authenticate_user, create_access_token = get_auth_functions()
     hashed_password = get_password_hash(user_data.password)
     
     # Create user object
@@ -173,11 +144,10 @@ async def create_user(
 async def update_user(
     user_id: int,
     user_data: UserUpdate,
-    current_user: User = get_current_admin_user_lazy,
-    db: Session = Depends(connect_to_db)
+    current_user: User = Depends(get_current_admin_user),
+    db: Session = Depends(get_db)
 ):
     """Update a user (admin only)"""
-    get_user_repository = get_repositories()
     user_repo = get_user_repository(db)
     
     # Check if user exists
@@ -189,7 +159,6 @@ async def update_user(
         )
     
     # Hash the new password
-    get_password_hash, authenticate_user, create_access_token = get_auth_functions()
     hashed_password = get_password_hash(user_data.password)
     
     # Create updated user object
@@ -214,11 +183,10 @@ async def update_user(
 @router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_user(
     user_id: int,
-    current_user: User = get_current_admin_user_lazy,
-    db: Session = Depends(connect_to_db)
+    current_user: User = Depends(get_current_admin_user),
+    db: Session = Depends(get_db)
 ):
     """Delete a user (admin only)"""
-    get_user_repository = get_repositories()
     user_repo = get_user_repository(db)
     
     # Prevent admin from deleting themselves
