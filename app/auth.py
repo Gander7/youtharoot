@@ -4,7 +4,7 @@ Authentication and authorization utilities for the Youtharoot system.
 from datetime import datetime, timedelta
 from typing import Optional, Union
 import jwt
-from passlib.context import CryptContext
+import bcrypt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
@@ -13,14 +13,6 @@ from app.config import settings
 from app.database import get_db
 from app.repositories import get_user_repository
 from app.models import User
-
-# Password hashing - configure bcrypt backend explicitly to avoid version detection issues
-pwd_context = CryptContext(
-    schemes=["bcrypt"], 
-    deprecated="auto",
-    bcrypt__default_rounds=12,
-    bcrypt__default_ident="2b"
-)
 
 # JWT settings
 SECRET_KEY = settings.SECRET_KEY if hasattr(settings, 'SECRET_KEY') else "your-secret-key-change-in-production"
@@ -32,23 +24,45 @@ security = HTTPBearer()
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """Verify a plain password against its hash."""
+    """Verify a plain password against its hash using bcrypt directly."""
     try:
-        return pwd_context.verify(plain_password, hashed_password)
-    except ValueError as e:
-        if "password cannot be longer than 72 bytes" in str(e):
-            # Fallback: truncate password if needed
-            print(f"⚠️ Bcrypt error, truncating password. Original length: {len(plain_password)}")
-            truncated_password = plain_password.encode('utf-8')[:72].decode('utf-8', errors='ignore')
-            return pwd_context.verify(truncated_password, hashed_password)
-        else:
-            # Re-raise other ValueError exceptions
-            raise
+        # Convert strings to bytes
+        password_bytes = plain_password.encode('utf-8')
+        hash_bytes = hashed_password.encode('utf-8')
+        
+        # Truncate password if it's longer than 72 bytes (bcrypt limitation)
+        if len(password_bytes) > 72:
+            print(f"⚠️ Password too long ({len(password_bytes)} bytes), truncating to 72 bytes")
+            password_bytes = password_bytes[:72]
+        
+        return bcrypt.checkpw(password_bytes, hash_bytes)
+    except Exception as e:
+        print(f"❌ Password verification error: {e}")
+        return False
 
 
 def get_password_hash(password: str) -> str:
-    """Hash a password for storing."""
-    return pwd_context.hash(password)
+    """Hash a password for storing using bcrypt directly."""
+    try:
+        # Convert to bytes
+        password_bytes = password.encode('utf-8')
+        
+        # Truncate password if it's longer than 72 bytes (bcrypt limitation)
+        if len(password_bytes) > 72:
+            print(f"⚠️ Password too long ({len(password_bytes)} bytes), truncating to 72 bytes")
+            password_bytes = password_bytes[:72]
+        
+        # Generate salt and hash
+        salt = bcrypt.gensalt(rounds=12)
+        hashed = bcrypt.hashpw(password_bytes, salt)
+        
+        return hashed.decode('utf-8')
+    except Exception as e:
+        print(f"❌ Password hashing error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error hashing password"
+        )
 
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
