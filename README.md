@@ -184,6 +184,51 @@ This project is licensed under the MIT License. See [LICENSE](LICENSE) for detai
 ---
 
 
+---
+
+## 🚧 TODO & Feature Requests
+
+### **� EXTREMELY IMPORTANT**
+- [ ] **SMS Messaging System**: Send text messages to youth and leaders
+  - [ ] Integration with SMS service (Twilio, AWS SNS, or similar)
+  - [ ] Bulk SMS capability for event notifications
+  - [ ] Individual SMS messaging for urgent communications
+  - [ ] SMS templates for common messages
+  - [ ] Opt-in/opt-out SMS preferences management
+  - [ ] SMS delivery status tracking
+  - [ ] Emergency broadcast SMS functionality
+
+### **�🔧 Improvements Needed**
+- [ ] **Mobile UI Fixes**
+  - [ ] Fix mobile view for check-in page (layout/responsiveness issues)
+  - [ ] Audit all screens for mobile responsiveness
+  - [ ] Test navigation on mobile devices
+  - [ ] Optimize touch targets and spacing for mobile
+
+### **🌟 Planned Features**
+- [ ] **Emergency Contact Alerts**: Automated notifications for urgent situations
+- [ ] **Birthday Notifications**: Automatic birthday reminders for youth and leaders
+- [ ] **Contact Information Expansion**: Support for multiple phone numbers, email addresses, and social media handles
+- [ ] **Attendance Analytics**: Charts and reports for attendance patterns
+- [ ] **Event Templates**: Reusable event configurations
+- [ ] **Group Management**: Organize youth into small groups or classes
+- [ ] **Parent Portal**: Dedicated access for parents/guardians
+- [ ] **Notification System**: SMS/Email alerts for events and updates
+
+### **🛠️ Technical Enhancements**
+- [ ] **Custom Domain Setup**: Configure custom domain for production deployment
+  - [ ] Domain registration and DNS configuration
+  - [ ] SSL certificate setup for HTTPS
+  - [ ] Railway domain configuration
+  - [ ] Update environment variables and CORS settings
+- [ ] **Offline Support**: PWA capabilities for offline check-ins
+- [ ] **Data Export**: Export attendance and contact data to CSV/Excel
+- [ ] **API Rate Limiting**: Enhanced security for production use
+- [ ] **Automated Backups**: Scheduled database backups with retention policies
+- [ ] **Performance Optimization**: Database indexing and query optimization
+
+---
+
 ## 💡 About
 
 Created and maintained by passionate youth leaders and developers. Youtharoot is designed to make event management and attendance tracking simple, secure, and scalable.

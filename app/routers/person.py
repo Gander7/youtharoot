@@ -1,9 +1,6 @@
 from fastapi import APIRouter, Request, HTTPException, Depends
 from typing import Union, List
 from app.models import Youth, Leader, Person, User
-from app.database import get_db
-from app.repositories import get_person_repository
-from app.auth import get_current_user
 from sqlalchemy.orm import Session
 import datetime
 
@@ -17,11 +14,36 @@ ERRORS = {
 }
 PERSON_NOT_FOUND = "person_not_found"
 
+
+def connect_to_db():
+    from app.database import get_db
+    db_generator = get_db()
+    try:
+        db = next(db_generator)
+        yield db
+    finally:
+        try:
+            next(db_generator)
+        except StopIteration:
+            pass
+
+def get_current_user_dependency():
+    from app.auth import get_current_user
+    return get_current_user
+
+# Use this as the actual dependency
+get_current_user_lazy = Depends(get_current_user_dependency())
+
+def get_repositories():
+    from app.repositories import get_person_repository
+    return get_person_repository
+
 @router.get("/person/youth", response_model=list[Youth])
 async def get_all_non_archived_youth(
-	db: Session = Depends(get_db),
-	current_user: User = Depends(get_current_user)
+	db: Session = Depends(connect_to_db),
+	current_user: User = get_current_user_lazy
 ):
+	get_person_repository = get_repositories()
 	repo = get_person_repository(db)
 	youth_list = await repo.get_all_youth()
 	
@@ -35,10 +57,11 @@ async def get_all_non_archived_youth(
 
 @router.get("/person/leaders", response_model=list[Leader])
 async def get_all_non_archived_leaders(
-	db: Session = Depends(get_db),
-	current_user: User = Depends(get_current_user)
+	db: Session = Depends(connect_to_db),
+	current_user: User = get_current_user_lazy
 ):
 	try:
+		get_person_repository = get_repositories()
 		repo = get_person_repository(db)
 		leaders_list = await repo.get_all_leaders()
 		
@@ -56,9 +79,10 @@ async def get_all_non_archived_leaders(
 @router.post("/person", response_model=Union[Youth, Leader])
 async def create_person(
 	person: Union[Youth, Leader], 
-	db: Session = Depends(get_db),
-	current_user: User = Depends(get_current_user)
+	db: Session = Depends(connect_to_db),
+	current_user: User = get_current_user_lazy
 ):
+	get_person_repository = get_repositories()
 	repo = get_person_repository(db)
 	try:
 		created_person = await repo.create_person(person)
@@ -71,9 +95,10 @@ async def create_person(
 @router.get("/person/{person_id}", response_model=Union[Youth, Leader])
 async def get_person(
 	person_id: int, 
-	db: Session = Depends(get_db),
-	current_user: User = Depends(get_current_user)
+	db: Session = Depends(connect_to_db),
+	current_user: User = get_current_user_lazy
 ):
+	get_person_repository = get_repositories()
 	repo = get_person_repository(db)
 	person = await repo.get_person(person_id)
 	
@@ -88,9 +113,10 @@ async def get_person(
 async def update_person(
 	person_id: int, 
 	person: Union[Youth, Leader], 
-	db: Session = Depends(get_db),
-	current_user: User = Depends(get_current_user)
+	db: Session = Depends(connect_to_db),
+	current_user: User = get_current_user_lazy
 ):
+	get_person_repository = get_repositories()
 	repo = get_person_repository(db)
 	try:
 		updated_person = await repo.update_person(person_id, person)
@@ -103,9 +129,10 @@ async def update_person(
 @router.delete("/person/{person_id}")
 async def archive_person(
 	person_id: int, 
-	db: Session = Depends(get_db),
-	current_user: User = Depends(get_current_user)
+	db: Session = Depends(connect_to_db),
+	current_user: User = get_current_user_lazy
 ):
+	get_person_repository = get_repositories()
 	repo = get_person_repository(db)
 	await repo.archive_person(person_id)
 	return {}

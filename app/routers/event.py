@@ -1,29 +1,52 @@
 from fastapi import APIRouter, HTTPException, Query, Depends
 from typing import Optional
 from app.models import Event, User
-from app.database import get_db
-from app.repositories import get_event_repository
-from app.auth import get_current_user
 from sqlalchemy.orm import Session
 import datetime
 
 router = APIRouter()
 
+
+def connect_to_db():
+    from app.database import get_db
+    db_generator = get_db()
+    try:
+        db = next(db_generator)
+        yield db
+    finally:
+        try:
+            next(db_generator)
+        except StopIteration:
+            pass
+
+def get_current_user_dependency():
+    from app.auth import get_current_user
+    return get_current_user
+
+# Use this as the actual dependency
+get_current_user_lazy = Depends(get_current_user_dependency())
+
+def get_repositories():
+    from app.repositories import get_event_repository
+    return get_event_repository
+
 @router.post("/event", response_model=Event)
 async def create_event(
     event: Event, 
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    db: Session = Depends(connect_to_db),
+    current_user: User = get_current_user_lazy
 ):
+    get_event_repository = get_repositories()
     repo = get_event_repository(db)
     return await repo.create_event(event)
 
 @router.get("/event/{event_id}", response_model=Event)
 async def get_event(
     event_id: int, 
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    db: Session = Depends(connect_to_db),
+    current_user: User = get_current_user_lazy
 ):
+    get_event_repository = get_repositories()
     repo = get_event_repository(db)
     event = await repo.get_event(event_id)
     if not event:
@@ -34,12 +57,13 @@ async def get_event(
 async def get_events(
     days: Optional[int] = Query(None), 
     name: Optional[str] = Query(None), 
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    db: Session = Depends(connect_to_db),
+    current_user: User = get_current_user_lazy
 ):
     import time
     start_time = time.time()
     
+    get_event_repository = get_repositories()
     repo = get_event_repository(db)
     repo_time = time.time()
     
@@ -53,9 +77,10 @@ async def get_events(
 async def update_event(
     event_id: int, 
     event: Event, 
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    db: Session = Depends(connect_to_db),
+    current_user: User = get_current_user_lazy
 ):
+    get_event_repository = get_repositories()
     repo = get_event_repository(db)
     try:
         return await repo.update_event(event_id, event)
@@ -65,9 +90,10 @@ async def update_event(
 @router.delete("/event/{event_id}")
 async def delete_event(
     event_id: int, 
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    db: Session = Depends(connect_to_db),
+    current_user: User = get_current_user_lazy
 ):
+    get_event_repository = get_repositories()
     repo = get_event_repository(db)
     try:
         success = await repo.delete_event(event_id)
@@ -80,9 +106,10 @@ async def delete_event(
 @router.get("/event/{event_id}/can-delete")
 async def can_delete_event(
     event_id: int, 
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    db: Session = Depends(connect_to_db),
+    current_user: User = get_current_user_lazy
 ):
+    get_event_repository = get_repositories()
     repo = get_event_repository(db)
     event = await repo.get_event(event_id)
     if not event:
