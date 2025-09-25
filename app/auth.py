@@ -14,8 +14,13 @@ from app.database import get_db
 from app.repositories import get_user_repository
 from app.models import User
 
-# Password hashing
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+# Password hashing - configure bcrypt backend explicitly to avoid version detection issues
+pwd_context = CryptContext(
+    schemes=["bcrypt"], 
+    deprecated="auto",
+    bcrypt__default_rounds=12,
+    bcrypt__default_ident="2b"
+)
 
 # JWT settings
 SECRET_KEY = settings.SECRET_KEY if hasattr(settings, 'SECRET_KEY') else "your-secret-key-change-in-production"
@@ -28,16 +33,17 @@ security = HTTPBearer()
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """Verify a plain password against its hash."""
-    # Debug logging to understand the bcrypt issue
-    print(f"🔍 Verifying password - Length: {len(plain_password)}, First 20 chars: '{plain_password[:20]}...'")
-    print(f"🔍 Hash length: {len(hashed_password)}, Hash: {hashed_password[:50]}...")
-    
-    # Truncate password if it's longer than 72 bytes (bcrypt limitation)
-    if len(plain_password.encode('utf-8')) > 72:
-        print(f"⚠️  Password too long ({len(plain_password.encode('utf-8'))} bytes), truncating to 72 bytes")
-        plain_password = plain_password.encode('utf-8')[:72].decode('utf-8', errors='ignore')
-    
-    return pwd_context.verify(plain_password, hashed_password)
+    try:
+        return pwd_context.verify(plain_password, hashed_password)
+    except ValueError as e:
+        if "password cannot be longer than 72 bytes" in str(e):
+            # Fallback: truncate password if needed
+            print(f"⚠️ Bcrypt error, truncating password. Original length: {len(plain_password)}")
+            truncated_password = plain_password.encode('utf-8')[:72].decode('utf-8', errors='ignore')
+            return pwd_context.verify(truncated_password, hashed_password)
+        else:
+            # Re-raise other ValueError exceptions
+            raise
 
 
 def get_password_hash(password: str) -> str:
