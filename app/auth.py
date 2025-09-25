@@ -28,6 +28,15 @@ security = HTTPBearer()
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """Verify a plain password against its hash."""
+    # Debug logging to understand the bcrypt issue
+    print(f"🔍 Verifying password - Length: {len(plain_password)}, First 20 chars: '{plain_password[:20]}...'")
+    print(f"🔍 Hash length: {len(hashed_password)}, Hash: {hashed_password[:50]}...")
+    
+    # Truncate password if it's longer than 72 bytes (bcrypt limitation)
+    if len(plain_password.encode('utf-8')) > 72:
+        print(f"⚠️  Password too long ({len(plain_password.encode('utf-8'))} bytes), truncating to 72 bytes")
+        plain_password = plain_password.encode('utf-8')[:72].decode('utf-8', errors='ignore')
+    
     return pwd_context.verify(plain_password, hashed_password)
 
 
