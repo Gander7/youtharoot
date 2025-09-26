@@ -2,11 +2,27 @@ from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
 from typing import Optional
 from app.models import User
-from app.database import get_db
-from app.repositories import get_event_repository, get_person_repository
-from app.auth import get_current_user
 from sqlalchemy.orm import Session
 import datetime
+
+# Lazy loading functions
+def connect_to_db():
+    """Lazily import and return database dependency"""
+    from app.database import get_db
+    return get_db
+
+def get_current_user_dependency():
+    """Lazily import and return current user dependency"""
+    from app.auth import get_current_user
+    return get_current_user
+
+def get_repositories(db_session):
+    """Lazily import and return repository instances"""
+    from app.repositories import get_event_repository, get_person_repository
+    return {
+        "event": get_event_repository(db_session),
+        "person": get_person_repository(db_session)
+    }
 
 router = APIRouter()
 
@@ -20,20 +36,20 @@ class CheckOutRequest(BaseModel):
 async def check_in_person(
     event_id: int, 
     request: CheckInRequest, 
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    db: Session = Depends(connect_to_db()),
+    current_user: User = Depends(get_current_user_dependency())
 ):
     """Check in a person to an event"""
     try:
+        repos = get_repositories(db)
+        
         # Verify event exists
-        event_repo = get_event_repository(db)
-        event = await event_repo.get_event(event_id)
+        event = await repos["event"].get_event(event_id)
         if not event:
             raise HTTPException(status_code=404, detail="Event not found")
         
         # Verify person exists
-        person_repo = get_person_repository(db)
-        person = await person_repo.get_person(request.person_id)
+        person = await repos["person"].get_person(request.person_id)
         if not person:
             raise HTTPException(status_code=404, detail="Person not found")
         
@@ -101,14 +117,14 @@ async def check_in_person(
 async def check_out_person(
     event_id: int, 
     request: CheckOutRequest, 
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    db: Session = Depends(connect_to_db()),
+    current_user: User = Depends(get_current_user_dependency())
 ):
     """Check out a person from an event"""
     try:
         # Verify event exists
-        event_repo = get_event_repository(db)
-        event = await event_repo.get_event(event_id)
+        repos = get_repositories(db)
+        event = await repos["event"].get_event(event_id)
         if not event:
             raise HTTPException(status_code=404, detail="Event not found")
         
@@ -134,7 +150,7 @@ async def check_out_person(
             event_person.check_out = datetime.datetime.now()
             
             # Update the event in the repository
-            await event_repo.update_event(event_id, event)
+            await repos["event"].update_event(event_id, event)
             
             return {"message": "Person checked out successfully", "check_out": event_person.check_out}
             
@@ -168,23 +184,22 @@ async def check_out_person(
 @router.get("/event/{event_id}/attendance")
 async def get_event_attendance(
     event_id: int, 
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    db: Session = Depends(connect_to_db()),
+    current_user: User = Depends(get_current_user_dependency())
 ):
     """Get all attendance records for an event"""
     try:
         # Verify event exists
-        event_repo = get_event_repository(db)
-        event = await event_repo.get_event(event_id)
+        repos = get_repositories(db)
+        event = await repos["event"].get_event(event_id)
         if not event:
             raise HTTPException(status_code=404, detail="Event not found")
         
-        person_repo = get_person_repository(db)
         result = []
         
         # Process youth attendees
         for event_person in event.youth:
-            person = await person_repo.get_person(event_person.person_id)
+            person = await repos["person"].get_person(event_person.person_id)
             if person:
                 result.append({
                     "person_id": person.id,
@@ -200,7 +215,7 @@ async def get_event_attendance(
         
         # Process leader attendees  
         for event_person in event.leaders:
-            person = await person_repo.get_person(event_person.person_id)
+            person = await repos["person"].get_person(event_person.person_id)
             if person:
                 result.append({
                     "person_id": person.id,

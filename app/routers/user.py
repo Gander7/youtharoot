@@ -6,10 +6,34 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 
-from app.database import get_db
-from app.repositories import get_user_repository
 from app.models import User
-from app.auth import get_current_admin_user, get_password_hash, authenticate_user, create_access_token
+
+# Lazy loading functions
+def connect_to_db():
+    """Lazily import and return database dependency"""
+    from app.database import get_db
+    return get_db
+
+def get_admin_user_dependency():
+    """Lazily import and return admin user dependency"""
+    from app.auth import get_current_admin_user
+    return get_current_admin_user
+
+def get_auth_functions():
+    """Lazily import and return authentication functions"""
+    from app.auth import get_password_hash, authenticate_user, create_access_token
+    return {
+        "get_password_hash": get_password_hash,
+        "authenticate_user": authenticate_user,
+        "create_access_token": create_access_token
+    }
+
+def get_repositories(db_session):
+    """Lazily import and return repository instances"""
+    from app.repositories import get_user_repository
+    return {
+        "user": get_user_repository(db_session)
+    }
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -60,9 +84,10 @@ def user_to_response(user: User) -> UserResponse:
 
 
 @router.post("/login", response_model=LoginResponse)
-async def login(login_data: LoginRequest, db: Session = Depends(get_db)):
+async def login(login_data: LoginRequest, db: Session = Depends(connect_to_db())):
     """Authenticate user and return access token"""
-    user = await authenticate_user(login_data.username, login_data.password, db)
+    auth_funcs = get_auth_functions()
+    user = await auth_funcs["authenticate_user"](login_data.username, login_data.password, db)
     
     if not user:
         raise HTTPException(
@@ -72,7 +97,7 @@ async def login(login_data: LoginRequest, db: Session = Depends(get_db)):
         )
     
     # Create access token
-    access_token = create_access_token(data={"sub": user.username})
+    access_token = auth_funcs["create_access_token"](data={"sub": user.username})
     
     return LoginResponse(
         access_token=access_token,
@@ -83,24 +108,24 @@ async def login(login_data: LoginRequest, db: Session = Depends(get_db)):
 
 @router.get("/", response_model=List[UserResponse])
 async def get_all_users(
-    current_user: User = Depends(get_current_admin_user),
-    db: Session = Depends(get_db)
+    current_user: User = Depends(get_admin_user_dependency()),
+    db: Session = Depends(connect_to_db())
 ):
     """Get all users (admin only)"""
-    user_repo = get_user_repository(db)
-    users = await user_repo.get_all_users()
+    repos = get_repositories(db)
+    users = await repos["user"].get_all_users()
     return [user_to_response(user) for user in users]
 
 
 @router.get("/{user_id}", response_model=UserResponse)
 async def get_user(
     user_id: int,
-    current_user: User = Depends(get_current_admin_user),
-    db: Session = Depends(get_db)
+    current_user: User = Depends(get_admin_user_dependency()),
+    db: Session = Depends(connect_to_db())
 ):
     """Get a specific user (admin only)"""
-    user_repo = get_user_repository(db)
-    user = await user_repo.get_user(user_id)
+    repos = get_repositories(db)
+    user = await repos["user"].get_user(user_id)
     
     if not user:
         raise HTTPException(
@@ -114,14 +139,15 @@ async def get_user(
 @router.post("/", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 async def create_user(
     user_data: UserCreate,
-    current_user: User = Depends(get_current_admin_user),
-    db: Session = Depends(get_db)
+    current_user: User = Depends(get_admin_user_dependency()),
+    db: Session = Depends(connect_to_db())
 ):
     """Create a new user (admin only)"""
-    user_repo = get_user_repository(db)
+    repos = get_repositories(db)
+    auth_funcs = get_auth_functions()
     
     # Hash the password
-    hashed_password = get_password_hash(user_data.password)
+    hashed_password = auth_funcs["get_password_hash"](user_data.password)
     
     # Create user object
     new_user = User(
@@ -131,7 +157,7 @@ async def create_user(
     )
     
     try:
-        created_user = await user_repo.create_user(new_user)
+        created_user = await repos["user"].create_user(new_user)
         return user_to_response(created_user)
     except ValueError as e:
         raise HTTPException(
@@ -144,14 +170,15 @@ async def create_user(
 async def update_user(
     user_id: int,
     user_data: UserUpdate,
-    current_user: User = Depends(get_current_admin_user),
-    db: Session = Depends(get_db)
+    current_user: User = Depends(get_admin_user_dependency()),
+    db: Session = Depends(connect_to_db())
 ):
     """Update a user (admin only)"""
-    user_repo = get_user_repository(db)
+    repos = get_repositories(db)
+    auth_funcs = get_auth_functions()
     
     # Check if user exists
-    existing_user = await user_repo.get_user(user_id)
+    existing_user = await repos["user"].get_user(user_id)
     if not existing_user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -159,7 +186,7 @@ async def update_user(
         )
     
     # Hash the new password
-    hashed_password = get_password_hash(user_data.password)
+    hashed_password = auth_funcs["get_password_hash"](user_data.password)
     
     # Create updated user object
     updated_user = User(
@@ -171,7 +198,7 @@ async def update_user(
     )
     
     try:
-        updated_user = await user_repo.update_user(user_id, updated_user)
+        updated_user = await repos["user"].update_user(user_id, updated_user)
         return user_to_response(updated_user)
     except ValueError as e:
         raise HTTPException(
@@ -183,11 +210,11 @@ async def update_user(
 @router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_user(
     user_id: int,
-    current_user: User = Depends(get_current_admin_user),
-    db: Session = Depends(get_db)
+    current_user: User = Depends(get_admin_user_dependency()),
+    db: Session = Depends(connect_to_db())
 ):
     """Delete a user (admin only)"""
-    user_repo = get_user_repository(db)
+    repos = get_repositories(db)
     
     # Prevent admin from deleting themselves
     if user_id == current_user.id:
@@ -196,7 +223,7 @@ async def delete_user(
             detail="Cannot delete your own user account"
         )
     
-    success = await user_repo.delete_user(user_id)
+    success = await repos["user"].delete_user(user_id)
     if not success:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

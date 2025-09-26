@@ -1,13 +1,28 @@
 from fastapi import APIRouter, Request, HTTPException, Depends
 from typing import Union, List
 from app.models import Youth, Leader, Person, User
-from app.database import get_db
-from app.repositories import get_person_repository
-from app.auth import get_current_user
 from sqlalchemy.orm import Session
 import datetime
 
 router = APIRouter()
+
+# Lazy loading functions
+def connect_to_db():
+    """Lazily import and return database dependency"""
+    from app.database import get_db
+    return get_db
+
+def get_current_user_lazy():
+    """Lazily import and return current user dependency"""
+    from app.auth import get_current_user
+    return get_current_user
+
+def get_repositories(db_session):
+    """Lazily import and return repository instances"""
+    from app.repositories import get_person_repository
+    return {
+        "person": get_person_repository(db_session)
+    }
 
 ERRORS = {
 	"person_not_found": {
@@ -19,11 +34,11 @@ PERSON_NOT_FOUND = "person_not_found"
 
 @router.get("/person/youth", response_model=list[Youth])
 async def get_all_non_archived_youth(
-	db: Session = Depends(get_db),
-	current_user: User = Depends(get_current_user)
+	db: Session = Depends(connect_to_db()),
+	current_user: User = Depends(get_current_user_lazy())
 ):
-	repo = get_person_repository(db)
-	youth_list = await repo.get_all_youth()
+	repos = get_repositories(db)
+	youth_list = await repos["person"].get_all_youth()
 	
 	# Return youth dicts without archived_on field
 	result = []
@@ -35,12 +50,12 @@ async def get_all_non_archived_youth(
 
 @router.get("/person/leaders", response_model=list[Leader])
 async def get_all_non_archived_leaders(
-	db: Session = Depends(get_db),
-	current_user: User = Depends(get_current_user)
+	db: Session = Depends(connect_to_db()),
+	current_user: User = Depends(get_current_user_lazy())
 ):
 	try:
-		repo = get_person_repository(db)
-		leaders_list = await repo.get_all_leaders()
+		repos = get_repositories(db)
+		leaders_list = await repos["person"].get_all_leaders()
 		
 		# Return leaders dicts without archived_on field
 		result = []
@@ -56,12 +71,12 @@ async def get_all_non_archived_leaders(
 @router.post("/person", response_model=Union[Youth, Leader])
 async def create_person(
 	person: Union[Youth, Leader], 
-	db: Session = Depends(get_db),
-	current_user: User = Depends(get_current_user)
+	db: Session = Depends(connect_to_db()),
+	current_user: User = Depends(get_current_user_lazy())
 ):
-	repo = get_person_repository(db)
+	repos = get_repositories(db)
 	try:
-		created_person = await repo.create_person(person)
+		created_person = await repos["person"].create_person(person)
 		data = created_person.model_dump()
 		data.pop("archived_on", None)
 		return data
@@ -71,11 +86,11 @@ async def create_person(
 @router.get("/person/{person_id}", response_model=Union[Youth, Leader])
 async def get_person(
 	person_id: int, 
-	db: Session = Depends(get_db),
-	current_user: User = Depends(get_current_user)
+	db: Session = Depends(connect_to_db()),
+	current_user: User = Depends(get_current_user_lazy())
 ):
-	repo = get_person_repository(db)
-	person = await repo.get_person(person_id)
+	repos = get_repositories(db)
+	person = await repos["person"].get_person(person_id)
 	
 	if not person:
 		raise HTTPException(**ERRORS[PERSON_NOT_FOUND])
@@ -88,12 +103,12 @@ async def get_person(
 async def update_person(
 	person_id: int, 
 	person: Union[Youth, Leader], 
-	db: Session = Depends(get_db),
-	current_user: User = Depends(get_current_user)
+	db: Session = Depends(connect_to_db()),
+	current_user: User = Depends(get_current_user_lazy())
 ):
-	repo = get_person_repository(db)
+	repos = get_repositories(db)
 	try:
-		updated_person = await repo.update_person(person_id, person)
+		updated_person = await repos["person"].update_person(person_id, person)
 		result = updated_person.model_dump()
 		result.pop("archived_on", None)
 		return result
@@ -103,9 +118,9 @@ async def update_person(
 @router.delete("/person/{person_id}")
 async def archive_person(
 	person_id: int, 
-	db: Session = Depends(get_db),
-	current_user: User = Depends(get_current_user)
+	db: Session = Depends(connect_to_db()),
+	current_user: User = Depends(get_current_user_lazy())
 ):
-	repo = get_person_repository(db)
-	await repo.archive_person(person_id)
+	repos = get_repositories(db)
+	await repos["person"].archive_person(person_id)
 	return {}
