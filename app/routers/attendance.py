@@ -77,7 +77,7 @@ async def check_in_person(
                 event.leaders.append(event_person)
             
             # Update the event in the repository
-            await event_repo.update_event(event_id, event)
+            await repos["event"].update_event(event_id, event)
             
             return {"message": "Person checked in successfully", "check_in": event_person.check_in}
             
