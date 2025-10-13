@@ -77,7 +77,7 @@ const darkTheme = createTheme({
 
 export default function CheckIn({ eventId }) {
   const [event, setEvent] = useState(null);
-  const [allYouth, setAllYouth] = useState([]);
+  const [allPeople, setAllPeople] = useState([]); // Changed from allYouth to allPeople
   const [attendees, setAttendees] = useState([]);
   const [filteredPeople, setFilteredPeople] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -103,12 +103,24 @@ export default function CheckIn({ eventId }) {
         setAttendees(attendanceData);
       }
 
-      // Fetch all youth
+      // Fetch all people (youth and leaders)
+      const allPeopleData = [];
+      
+      // Fetch youth
       const youthResponse = await apiRequest('/person/youth');
       if (youthResponse.ok) {
         const youthData = await youthResponse.json();
-        setAllYouth(youthData);
+        allPeopleData.push(...youthData.map(person => ({ ...person, person_type: 'youth' })));
       }
+      
+      // Fetch leaders
+      const leadersResponse = await apiRequest('/person/leaders');
+      if (leadersResponse.ok) {
+        const leadersData = await leadersResponse.json();
+        allPeopleData.push(...leadersData.map(person => ({ ...person, person_type: 'leader' })));
+      }
+      
+      setAllPeople(allPeopleData);
     } catch (error) {
       console.error('Error fetching data:', error);
       setSnackbar({ 
@@ -125,10 +137,12 @@ export default function CheckIn({ eventId }) {
         end_time: '21:00',
         location: 'BLT'
       });
-      setAllYouth([
-        { id: 1, first_name: 'Alex', last_name: 'Johnson', grade: 10, school_name: 'Central High' },
-        { id: 2, first_name: 'Sarah', last_name: 'Smith', grade: 11, school_name: 'North High' },
-        { id: 3, first_name: 'Mike', last_name: 'Davis', grade: 9, school_name: 'South High' }
+      setAllPeople([
+        { id: 1, first_name: 'Alex', last_name: 'Johnson', grade: 10, school_name: 'Central High', person_type: 'youth' },
+        { id: 2, first_name: 'Sarah', last_name: 'Smith', grade: 11, school_name: 'North High', person_type: 'youth' },
+        { id: 3, first_name: 'Mike', last_name: 'Davis', grade: 9, school_name: 'South High', person_type: 'youth' },
+        { id: 4, first_name: 'Pastor', last_name: 'Johnson', role: 'Youth Pastor', person_type: 'leader' },
+        { id: 5, first_name: 'Leader', last_name: 'Smith', role: 'Volunteer', person_type: 'leader' }
       ]);
       setAttendees([]);
     }
@@ -146,24 +160,26 @@ export default function CheckIn({ eventId }) {
     let filtered = [];
     
     if (filter === 'available') {
-      // Show youth who are NOT checked in at all
+      // Show people who are NOT checked in at all
       const checkedInIds = attendees.map(a => a.person_id);
-      filtered = allYouth.filter(youth => !checkedInIds.includes(youth.id));
+      filtered = allPeople.filter(person => !checkedInIds.includes(person.id));
     } else if (filter === 'checked-in') {
       // Show people who ARE checked in but NOT checked out
       const checkedInPeople = attendees
         .filter(attendee => !attendee.check_out) // Only those who haven't checked out
         .map(attendee => {
-          const person = allYouth.find(p => p.id === attendee.person_id);
+          const person = allPeople.find(p => p.id === attendee.person_id);
           return person ? { 
             ...person, 
             check_in: attendee.check_in, 
             check_out: attendee.check_out,
-            // Use the data from attendance record if person not found in allYouth
+            // Use the data from attendance record if person not found in allPeople
             first_name: person.first_name || attendee.first_name,
             last_name: person.last_name || attendee.last_name,
             grade: person.grade || attendee.grade,
-            school_name: person.school_name || attendee.school_name
+            school_name: person.school_name || attendee.school_name,
+            role: person.role || attendee.role,
+            person_type: person.person_type || attendee.person_type
           } : {
             id: attendee.person_id,
             first_name: attendee.first_name,
@@ -180,7 +196,7 @@ export default function CheckIn({ eventId }) {
       const checkedOutPeople = attendees
         .filter(attendee => attendee.check_out) // Only those who have checked out
         .map(attendee => {
-          const person = allYouth.find(p => p.id === attendee.person_id);
+          const person = allPeople.find(p => p.id === attendee.person_id);
           return person ? { 
             ...person, 
             check_in: attendee.check_in, 
@@ -188,7 +204,9 @@ export default function CheckIn({ eventId }) {
             first_name: person.first_name || attendee.first_name,
             last_name: person.last_name || attendee.last_name,
             grade: person.grade || attendee.grade,
-            school_name: person.school_name || attendee.school_name
+            school_name: person.school_name || attendee.school_name,
+            role: person.role || attendee.role,
+            person_type: person.person_type || attendee.person_type
           } : {
             id: attendee.person_id,
             first_name: attendee.first_name,
@@ -208,12 +226,13 @@ export default function CheckIn({ eventId }) {
       filtered = filtered.filter(person => {
         const fullName = `${person.first_name} ${person.last_name}`.toLowerCase();
         return fullName.includes(searchLower) ||
-               (person.school_name && person.school_name.toLowerCase().includes(searchLower));
+               (person.school_name && person.school_name.toLowerCase().includes(searchLower)) ||
+               (person.role && person.role.toLowerCase().includes(searchLower));
       });
     }
 
     setFilteredPeople(filtered);
-  }, [allYouth, attendees, searchTerm, filter]);
+  }, [allPeople, attendees, searchTerm, filter]);
 
   const handleCheckIn = async (person) => {
     try {
@@ -281,7 +300,7 @@ export default function CheckIn({ eventId }) {
 
   const getAvailableCount = () => {
     const checkedInIds = attendees.map(a => a.person_id);
-    return allYouth.filter(youth => !checkedInIds.includes(youth.id)).length;
+    return allPeople.filter(person => !checkedInIds.includes(person.id)).length;
   };
 
   const getCheckedInCount = () => {
@@ -434,7 +453,9 @@ export default function CheckIn({ eventId }) {
                     secondary={
                       <Stack spacing={0.5} sx={{ mt: 0.5 }}>
                         <Typography variant="body2" color="text.secondary">
-                          {person.grade || person.school_name ? (
+                          {person.person_type === 'leader' ? (
+                            person.role || 'Leader'
+                          ) : person.grade || person.school_name ? (
                             <>
                               {person.grade && `Grade ${person.grade}`}
                               {person.grade && person.school_name && ' • '}
