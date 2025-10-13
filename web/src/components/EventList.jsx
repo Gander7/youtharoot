@@ -368,6 +368,29 @@ export default function EventList() {
     fetchEvents();
   }, []);
 
+  // Check for refresh flag from CheckIn component
+  useEffect(() => {
+    const checkRefreshFlag = () => {
+      const shouldRefresh = localStorage.getItem('refreshEventList');
+      if (shouldRefresh === 'true') {
+        console.log('🔄 Refreshing EventList due to bulk checkout');
+        localStorage.removeItem('refreshEventList'); // Clear the flag
+        fetchEvents(); // Refresh events and attendance data
+      }
+    };
+
+    // Check immediately
+    checkRefreshFlag();
+
+    // Also check when the window regains focus (user returns from CheckIn page)
+    const handleFocus = () => checkRefreshFlag();
+    window.addEventListener('focus', handleFocus);
+
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, []);
+
   useEffect(() => {
     let filtered = events;
     

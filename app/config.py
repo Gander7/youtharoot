@@ -19,6 +19,10 @@ class Settings:
     # Security Configuration
     SECRET_KEY: str = os.getenv("SECRET_KEY", "your-secret-key-change-in-production-please-make-it-long-and-random")
     
+    # Admin User Configuration (for development/initial setup)
+    ADMIN_USERNAME: str = os.getenv("ADMIN_USERNAME", "admin")
+    ADMIN_PASSWORD: Optional[str] = os.getenv("ADMIN_PASSWORD")  # If not set, random password will be generated
+    
     @property
     def database_url(self) -> Optional[str]:
         """Get the appropriate database URL based on environment"""

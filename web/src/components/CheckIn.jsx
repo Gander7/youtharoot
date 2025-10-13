@@ -378,6 +378,28 @@ export default function CheckIn({ eventId, viewOnly = false }) {
         
         // Refresh the attendance data
         fetchData();
+        
+        // If event has ended and everyone is now checked out, 
+        // set a flag to refresh EventList when we go back
+        if (isEventEnded() && result.checked_out_count > 0) {
+          // Check if everyone is now checked out
+          setTimeout(async () => {
+            try {
+              const attendanceResponse = await apiRequest(`/event/${eventId}/attendance`);
+              if (attendanceResponse.ok) {
+                const attendanceData = await attendanceResponse.json();
+                const stillCheckedIn = attendanceData.filter(attendee => !attendee.check_out).length;
+                
+                if (stillCheckedIn === 0) {
+                  // Everyone is checked out, set refresh flag for EventList
+                  localStorage.setItem('refreshEventList', 'true');
+                }
+              }
+            } catch (error) {
+              console.error('Error checking final attendance state:', error);
+            }
+          }, 500); // Small delay to ensure the checkout API has completed
+        }
       } else {
         const errorData = await response.json().catch(() => ({}));
         throw new Error(errorData.detail || 'Check-out failed');
@@ -392,6 +414,12 @@ export default function CheckIn({ eventId, viewOnly = false }) {
     }
     
     setCheckingOutAll(false);
+  };
+
+  const handleGoBack = () => {
+    // If there was a bulk checkout that resulted in everyone being checked out,
+    // the localStorage flag will already be set by handleCheckOutAll
+    window.history.back();
   };
 
   const getCheckedOutCount = () => {
@@ -415,7 +443,7 @@ export default function CheckIn({ eventId, viewOnly = false }) {
         {/* Header */}
         <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
           <IconButton 
-            onClick={() => window.history.back()} 
+            onClick={handleGoBack} 
             sx={{ mr: 2 }}
           >
             <BackIcon />

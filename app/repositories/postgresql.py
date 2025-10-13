@@ -271,6 +271,48 @@ class PostgreSQLUserRepository(UserRepository):
     
     def __init__(self, db: Session):
         self.db = db
+        # Initialize admin user if no users exist (production safety)
+        self._ensure_admin_exists()
+    
+    def _ensure_admin_exists(self):
+        """Ensure admin user exists in production database"""
+        import os
+        import bcrypt
+        from app.db_models import UserDB
+        
+        # Check if any users exist
+        user_count = self.db.query(UserDB).count()
+        if user_count > 0:
+            return  # Users already exist, don't initialize
+            
+        # Get admin credentials from environment
+        admin_username = os.getenv("ADMIN_USERNAME", "admin")
+        admin_password = os.getenv("ADMIN_PASSWORD")
+        
+        if not admin_password:
+            print("🚨 WARNING: No ADMIN_PASSWORD set in production environment!")
+            print("🚨 Cannot initialize admin user. Set ADMIN_PASSWORD environment variable.")
+            return
+            
+        # Hash the password securely
+        password_bytes = admin_password.encode('utf-8')
+        salt = bcrypt.gensalt()
+        password_hash = bcrypt.hashpw(password_bytes, salt).decode('utf-8')
+        
+        # Create admin user in database
+        admin_user = UserDB(
+            username=admin_username,
+            password_hash=password_hash,
+            role="admin"
+        )
+        
+        try:
+            self.db.add(admin_user)
+            self.db.commit()
+            print(f"✅ Initialized PostgreSQL admin user: {admin_username}")
+        except Exception as e:
+            self.db.rollback()
+            print(f"❌ Failed to initialize admin user: {e}")
     
     def _db_to_pydantic(self, db_user: UserDB) -> User:
         """Convert database model to Pydantic model"""

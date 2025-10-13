@@ -188,6 +188,37 @@ This project is licensed under the MIT License. See [LICENSE](LICENSE) for detai
 ---
 
 
+---
+
+## 🛠️ Technical Debt & Code Quality TODOs
+
+### Critical Issues 🚨
+- [ ] **Remove hardcoded credentials** - Remove hardcoded admin password hash from app/repositories/memory.py. Replace with secure environment variable initialization
+- [ ] **Implement error boundaries** - Add React error boundaries to prevent crashes and provide graceful error handling
+- [ ] **Fix race conditions** - Remove setTimeout hack in CheckIn.jsx line 395 and implement proper state synchronization
+
+### High Priority ⚠️
+- [ ] **Add request cancellation** - Implement AbortController for API requests and cleanup in useEffect hooks
+- [ ] **Replace localStorage communication** - Replace localStorage-based cross-component communication with proper state management
+- [ ] **Implement proper routing** - Replace window.location.href direct manipulation with proper Astro/React routing
+- [ ] **Centralize API error handling** - Create consistent error response format across all API endpoints
+
+### Medium Priority 🔧
+- [ ] **Improve type safety** - Convert remaining JavaScript to TypeScript and add proper type definitions
+- [ ] **Separate business logic from UI** - Extract business logic from CheckIn.jsx into custom hooks and service layers
+- [ ] **Add debouncing to search inputs** - Implement debouncing to prevent excessive API calls
+- [ ] **Centralize theme definitions** - Move all inline styles and scattered theme definitions to centralized configuration
+- [ ] **Add comprehensive unit tests** - Create unit tests for React components, API endpoints, and critical business logic
+
+### Low Priority 📱
+- [ ] **Implement accessibility features** - Add ARIA labels, keyboard navigation support, and improve color contrast
+- [ ] **Add performance optimizations** - Implement virtualization for large lists, prevent unnecessary re-renders
+- [ ] **Remove debug console logs** - Clean up console.log statements and implement proper logging framework
+- [ ] **Add rate limiting** - Implement API rate limiting and request throttling
+- [ ] **Implement integration tests** - Create end-to-end tests for critical user flows
+
+---
+
 ## 💡 About
 
 Created and maintained by passionate youth leaders and developers. Youtharoot is designed to make event management and attendance tracking simple, secure, and scalable.

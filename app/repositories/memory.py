@@ -140,31 +140,48 @@ class InMemoryUserRepository(UserRepository):
         self._initialize_seed_data()
     
     def _initialize_seed_data(self):
-        """Initialize with admin and user seed data"""
-        # Note: These are proper bcrypt hashes for demo purposes
-        # In production, initial users should be created through secure setup process
+        """Initialize with secure seed data based on environment variables"""
+        import os
+        import bcrypt
         
-        # Admin user - password: "admin123"
+        # Only initialize users if none exist yet
+        if len(self.store) > 0:
+            return
+            
+        # Get admin credentials from environment (for development/demo only)
+        admin_username = os.getenv("ADMIN_USERNAME", "admin")
+        admin_password = os.getenv("ADMIN_PASSWORD")
+        
+        # Generate secure password if not provided
+        if not admin_password:
+            import secrets
+            import string
+            admin_password = ''.join(secrets.choice(string.ascii_letters + string.digits + '!@#$%^&*') for _ in range(16))
+            print(f"🔐 Generated admin password: {admin_password}")
+            print("🚨 SAVE THIS PASSWORD! It won't be shown again.")
+        
+        # Hash the password securely
+        password_bytes = admin_password.encode('utf-8')
+        salt = bcrypt.gensalt()
+        password_hash = bcrypt.hashpw(password_bytes, salt).decode('utf-8')
+        
+        # Create admin user
         admin_user = User(
             id=1,
-            username="admin",
-            password_hash="$2b$12$UgEizDPb.75.tE6qHLPR7.LCISLwlLGnoCyb/ummRVs07sGLBY2nu",
+            username=admin_username,
+            password_hash=password_hash,
             role="admin",
             created_at=datetime.datetime.now(datetime.timezone.utc)
         )
         
-        # Regular user - password: "user123"  
-        regular_user = User(
-            id=2,
-            username="user",
-            password_hash="$2b$12$IEUDH2tE8c1qh.XziSOa5OanTf9cdeDOYgFPtpk4J719zVh3YcWUK",
-            role="user",
-            created_at=datetime.datetime.now(datetime.timezone.utc)
-        )
-        
         self.store[1] = admin_user
-        self.store[2] = regular_user
-        self.next_id = 3
+        self.next_id = 2
+        
+        print(f"✅ Initialized admin user: {admin_username}")
+        if os.getenv("ADMIN_PASSWORD"):
+            print("🔑 Using password from ADMIN_PASSWORD environment variable")
+        else:
+            print("⚠️  No ADMIN_PASSWORD set, generated random password (see above)")
     
     async def create_user(self, user: User) -> User:
         # Generate ID if not provided
