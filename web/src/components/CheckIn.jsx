@@ -379,28 +379,13 @@ export default function CheckIn({ eventId, viewOnly = false }) {
         }
         
         // Refresh the attendance data
-        fetchData();
+        await fetchData();
         
-        // If event has ended and everyone is now checked out, 
+        // If event has ended and we checked out everyone who was checked in,
         // set a flag to refresh EventList when we go back
-        if (isEventEnded() && result.checked_out_count > 0) {
-          // Check if everyone is now checked out
-          setTimeout(async () => {
-            try {
-              const attendanceResponse = await apiRequest(`/event/${eventId}/attendance`);
-              if (attendanceResponse.ok) {
-                const attendanceData = await attendanceResponse.json();
-                const stillCheckedIn = attendanceData.filter(attendee => !attendee.check_out).length;
-                
-                if (stillCheckedIn === 0) {
-                  // Everyone is checked out, set refresh flag for EventList
-                  localStorage.setItem('refreshEventList', 'true');
-                }
-              }
-            } catch (error) {
-              console.error('Error checking final attendance state:', error);
-            }
-          }, 500); // Small delay to ensure the checkout API has completed
+        if (isEventEnded() && result.checked_out_count > 0 && result.checked_out_count === checkedInCount) {
+          // Everyone who was checked in has now been checked out
+          localStorage.setItem('refreshEventList', 'true');
         }
       } else {
         const errorData = await response.json().catch(() => ({}));
