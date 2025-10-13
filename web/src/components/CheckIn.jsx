@@ -33,7 +33,8 @@ import {
   Event as EventIcon,
   ArrowBack as BackIcon
 } from '@mui/icons-material';
-import { apiRequest } from '../stores/auth';
+import { apiRequest, authStore } from '../stores/auth';
+import { useStore } from '@nanostores/react';
 
 const darkTheme = createTheme({
   palette: {
@@ -84,6 +85,10 @@ export default function CheckIn({ eventId }) {
   const [filter, setFilter] = useState('available'); // 'available', 'checked-in', or 'checked-out'
   const [loading, setLoading] = useState(true);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
+  const [checkingOutAll, setCheckingOutAll] = useState(false);
+  
+  // Get current user from auth store
+  const auth = useStore(authStore);
 
   // Fetch event details and youth data
   const fetchData = async () => {
@@ -313,6 +318,82 @@ export default function CheckIn({ eventId }) {
     return attendees.filter(attendee => !attendee.check_out).length;
   };
 
+  const isAdmin = () => {
+    return auth.user?.role === 'admin';
+  };
+
+  const isEventEnded = () => {
+    if (!event) return false;
+    
+    const now = new Date();
+    const eventDate = new Date(event.date);
+    const [hours, minutes] = event.end_time.split(':').map(Number);
+    
+    // Set the end time for the event date
+    const eventEndTime = new Date(eventDate);
+    eventEndTime.setHours(hours, minutes, 0, 0);
+    
+    return now > eventEndTime;
+  };
+
+  const handleCheckOutAll = async () => {
+    if (!isAdmin() || !isEventEnded()) return;
+    
+    // Guard clause: Check if anyone is still checked in before making API call
+    const checkedInCount = getCheckedInCount();
+    if (checkedInCount === 0) {
+      setSnackbar({ 
+        open: true, 
+        message: 'No one is currently checked in to check out.', 
+        severity: 'info' 
+      });
+      return;
+    }
+    
+    setCheckingOutAll(true);
+    
+    try {
+      // Use the new bulk checkout endpoint
+      const response = await apiRequest(`/event/${eventId}/checkout-all`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        
+        if (result.checked_out_count === 0) {
+          setSnackbar({ 
+            open: true, 
+            message: 'No one is currently checked in to check out.', 
+            severity: 'info' 
+          });
+        } else {
+          setSnackbar({ 
+            open: true, 
+            message: `Successfully checked out ${result.checked_out_count} people.`, 
+            severity: 'success' 
+          });
+        }
+        
+        // Refresh the attendance data
+        fetchData();
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.detail || 'Check-out failed');
+      }
+    } catch (error) {
+      console.error('Error checking out all:', error);
+      setSnackbar({ 
+        open: true, 
+        message: `Error occurred while checking out all people: ${error.message}`, 
+        severity: 'error' 
+      });
+    }
+    
+    setCheckingOutAll(false);
+  };
+
   const getCheckedOutCount = () => {
     // Count people who are checked out
     return attendees.filter(attendee => attendee.check_out).length;
@@ -371,6 +452,33 @@ export default function CheckIn({ eventId }) {
                     {event.location && ` • 📍 ${event.location}`}
                   </Typography>
                 </Box>
+              </Box>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Admin Check Out All Button */}
+        {event && isAdmin() && isEventEnded() && getCheckedInCount() > 0 && (
+          <Card sx={{ mb: 3, bgcolor: 'warning.dark' }}>
+            <CardContent>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Box>
+                  <Typography variant="h6" color="warning.contrastText">
+                    Event Has Ended
+                  </Typography>
+                  <Typography variant="body2" color="warning.contrastText" sx={{ opacity: 0.8 }}>
+                    {getCheckedInCount()} people are still checked in
+                  </Typography>
+                </Box>
+                <Button
+                  variant="contained"
+                  color="error"
+                  onClick={handleCheckOutAll}
+                  disabled={checkingOutAll}
+                  sx={{ minWidth: 120 }}
+                >
+                  {checkingOutAll ? 'Checking Out...' : 'Check Out All'}
+                </Button>
               </Box>
             </CardContent>
           </Card>

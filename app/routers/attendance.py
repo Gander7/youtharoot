@@ -182,6 +182,107 @@ async def check_out_person(
         print(f"Error in check_out_person: {e}")
         raise HTTPException(status_code=500, detail="Internal server error")
 
+@router.put("/event/{event_id}/checkout-all")
+async def check_out_all_people(
+    event_id: int, 
+    db: Session = Depends(connect_to_db()),
+    current_user: User = Depends(get_current_user_dependency())
+):
+    """Check out all people who are still checked in to an event"""
+    try:
+        # Verify event exists
+        repos = get_repositories(db)
+        event = await repos["event"].get_event(event_id)
+        if not event:
+            raise HTTPException(status_code=404, detail="Event not found")
+        
+        from app.config import settings
+        checkout_time = datetime.datetime.now(timezone.utc)
+        
+        if settings.DATABASE_TYPE == "memory":
+            # Handle in-memory repository
+            all_attendees = event.youth + event.leaders
+            still_checked_in = [attendee for attendee in all_attendees if not attendee.check_out]
+            
+            if not still_checked_in:
+                return {
+                    "message": "No one is currently checked in to check out",
+                    "checked_out_count": 0,
+                    "people": []
+                }
+            
+            # Check out all people who are still checked in
+            checked_out_people = []
+            for attendee in still_checked_in:
+                attendee.check_out = checkout_time
+                
+                # Get person details for response
+                person = await repos["person"].get_person(attendee.person_id)
+                if person:
+                    checked_out_people.append({
+                        "person_id": person.id,
+                        "first_name": person.first_name,
+                        "last_name": person.last_name,
+                        "check_out": checkout_time
+                    })
+            
+            # Update the event in the repository
+            await repos["event"].update_event(event_id, event)
+            
+            return {
+                "message": f"Successfully checked out {len(checked_out_people)} people",
+                "checked_out_count": len(checked_out_people),
+                "people": checked_out_people,
+                "check_out_time": checkout_time
+            }
+            
+        else:
+            # Handle PostgreSQL database directly
+            from app.db_models import EventPersonDB
+            
+            # Find all people still checked in
+            still_checked_in = db.query(EventPersonDB).filter(
+                EventPersonDB.event_id == event_id,
+                EventPersonDB.check_out.is_(None)
+            ).all()
+            
+            if not still_checked_in:
+                return {
+                    "message": "No one is currently checked in to check out",
+                    "checked_out_count": 0,
+                    "people": []
+                }
+            
+            # Check out all people and collect their details
+            checked_out_people = []
+            for event_person in still_checked_in:
+                event_person.check_out = checkout_time
+                
+                # Get person details for response
+                person = await repos["person"].get_person(event_person.person_id)
+                if person:
+                    checked_out_people.append({
+                        "person_id": person.id,
+                        "first_name": person.first_name,
+                        "last_name": person.last_name,
+                        "check_out": checkout_time
+                    })
+            
+            db.commit()
+            
+            return {
+                "message": f"Successfully checked out {len(checked_out_people)} people",
+                "checked_out_count": len(checked_out_people),
+                "people": checked_out_people,
+                "check_out_time": checkout_time
+            }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error in check_out_all_people: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")
+
 @router.get("/event/{event_id}/attendance")
 async def get_event_attendance(
     event_id: int, 
