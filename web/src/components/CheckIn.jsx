@@ -76,7 +76,7 @@ const darkTheme = createTheme({
   },
 });
 
-export default function CheckIn({ eventId }) {
+export default function CheckIn({ eventId, viewOnly = false }) {
   const [event, setEvent] = useState(null);
   const [allPeople, setAllPeople] = useState([]); // Changed from allYouth to allPeople
   const [attendees, setAttendees] = useState([]);
@@ -422,11 +422,16 @@ export default function CheckIn({ eventId }) {
           </IconButton>
           <Box sx={{ flexGrow: 1 }}>
             <Typography variant="h4" component="h1" fontWeight="bold">
-              Check In
+              {viewOnly ? 'Event Attendance' : 'Check In'}
             </Typography>
             {event && (
               <Typography variant="subtitle1" color="text.secondary">
                 {event.name} • {new Date(event.date).toLocaleDateString()}
+                {viewOnly && (
+                  <Typography component="span" sx={{ ml: 1, color: 'warning.main', fontWeight: 'medium' }}>
+                    (View Only)
+                  </Typography>
+                )}
               </Typography>
             )}
           </Box>
@@ -458,7 +463,7 @@ export default function CheckIn({ eventId }) {
         )}
 
         {/* Admin Check Out All Button */}
-        {event && isAdmin() && isEventEnded() && getCheckedInCount() > 0 && (
+        {event && isAdmin() && !viewOnly && isEventEnded() && getCheckedInCount() > 0 && (
           <Card sx={{ mb: 3, bgcolor: 'warning.dark' }}>
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -588,7 +593,7 @@ export default function CheckIn({ eventId }) {
                     }
                   />
                   <ListItemSecondaryAction>
-                    {filter === 'available' ? (
+                    {!viewOnly && filter === 'available' ? (
                       <Button
                         variant="contained"
                         color="success"
@@ -599,7 +604,7 @@ export default function CheckIn({ eventId }) {
                       >
                         Check In
                       </Button>
-                    ) : (
+                    ) : !viewOnly ? (
                       <Button
                         variant="outlined"
                         color="warning"
@@ -611,6 +616,12 @@ export default function CheckIn({ eventId }) {
                       >
                         {person.check_out ? 'Checked Out' : 'Check Out'}
                       </Button>
+                    ) : (
+                      // View-only mode - show status instead of buttons
+                      <Typography variant="body2" color="text.secondary">
+                        {filter === 'available' ? 'Not checked in' : 
+                         person.check_out ? 'Checked out' : 'Checked in'}
+                      </Typography>
                     )}
                   </ListItemSecondaryAction>
                 </ListItem>

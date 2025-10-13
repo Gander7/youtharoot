@@ -299,6 +299,7 @@ const DeleteConfirmDialog = ({ open, onClose, event, onConfirm }) => {
 export default function EventList() {
   const [events, setEvents] = useState([]);
   const [filteredEvents, setFilteredEvents] = useState([]);
+  const [eventAttendance, setEventAttendance] = useState({}); // Store attendance data for each event
   const [searchTerm, setSearchTerm] = useState('');
   const [formOpen, setFormOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -324,6 +325,10 @@ export default function EventList() {
         console.log(`📋 JSON parsing took ${jsonEnd - jsonStart}ms, got ${data.length} events`);
         
         setEvents(data);
+        
+        // Fetch attendance data for each event
+        await fetchAttendanceData(data);
+        
         const totalTime = performance.now() - startTime;
         console.log(`✅ Total fetchEvents took ${totalTime}ms`);
       }
@@ -444,27 +449,94 @@ export default function EventList() {
     return (event.youth?.length || 0) + (event.leaders?.length || 0);
   };
 
-  const isEventCheckInEligible = (event) => {
-    // Parse event date as local date to avoid timezone issues
+  const fetchAttendanceData = async (eventsData) => {
+    const attendanceMap = {};
+    
+    // Fetch attendance for each event that might need it
+    await Promise.all(eventsData.map(async (event) => {
+      try {
+        const attendanceResponse = await apiRequest(`/event/${event.id}/attendance`);
+        if (attendanceResponse.ok) {
+          const attendanceData = await attendanceResponse.json();
+          attendanceMap[event.id] = attendanceData;
+        }
+      } catch (error) {
+        console.error(`Error fetching attendance for event ${event.id}:`, error);
+        attendanceMap[event.id] = [];
+      }
+    }));
+    
+    setEventAttendance(attendanceMap);
+  };
+
+  const hasEveryoneCheckedOut = (eventId) => {
+    const attendance = eventAttendance[eventId] || [];
+    if (attendance.length === 0) return true; // No one checked in
+    
+    // Check if all attendees have been checked out
+    return attendance.every(attendee => attendee.check_out);
+  };
+
+  const isEventEnded = (event) => {
+    // Parse event date and time to get the exact event end time
     const [year, month, day] = event.date.split('-').map(Number);
     const eventDate = new Date(year, month - 1, day);
     
-    const today = new Date();
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
+    // Parse end time and set it on the event date
+    const [hours, minutes] = event.end_time.split(':').map(Number);
+    const eventEndTime = new Date(eventDate);
+    eventEndTime.setHours(hours, minutes, 0, 0);
     
-    // Reset time to compare dates only
-    eventDate.setHours(0, 0, 0, 0);
-    today.setHours(0, 0, 0, 0);
-    tomorrow.setHours(0, 0, 0, 0);
+    const now = new Date();
+    return now > eventEndTime;
+  };
+
+  const canManageAttendance = (event) => {
+    // Parse event date to check if it's accessible (from event day onward)
+    const [year, month, day] = event.date.split('-').map(Number);
+    const eventDate = new Date(year, month - 1, day);
+    const eventStartOfDay = new Date(eventDate);
+    eventStartOfDay.setHours(0, 0, 0, 0);
     
-    return eventDate.getTime() === today.getTime() || eventDate.getTime() === tomorrow.getTime();
+    const now = new Date();
+    
+    // Must be on or after event day
+    if (now < eventStartOfDay) return false;
+    
+    // If event hasn't ended yet, always allow management
+    if (!isEventEnded(event)) return true;
+    
+    // If event has ended, only allow management if someone is still checked in
+    return !hasEveryoneCheckedOut(event.id);
+  };
+
+  const canViewAttendance = (event) => {
+    // Parse event date to check if it's accessible (from event day onward)  
+    const [year, month, day] = event.date.split('-').map(Number);
+    const eventDate = new Date(year, month - 1, day);
+    const eventStartOfDay = new Date(eventDate);
+    eventStartOfDay.setHours(0, 0, 0, 0);
+    
+    const now = new Date();
+    
+    // Must be on or after event day
+    if (now < eventStartOfDay) return false;
+    
+    // If event has ended and everyone is checked out, show view-only
+    return isEventEnded(event) && hasEveryoneCheckedOut(event.id);
   };
 
   const handleCheckIn = (event) => {
     // Navigate to check-in page with eventId as query parameter
     if (typeof window !== 'undefined') {
       window.location.href = `/checkin?eventId=${event.id}`;
+    }
+  };
+
+  const handleViewAttendance = (event) => {
+    // Navigate to check-in page with read-only mode
+    if (typeof window !== 'undefined') {
+      window.location.href = `/checkin?eventId=${event.id}&viewOnly=true`;
     }
   };
 
@@ -564,7 +636,7 @@ export default function EventList() {
                   />
                   <ListItemSecondaryAction>
                     <Box sx={{ display: 'flex', gap: 0.5 }}>
-                      {isEventCheckInEligible(event) && (
+                      {canManageAttendance(event) && (
                         <Button
                           variant="contained"
                           color="success"
@@ -573,7 +645,19 @@ export default function EventList() {
                           onClick={() => handleCheckIn(event)}
                           sx={{ mr: 1 }}
                         >
-                          Check In
+                          Manage Attendance
+                        </Button>
+                      )}
+                      {canViewAttendance(event) && (
+                        <Button
+                          variant="outlined"
+                          color="primary"
+                          size="small"
+                          startIcon={<CheckInIcon />}
+                          onClick={() => handleViewAttendance(event)}
+                          sx={{ mr: 1 }}
+                        >
+                          View Attendance
                         </Button>
                       )}
                       <IconButton
