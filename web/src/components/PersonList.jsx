@@ -462,12 +462,12 @@ export default function PersonList() {
     let filtered = persons.filter(p => p.type === filter);
     
     if (searchTerm) {
-      filtered = filtered.filter(p => 
-        p.first_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        p.last_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (p.school_name && p.school_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (p.role && p.role.toLowerCase().includes(searchTerm.toLowerCase()))
-      );
+      const searchLower = searchTerm.trim().toLowerCase();
+      filtered = filtered.filter(p => {
+        const fullName = `${p.first_name} ${p.last_name}`.toLowerCase();
+        return fullName.includes(searchLower) ||
+               (p.school_name && p.school_name.toLowerCase().includes(searchLower));
+      });
     }
     
     setFilteredPersons(filtered);

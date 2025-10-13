@@ -367,11 +367,12 @@ export default function EventList() {
     let filtered = events;
     
     if (searchTerm) {
-      filtered = events.filter(e => 
-        e.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        e.desc.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (e.location && e.location.toLowerCase().includes(searchTerm.toLowerCase()))
-      );
+      const searchLower = searchTerm.trim().toLowerCase();
+      filtered = events.filter(e => {
+        // Combine all searchable text for better multi-word matching
+        const searchableText = `${e.name} ${e.desc || ''} ${e.location || ''}`.toLowerCase();
+        return searchableText.includes(searchLower);
+      });
     }
     
     // Sort by date (most recent first) - date strings in YYYY-MM-DD format sort correctly

@@ -204,11 +204,12 @@ export default function CheckIn({ eventId }) {
 
     // Apply search filter
     if (searchTerm) {
-      filtered = filtered.filter(person => 
-        person.first_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        person.last_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (person.school_name && person.school_name.toLowerCase().includes(searchTerm.toLowerCase()))
-      );
+      const searchLower = searchTerm.trim().toLowerCase();
+      filtered = filtered.filter(person => {
+        const fullName = `${person.first_name} ${person.last_name}`.toLowerCase();
+        return fullName.includes(searchLower) ||
+               (person.school_name && person.school_name.toLowerCase().includes(searchLower));
+      });
     }
 
     setFilteredPeople(filtered);

@@ -19,7 +19,6 @@ An API-first, mobile-friendly platform for managing youth group events, attendan
 ### Core Features (Essential for MVP)
 
 **🔮 Still To Do:**
-- 🔮 **Authentication:** User login and permission system
 - 🔮 **Waiver/Form Tracking:** Store and track signed waivers for overnight events
 - 🔮 **Permissions/Roles:** Differentiate access for leaders and admins
 - 🔮 **Emergency Contact Validation:** Make emergency contact fields required again for youth profiles
@@ -73,6 +72,11 @@ An API-first, mobile-friendly platform for managing youth group events, attendan
   - ✅ Available/Checked In/Checked Out filters
   - ✅ Real-time attendance updates
   - ✅ Support for both memory and PostgreSQL storage
+- ✅ **Authentication:** User login and permission system
+  - ✅ JWT token-based authentication
+  - ✅ User management with admin controls
+  - ✅ Role-based access control (admin/user roles)
+  - ✅ Secure password hashing with bcrypt
 ---
 
 ## ⚡ Installation
