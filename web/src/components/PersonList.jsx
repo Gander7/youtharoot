@@ -33,6 +33,8 @@ import {
 } from '@mui/material';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { apiRequest } from '../stores/auth';
+import ErrorBoundary from './ErrorBoundary.jsx';
+import ApiErrorBoundary from './ApiErrorBoundary.jsx';
 import {
   Search as SearchIcon,
   Person as PersonIcon,
@@ -504,7 +506,9 @@ export default function PersonList() {
   };
 
   return (
-    <ThemeProvider theme={darkTheme}>
+    <ErrorBoundary level="component" title="People Management Error">
+      <ApiErrorBoundary>
+        <ThemeProvider theme={darkTheme}>
       <Box sx={{ maxWidth: 800, margin: '0 auto', padding: 2 }}>
         {/* Header */}
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
@@ -650,6 +654,8 @@ export default function PersonList() {
           </Fab>
         </Box>
       </Box>
-    </ThemeProvider>
+        </ThemeProvider>
+      </ApiErrorBoundary>
+    </ErrorBoundary>
   );
 }

@@ -40,6 +40,8 @@ import {
   CheckCircle as CheckInIcon
 } from '@mui/icons-material';
 import { apiRequest } from '../stores/auth';
+import ErrorBoundary from './ErrorBoundary.jsx';
+import ApiErrorBoundary from './ApiErrorBoundary.jsx';
 
 const darkTheme = createTheme({
   palette: {
@@ -564,7 +566,9 @@ export default function EventList() {
   };
 
   return (
-    <ThemeProvider theme={darkTheme}>
+    <ErrorBoundary level="component" title="Events System Error">
+      <ApiErrorBoundary>
+        <ThemeProvider theme={darkTheme}>
       <Box sx={{ maxWidth: 800, margin: '0 auto', padding: 2 }}>
         {/* Header */}
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
@@ -740,6 +744,8 @@ export default function EventList() {
           </Fab>
         </Box>
       </Box>
-    </ThemeProvider>
+        </ThemeProvider>
+      </ApiErrorBoundary>
+    </ErrorBoundary>
   );
 }

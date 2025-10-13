@@ -35,6 +35,8 @@ import {
 } from '@mui/icons-material';
 import { apiRequest, authStore } from '../stores/auth';
 import { useStore } from '@nanostores/react';
+import ErrorBoundary from './ErrorBoundary.jsx';
+import ApiErrorBoundary from './ApiErrorBoundary.jsx';
 
 const darkTheme = createTheme({
   palette: {
@@ -438,10 +440,12 @@ export default function CheckIn({ eventId, viewOnly = false }) {
   }
 
   return (
-    <ThemeProvider theme={darkTheme}>
-      <Box sx={{ maxWidth: 800, margin: '0 auto', padding: 2 }}>
-        {/* Header */}
-        <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+    <ErrorBoundary level="component" title="Check-in System Error">
+      <ApiErrorBoundary>
+        <ThemeProvider theme={darkTheme}>
+          <Box sx={{ maxWidth: 800, margin: '0 auto', padding: 2 }}>
+            {/* Header */}
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
           <IconButton 
             onClick={handleGoBack} 
             sx={{ mr: 2 }}
@@ -671,7 +675,9 @@ export default function CheckIn({ eventId, viewOnly = false }) {
             {snackbar.message}
           </Alert>
         </Snackbar>
-      </Box>
-    </ThemeProvider>
+          </Box>
+        </ThemeProvider>
+      </ApiErrorBoundary>
+    </ErrorBoundary>
   );
 }

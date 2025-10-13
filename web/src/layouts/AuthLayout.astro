@@ -1,5 +1,6 @@
 ---
 import AuthGuard from '../components/AuthGuard.jsx';
+import ErrorBoundary from '../components/ErrorBoundary.jsx';
 
 interface Props {
   title?: string;
@@ -33,8 +34,10 @@ const { title = 'Youtharoot' } = Astro.props;
     }
   </style>
   
-  <AuthGuard client:load>
-    <slot />
-  </AuthGuard>
+  <ErrorBoundary client:load level="page" title="Application Error">
+    <AuthGuard client:load>
+      <slot />
+    </AuthGuard>
+  </ErrorBoundary>
 </body>
 </html>
