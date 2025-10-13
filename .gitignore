@@ -1,3 +1,4 @@
+backups/**
 htmlcov/
 # Python
 __pycache__/
