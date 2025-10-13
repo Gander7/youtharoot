@@ -4,6 +4,7 @@ from typing import Optional
 from app.models import User
 from sqlalchemy.orm import Session
 import datetime
+from datetime import timezone
 
 # Lazy loading functions
 def connect_to_db():
@@ -67,7 +68,7 @@ async def check_in_person(
             from app.models import EventPerson
             event_person = EventPerson(
                 person_id=request.person_id,
-                check_in=datetime.datetime.now()
+                check_in=datetime.datetime.now(timezone.utc)
             )
             
             # Add to appropriate list based on person type
@@ -98,7 +99,7 @@ async def check_in_person(
             event_person = EventPersonDB(
                 event_id=event_id,
                 person_id=request.person_id,
-                check_in=datetime.datetime.now(),
+                check_in=datetime.datetime.now(timezone.utc),
                 person_type="youth" if hasattr(person, 'grade') else "leader"
             )
             
@@ -147,7 +148,7 @@ async def check_out_person(
                 raise HTTPException(status_code=409, detail="Person is already checked out")
             
             # Update check-out time
-            event_person.check_out = datetime.datetime.now()
+            event_person.check_out = datetime.datetime.now(timezone.utc)
             
             # Update the event in the repository
             await repos["event"].update_event(event_id, event)
@@ -170,7 +171,7 @@ async def check_out_person(
                 raise HTTPException(status_code=409, detail="Person is already checked out")
             
             # Update check-out time
-            event_person.check_out = datetime.datetime.now()
+            event_person.check_out = datetime.datetime.now(timezone.utc)
             db.commit()
             
             return {"message": "Person checked out successfully", "check_out": event_person.check_out}

@@ -432,6 +432,14 @@ export default function EventList() {
     });
   };
 
+  const formatEventTime = (startTime, endTime) => {
+    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const shortTz = new Date().toLocaleTimeString('en-US', {
+      timeZoneName: 'short'
+    }).split(' ').pop();
+    return `${startTime} - ${endTime} ${shortTz}`;
+  };
+
   const getAttendeeCount = (event) => {
     return (event.youth?.length || 0) + (event.leaders?.length || 0);
   };
@@ -537,7 +545,7 @@ export default function EventList() {
                       <>
                         📅 {formatDate(event.date)}
                         <br />
-                        ⏰ {event.start_time} - {event.end_time}
+                        ⏰ {formatEventTime(event.start_time, event.end_time)}
                         {event.location && (
                           <>
                             <br />

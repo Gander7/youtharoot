@@ -292,10 +292,15 @@ export default function CheckIn({ eventId }) {
 
   const formatTime = (timeStr) => {
     if (!timeStr) return '';
-    return new Date(timeStr).toLocaleTimeString('en-US', {
+    const date = new Date(timeStr);
+    const time = date.toLocaleTimeString('en-US', {
       hour: 'numeric',
       minute: '2-digit'
     });
+    const timezone = date.toLocaleTimeString('en-US', {
+      timeZoneName: 'short'
+    }).split(' ').pop();
+    return `${time} ${timezone}`;
   };
 
   const getAvailableCount = () => {

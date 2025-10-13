@@ -6,7 +6,7 @@ Script to create an admin user with hashed password for direct database insertio
 import bcrypt
 import getpass
 import sys
-from datetime import datetime
+from datetime import datetime, timezone
 
 def hash_password(password: str) -> str:
     """Hash a password using bcrypt."""
@@ -42,7 +42,7 @@ def main():
     password_hash = hash_password(password)
     
     # Generate SQL statements
-    current_time = datetime.utcnow().isoformat()
+    current_time = datetime.now(timezone.utc).isoformat()
     
     print("\n✅ Admin user created successfully!")
     print("\n" + "=" * 60)
@@ -62,8 +62,8 @@ VALUES ('{username}', '{password_hash}', 'admin', '{current_time}', '{current_ti
     username="{username}",
     password_hash="{password_hash}",
     role="admin",
-    created_at=datetime.utcnow(),
-    updated_at=datetime.utcnow()
+    created_at=datetime.now(timezone.utc),
+    updated_at=datetime.now(timezone.utc)
 )"""
     print(memory_code)
     
