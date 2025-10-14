@@ -280,6 +280,7 @@ This project is licensed under the MIT License. See [LICENSE](LICENSE) for detai
 - [ ] **Add input validation** - Implement client-side and server-side validation for required fields, phone number format, email format
 - [ ] **Implement proper error handling in API routes** - Add try-catch blocks and proper HTTP status codes in FastAPI routes
 - [ ] **Add authentication middleware** - Implement JWT token validation middleware for protected API endpoints
+- [ ] **Refactor repository initialization architecture** - Fix the repository singleton pattern to prevent re-initialization between API calls in test environments. Current quick fix uses test-specific repository overrides, but production architecture needs proper singleton enforcement
 - [ ] **Add request cancellation** - Implement AbortController for API requests and cleanup in useEffect hooks
 - [ ] **Replace localStorage communication** - Replace localStorage-based cross-component communication with proper state management
 - [ ] **Implement proper routing** - Replace window.location.href direct manipulation with proper Astro/React routing

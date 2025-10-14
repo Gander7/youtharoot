@@ -9,19 +9,24 @@ client = get_authenticated_client()
 PERSON_ENDPOINT = "/person"
 
 @pytest.fixture(autouse=True)
-def clear_person_store():
+def clear_person_store(clean_database):
     """Clear person store for each test."""
     # Get the memory repository instance and clear it
     from app.repositories import get_person_repository
+    from app.config import settings
     
-    # Create a mock session for memory repository
-    class MockSession:
+    if settings.DATABASE_TYPE == "postgresql":
+        # Database cleaning is handled by clean_database fixture
         pass
-    
-    mock_session = MockSession()
-    person_repo = get_person_repository(mock_session)
-    if isinstance(person_repo, InMemoryPersonRepository):
-        person_repo.store.clear()
+    else:
+        # Create a mock session for memory repository
+        class MockSession:
+            pass
+        
+        mock_session = MockSession()
+        person_repo = get_person_repository(mock_session)
+        if isinstance(person_repo, InMemoryPersonRepository):
+            person_repo.store.clear()
 
 def valid_youth_payload():
     return {

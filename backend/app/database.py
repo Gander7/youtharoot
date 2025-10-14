@@ -15,6 +15,9 @@ def init_database():
         engine = create_engine(settings.database_url)
         SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
         
+        # Import database models to ensure they're registered with Base
+        from app import db_models
+        
         # Create tables (this will update schema if needed)
         Base.metadata.create_all(bind=engine)
         

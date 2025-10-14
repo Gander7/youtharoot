@@ -1,6 +1,6 @@
 from app.repositories.base import PersonRepository, EventRepository, UserRepository, MessageGroupRepository
 from app.repositories.memory import InMemoryPersonRepository, InMemoryEventRepository, InMemoryUserRepository, InMemoryMessageGroupRepository
-from app.repositories.postgresql import PostgreSQLPersonRepository, PostgreSQLEventRepository, PostgreSQLUserRepository
+from app.repositories.postgresql import PostgreSQLPersonRepository, PostgreSQLEventRepository, PostgreSQLUserRepository, PostgreSQLMessageGroupRepository
 from app.config import settings
 from app.database import get_db
 from sqlalchemy.orm import Session
@@ -60,6 +60,4 @@ def get_group_repository(db: Session = None) -> MessageGroupRepository:
     else:
         if db is None:
             raise ValueError("Database session required for PostgreSQL repository")
-        # For now, return None since we haven't implemented PostgreSQL version yet
-        # TODO: Implement PostgreSQLMessageGroupRepository
-        raise NotImplementedError("PostgreSQL MessageGroup repository not yet implemented")
+        return PostgreSQLMessageGroupRepository(db)

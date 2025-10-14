@@ -23,25 +23,63 @@ GROUPS_ENDPOINT = "/groups"
 @pytest.fixture(autouse=True)
 def clear_stores():
     """Clear all stores for each test."""
-    # Clear person store
-    from app.repositories import get_person_repository, get_group_repository
+    from app.repositories import get_person_repository, get_group_repository, get_user_repository
+    from app.config import settings
     
-    class MockSession:
-        pass
-    
-    mock_session = MockSession()
-    person_repo = get_person_repository(mock_session)
-    group_repo = get_group_repository(mock_session)
-    
-    if isinstance(person_repo, InMemoryPersonRepository):
-        person_repo.store.clear()
-    
-    # Clear group stores
-    if hasattr(group_repo, 'groups_store'):
-        group_repo.groups_store.clear()
-        group_repo.memberships_store.clear()
-        group_repo.next_group_id = 1
-        group_repo.next_membership_id = 1
+    if settings.DATABASE_TYPE == "postgresql":
+        # For PostgreSQL integration tests, ensure test users exist for both possible IDs
+        from app.database import get_db
+        from app.db_models import UserDB, MessageGroupDB, MessageGroupMembershipDB
+        
+        db = next(get_db())
+        if db is not None:
+            try:
+                # Clear groups and memberships first to avoid foreign key issues
+                db.query(MessageGroupMembershipDB).delete()
+                db.query(MessageGroupDB).delete()
+                
+                # Create test users for both ID 1 and ID 999 to handle different test environments
+                test_users = [
+                    {"id": 1, "username": "test_admin_1"},
+                    {"id": 999, "username": "test_admin_999"}
+                ]
+                
+                for user_data in test_users:
+                    existing_user = db.query(UserDB).filter(UserDB.id == user_data["id"]).first()
+                    if not existing_user:
+                        test_user_db = UserDB(
+                            id=user_data["id"],
+                            username=user_data["username"],
+                            password_hash="test_hash",
+                            role="admin"
+                        )
+                        db.add(test_user_db)
+                
+                db.commit()
+            except Exception as e:
+                # If user creation fails, try to rollback
+                try:
+                    db.rollback()
+                except:
+                    pass
+    else:
+        # For memory tests, clear the stores
+        class MockSession:
+            pass
+        
+        mock_session = MockSession()
+        person_repo = get_person_repository(mock_session)
+        group_repo = get_group_repository(mock_session)
+        
+        if isinstance(person_repo, InMemoryPersonRepository):
+            person_repo.store.clear()
+        
+        # Clear group stores
+        if hasattr(group_repo, 'groups_store'):
+            group_repo.groups_store.clear()
+            group_repo.memberships_store.clear()
+            group_repo.next_group_id = 1
+            group_repo.next_membership_id = 1
 
 
 def valid_group_payload():

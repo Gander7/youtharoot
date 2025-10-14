@@ -1,8 +1,9 @@
 from typing import List, Optional, Union
 from sqlalchemy.orm import Session
-from app.repositories.base import PersonRepository, EventRepository, UserRepository
+from app.repositories.base import PersonRepository, EventRepository, UserRepository, MessageGroupRepository
 from app.models import Youth, Leader, Event, EventPerson, User
-from app.db_models import PersonDB, EventDB, UserDB
+from app.messaging_models import MessageGroup, MessageGroupCreate, MessageGroupUpdate, MessageGroupMembership, BulkGroupMembershipResponse
+from app.db_models import PersonDB, EventDB, UserDB, MessageGroupDB, MessageGroupMembershipDB
 from datetime import datetime, timezone
 import datetime as dt
 
@@ -393,3 +394,225 @@ class PostgreSQLUserRepository(UserRepository):
         self.db.delete(db_user)
         self.db.commit()
         return True
+
+
+class PostgreSQLMessageGroupRepository(MessageGroupRepository):
+    """PostgreSQL implementation for message group management"""
+    
+    def __init__(self, db: Session):
+        self.db = db
+    
+    def _db_to_pydantic_group(self, db_group: MessageGroupDB) -> MessageGroup:
+        """Convert database model to Pydantic model"""
+        return MessageGroup(
+            id=db_group.id,
+            name=db_group.name,
+            description=db_group.description,
+            is_active=db_group.is_active,
+            created_by=db_group.created_by,
+            created_at=db_group.created_at,
+            updated_at=db_group.updated_at
+        )
+    
+    def _db_to_pydantic_membership(self, db_membership: MessageGroupMembershipDB) -> MessageGroupMembership:
+        """Convert database membership model to Pydantic model"""
+        return MessageGroupMembership(
+            id=db_membership.id,
+            group_id=db_membership.group_id,
+            person_id=db_membership.person_id,
+            added_by=db_membership.added_by,
+            joined_at=db_membership.joined_at
+        )
+    
+    async def create_group(self, group: MessageGroupCreate, created_by: int) -> MessageGroup:
+        """Create a new message group"""
+        # Check for duplicate name for this user
+        if await self.group_name_exists(group.name, created_by):
+            raise ValueError(f"Group with name '{group.name}' already exists")
+        
+        try:
+            db_group = MessageGroupDB(
+                name=group.name,
+                description=group.description,
+                is_active=group.is_active,
+                created_by=created_by
+            )
+            
+            self.db.add(db_group)
+            self.db.commit()
+            self.db.refresh(db_group)
+            
+            return self._db_to_pydantic_group(db_group)
+        except Exception as e:
+            self.db.rollback()
+            raise e
+    
+    async def get_group(self, group_id: int, created_by: int) -> Optional[MessageGroup]:
+        """Get a message group by ID (user-scoped)"""
+        db_group = self.db.query(MessageGroupDB).filter(
+            MessageGroupDB.id == group_id,
+            MessageGroupDB.created_by == created_by
+        ).first()
+        
+        if db_group:
+            return self._db_to_pydantic_group(db_group)
+        return None
+    
+    async def get_all_groups(self, created_by: int) -> List[MessageGroup]:
+        """Get all message groups for a user"""
+        db_groups = self.db.query(MessageGroupDB).filter(
+            MessageGroupDB.created_by == created_by
+        ).all()
+        
+        return [self._db_to_pydantic_group(db_group) for db_group in db_groups]
+    
+    async def update_group(self, group_id: int, group_update: MessageGroupUpdate, created_by: int) -> Optional[MessageGroup]:
+        """Update a message group"""
+        db_group = self.db.query(MessageGroupDB).filter(
+            MessageGroupDB.id == group_id,
+            MessageGroupDB.created_by == created_by
+        ).first()
+        
+        if not db_group:
+            return None
+        
+        try:
+            # Check for duplicate name if name is being updated
+            if group_update.name is not None and group_update.name != db_group.name:
+                if await self.group_name_exists(group_update.name, created_by, exclude_id=group_id):
+                    raise ValueError(f"Group with name '{group_update.name}' already exists")
+            
+            # Update fields
+            if group_update.name is not None:
+                db_group.name = group_update.name
+            if group_update.description is not None:
+                db_group.description = group_update.description
+            if group_update.is_active is not None:
+                db_group.is_active = group_update.is_active
+            
+            db_group.updated_at = datetime.now(timezone.utc)
+            
+            self.db.commit()
+            self.db.refresh(db_group)
+            
+            return self._db_to_pydantic_group(db_group)
+        except Exception as e:
+            self.db.rollback()
+            raise e
+    
+    async def delete_group(self, group_id: int, created_by: int) -> bool:
+        """Delete a message group and all its memberships"""
+        db_group = self.db.query(MessageGroupDB).filter(
+            MessageGroupDB.id == group_id,
+            MessageGroupDB.created_by == created_by
+        ).first()
+        
+        if not db_group:
+            return False
+        
+        try:
+            # Delete all memberships first (handled by cascade in DB model)
+            self.db.delete(db_group)
+            self.db.commit()
+            return True
+        except Exception as e:
+            self.db.rollback()
+            raise e
+    
+    async def group_name_exists(self, name: str, created_by: int, exclude_id: Optional[int] = None) -> bool:
+        """Check if a group name already exists for a user"""
+        query = self.db.query(MessageGroupDB).filter(
+            MessageGroupDB.name == name,
+            MessageGroupDB.created_by == created_by
+        )
+        
+        if exclude_id is not None:
+            query = query.filter(MessageGroupDB.id != exclude_id)
+        
+        return query.first() is not None
+    
+    async def add_member(self, group_id: int, person_id: int, added_by: int) -> Optional[MessageGroupMembership]:
+        """Add a person to a message group"""
+        # Check if already a member
+        if await self.is_member(group_id, person_id):
+            raise ValueError("Person is already a member of this group")
+        
+        try:
+            db_membership = MessageGroupMembershipDB(
+                group_id=group_id,
+                person_id=person_id,
+                added_by=added_by
+            )
+            
+            self.db.add(db_membership)
+            self.db.commit()
+            self.db.refresh(db_membership)
+            
+            return self._db_to_pydantic_membership(db_membership)
+        except Exception as e:
+            self.db.rollback()
+            raise e
+    
+    async def remove_member(self, group_id: int, person_id: int) -> bool:
+        """Remove a person from a message group"""
+        db_membership = self.db.query(MessageGroupMembershipDB).filter(
+            MessageGroupMembershipDB.group_id == group_id,
+            MessageGroupMembershipDB.person_id == person_id
+        ).first()
+        
+        if not db_membership:
+            return False
+        
+        try:
+            self.db.delete(db_membership)
+            self.db.commit()
+            return True
+        except Exception as e:
+            self.db.rollback()
+            raise e
+    
+    async def get_group_members(self, group_id: int) -> List[MessageGroupMembership]:
+        """Get all members of a message group"""
+        db_memberships = self.db.query(MessageGroupMembershipDB).filter(
+            MessageGroupMembershipDB.group_id == group_id
+        ).all()
+        
+        return [self._db_to_pydantic_membership(db_membership) for db_membership in db_memberships]
+    
+    async def is_member(self, group_id: int, person_id: int) -> bool:
+        """Check if a person is a member of a group"""
+        db_membership = self.db.query(MessageGroupMembershipDB).filter(
+            MessageGroupMembershipDB.group_id == group_id,
+            MessageGroupMembershipDB.person_id == person_id
+        ).first()
+        
+        return db_membership is not None
+    
+    async def add_multiple_members(self, group_id: int, person_ids: List[int], added_by: int) -> BulkGroupMembershipResponse:
+        """Add multiple people to a message group"""
+        added_count = 0
+        skipped_count = 0
+        failed_count = 0
+        failed_person_ids = []
+        
+        for person_id in person_ids:
+            try:
+                # Check if already a member
+                if await self.is_member(group_id, person_id):
+                    skipped_count += 1
+                    continue
+                
+                # Add member
+                await self.add_member(group_id, person_id, added_by)
+                added_count += 1
+                
+            except Exception:
+                failed_count += 1
+                failed_person_ids.append(person_id)
+        
+        return BulkGroupMembershipResponse(
+            added_count=added_count,
+            skipped_count=skipped_count,
+            failed_count=failed_count,
+            failed_person_ids=failed_person_ids
+        )

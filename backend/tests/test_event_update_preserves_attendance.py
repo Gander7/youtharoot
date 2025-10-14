@@ -77,9 +77,12 @@ async def test_update_event_preserves_attendance_postgresql():
     # so this test verifies the separation works correctly
     
     from app.repositories.postgresql import PostgreSQLEventRepository, PostgreSQLPersonRepository
-    from app.database import get_db
+    from app.database import get_db, init_database
     from app.db_models import EventDB, PersonDB, EventPersonDB
     from sqlalchemy.orm import Session
+    
+    # Initialize database if needed
+    init_database()
     
     # Get database session
     db = next(get_db())
@@ -87,6 +90,11 @@ async def test_update_event_preserves_attendance_postgresql():
     # Skip this test if no database session available (in-memory mode)
     if db is None:
         pytest.skip("PostgreSQL test requires database connection")
+    
+    # Initialize variables for cleanup
+    event_id = None
+    created_youth = None
+    created_leader = None
     
     try:
         # Create repositories  
@@ -128,12 +136,14 @@ async def test_update_event_preserves_attendance_postgresql():
         youth_attendance = EventPersonDB(
             event_id=event_id,
             person_id=created_youth.id,
-            checked_in=True
+            check_in=datetime.datetime.now(),
+            person_type="youth"
         )
         leader_attendance = EventPersonDB(
             event_id=event_id, 
             person_id=created_leader.id,
-            checked_in=True
+            check_in=datetime.datetime.now(),
+            person_type="leader"
         )
         
         db.add(youth_attendance)
@@ -143,7 +153,7 @@ async def test_update_event_preserves_attendance_postgresql():
         # Verify attendance records exist
         attendance_count = db.query(EventPersonDB).filter(
             EventPersonDB.event_id == event_id,
-            EventPersonDB.checked_in == True
+            EventPersonDB.check_in.isnot(None)
         ).count()
         assert attendance_count == 2, "Should have 2 people checked in"
         
@@ -170,7 +180,7 @@ async def test_update_event_preserves_attendance_postgresql():
         # CRITICAL: Verify attendance records still exist in database
         final_attendance_count = db.query(EventPersonDB).filter(
             EventPersonDB.event_id == event_id,
-            EventPersonDB.checked_in == True
+            EventPersonDB.check_in.isnot(None)
         ).count()
         assert final_attendance_count == 2, "Attendance records should be preserved after event update"
         
@@ -178,13 +188,13 @@ async def test_update_event_preserves_attendance_postgresql():
         youth_still_checked_in = db.query(EventPersonDB).filter(
             EventPersonDB.event_id == event_id,
             EventPersonDB.person_id == created_youth.id,
-            EventPersonDB.checked_in == True
+            EventPersonDB.check_in.isnot(None)
         ).first()
         
         leader_still_checked_in = db.query(EventPersonDB).filter(
             EventPersonDB.event_id == event_id,
-            EventPersonDB.person_id == created_leader.id, 
-            EventPersonDB.checked_in == True
+            EventPersonDB.person_id == created_leader.id,
+            EventPersonDB.check_in.isnot(None)
         ).first()
         
         assert youth_still_checked_in is not None, "Youth should still be checked in"
@@ -195,11 +205,27 @@ async def test_update_event_preserves_attendance_postgresql():
     finally:
         # Clean up test data
         if db is not None:
-            db.query(EventPersonDB).filter(EventPersonDB.event_id == event_id).delete()
-            db.query(EventDB).filter(EventDB.id == event_id).delete()
-            db.query(PersonDB).filter(PersonDB.id.in_([created_youth.id, created_leader.id])).delete()
-            db.commit()
-            db.close()
+            try:
+                if event_id is not None:
+                    db.query(EventPersonDB).filter(EventPersonDB.event_id == event_id).delete()
+                    db.query(EventDB).filter(EventDB.id == event_id).delete()
+                
+                if created_youth is not None and created_leader is not None:
+                    db.query(PersonDB).filter(PersonDB.id.in_([created_youth.id, created_leader.id])).delete()
+                elif created_youth is not None:
+                    db.query(PersonDB).filter(PersonDB.id == created_youth.id).delete()
+                elif created_leader is not None:
+                    db.query(PersonDB).filter(PersonDB.id == created_leader.id).delete()
+                
+                db.commit()
+            except Exception as cleanup_error:
+                # If cleanup fails, rollback to avoid leaving the transaction in a bad state
+                try:
+                    db.rollback()
+                except:
+                    pass
+            finally:
+                db.close()
 
 
 if __name__ == "__main__":
