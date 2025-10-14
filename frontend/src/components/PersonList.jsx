@@ -29,7 +29,9 @@ import {
   Grid,
   Paper,
   Divider,
-  Stack
+  Stack,
+  Checkbox,
+  FormControlLabel
 } from '@mui/material';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { apiRequest } from '../stores/auth';
@@ -92,6 +94,7 @@ const PersonForm = ({ open, onClose, person, onSave, personType }) => {
     first_name: '',
     last_name: '',
     phone_number: '',
+    sms_opt_out: false,
     grade: '',
     school_name: '',
     birth_date: '',
@@ -109,6 +112,7 @@ const PersonForm = ({ open, onClose, person, onSave, personType }) => {
       first_name: '',
       last_name: '',
       phone_number: '',
+      sms_opt_out: false,
       school_name: '',
       birth_date: '',
       emergency_contact_name: '',
@@ -129,6 +133,7 @@ const PersonForm = ({ open, onClose, person, onSave, personType }) => {
         first_name: '',
         last_name: '',
         phone_number: '',
+        sms_opt_out: false,
         grade: '',
         school_name: '',
         birth_date: '',
@@ -163,6 +168,7 @@ const PersonForm = ({ open, onClose, person, onSave, personType }) => {
       first_name: formData.first_name,
       last_name: formData.last_name,
       phone_number: formData.phone_number || null,
+      sms_opt_out: formData.sms_opt_out || false,
     };
 
     // Include ID only if editing existing person
@@ -272,6 +278,7 @@ const PersonForm = ({ open, onClose, person, onSave, personType }) => {
             </Grid>
             
             <TextField
+              type="tel"
               label="Phone Number"
               value={formData.phone_number}
               onChange={(e) => setFormData({ ...formData, phone_number: e.target.value })}
@@ -282,8 +289,28 @@ const PersonForm = ({ open, onClose, person, onSave, personType }) => {
                   </InputAdornment>
                 ),
               }}
+              inputProps={{
+                pattern: "^(\\+?1[\\-\\s]?)?\\(?[0-9]{3}\\)?[\\-\\s]?[0-9]{3}[\\-\\s]?[0-9]{4}$",
+                title: "Please enter a valid Canadian phone number: (416) 555-1234 or +1-416-555-1234"
+              }}
+              placeholder="(416) 555-1234"
+              helperText="Canadian format: (416) 555-1234 or +1-416-555-1234"
               fullWidth
             />
+
+            {formData.phone_number && (
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={formData.sms_opt_out}
+                    onChange={(e) => setFormData({ ...formData, sms_opt_out: e.target.checked })}
+                    name="sms_opt_out"
+                  />
+                }
+                label="Opt out of SMS notifications (uncheck to receive text messages)"
+                sx={{ mt: 1 }}
+              />
+            )}
 
             {personType === 'youth' ? (
               <>
@@ -350,10 +377,10 @@ const PersonForm = ({ open, onClose, person, onSave, personType }) => {
                 </Grid>
                 
                 <TextField
+                  type="tel"
                   label="Emergency Contact Phone (Optional)"
                   value={formData.emergency_contact_phone}
                   onChange={(e) => setFormData({ ...formData, emergency_contact_phone: e.target.value })}
-                  fullWidth
                   InputProps={{
                     startAdornment: (
                       <InputAdornment position="start">
@@ -361,6 +388,13 @@ const PersonForm = ({ open, onClose, person, onSave, personType }) => {
                       </InputAdornment>
                     ),
                   }}
+                  inputProps={{
+                    pattern: "^(\\+?1[\\-\\s]?)?\\(?[0-9]{3}\\)?[\\-\\s]?[0-9]{3}[\\-\\s]?[0-9]{4}$",
+                    title: "Please enter a valid Canadian phone number: (416) 555-1234 or +1-416-555-1234"
+                  }}
+                  placeholder="(416) 555-1234"
+                  helperText="Canadian format: (416) 555-1234 or +1-416-555-1234"
+                  fullWidth
                 />
               </>
             ) : (

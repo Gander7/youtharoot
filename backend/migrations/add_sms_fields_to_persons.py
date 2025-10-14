@@ -100,14 +100,14 @@ def add_sms_fields_to_persons():
                 # Show sample data
                 print(f"\n📊 Sample data from persons table:")
                 result = conn.execute(text("""
-                    SELECT id, first_name, last_name, person_type, sms_consent, sms_opt_out 
+                    SELECT id, first_name, last_name, person_type, sms_opt_out 
                     FROM persons 
                     LIMIT 3
                 """))
                 rows = result.fetchall()
                 if rows:
                     for row in rows:
-                        print(f"   ID {row[0]}: {row[1]} {row[2]} ({row[3]}) - SMS Consent: {row[4]}, Opt Out: {row[5]}")
+                        print(f"   ID {row[0]}: {row[1]} {row[2]} ({row[3]}) - SMS Opt Out: {row[4]}")
                 else:
                     print("   No data found in persons table")
                     
@@ -143,11 +143,10 @@ def main():
     
     if success:
         print(f"\n🎊 Migration completed successfully!")
-        print(f"📋 New fields added to persons table:")
-        print(f"   - sms_consent: BOOLEAN DEFAULT FALSE")
-        print(f"   - sms_opt_out: BOOLEAN DEFAULT FALSE")
+        print(f"📋 New field added to persons table:")
+        print(f"   - sms_opt_out: BOOLEAN DEFAULT FALSE (implicit SMS permission)")
         print(f"\n💡 Next steps:")
-        print(f"   1. Update your application code to use the new fields")
+        print(f"   1. Update your application code to use the new field")
         print(f"   2. Consider adding a UI for users to manage SMS preferences") 
         print(f"   3. Implement phone number validation in your forms")
     else:

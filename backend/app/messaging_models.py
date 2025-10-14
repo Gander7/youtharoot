@@ -84,9 +84,9 @@ class MessageGroupMembershipBase(BaseModel):
     person_id: int
 
 
-class MessageGroupMembershipCreate(MessageGroupMembershipBase):
-    """Model for adding a person to a group."""
-    pass
+class MessageGroupMembershipCreate(BaseModel):
+    """Model for adding a person to a group via API."""
+    person_id: int
 
 
 class MessageGroupMembership(MessageGroupMembershipBase):
@@ -230,8 +230,7 @@ class MessageStatusUpdate(BaseModel):
 
 # Bulk Operations
 class BulkGroupMembershipCreate(BaseModel):
-    """Model for adding multiple people to a group."""
-    group_id: int
+    """Model for adding multiple people to a group via API."""
     person_ids: List[int] = Field(..., min_length=1, max_length=1000)
 
 

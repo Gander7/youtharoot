@@ -23,6 +23,13 @@ class Settings:
     ADMIN_USERNAME: str = os.getenv("ADMIN_USERNAME", "admin")
     ADMIN_PASSWORD: Optional[str] = os.getenv("ADMIN_PASSWORD")  # If not set, random password will be generated
     
+    # SMS Configuration (Twilio)
+    TWILIO_ACCOUNT_SID: Optional[str] = os.getenv("TWILIO_ACCOUNT_SID")
+    TWILIO_AUTH_TOKEN: Optional[str] = os.getenv("TWILIO_AUTH_TOKEN")
+    TWILIO_PHONE_NUMBER: Optional[str] = os.getenv("TWILIO_PHONE_NUMBER")
+    SMS_MAX_MESSAGES_PER_HOUR: int = int(os.getenv("SMS_MAX_MESSAGES_PER_HOUR", "150"))
+    SMS_COST_PER_MESSAGE: float = float(os.getenv("SMS_COST_PER_MESSAGE", "0.0083"))
+    
     @property
     def database_url(self) -> Optional[str]:
         """Get the appropriate database URL based on environment"""

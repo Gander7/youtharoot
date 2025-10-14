@@ -9,6 +9,7 @@ class Person(BaseModel, abc.ABC):
 	first_name: str
 	last_name: str
 	phone_number: Optional[str] = None
+	sms_opt_out: bool = False  # Allow users to opt out of SMS messages (default is to receive messages)
 	archived_on: Optional[datetime.datetime] = None
 
 	def __new__(cls, *args, **kwargs):

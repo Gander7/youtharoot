@@ -1,6 +1,7 @@
 from typing import List, Optional, Union
-from app.repositories.base import PersonRepository, EventRepository, UserRepository
+from app.repositories.base import PersonRepository, EventRepository, UserRepository, MessageGroupRepository
 from app.models import Youth, Leader, Event, User
+from app.messaging_models import MessageGroup, MessageGroupCreate, MessageGroupUpdate, MessageGroupMembership, MessageGroupMembershipCreate, BulkGroupMembershipResponse
 import datetime
 
 class InMemoryPersonRepository(PersonRepository):
@@ -247,3 +248,165 @@ class InMemoryUserRepository(UserRepository):
         
         del self.store[user_id]
         return True
+
+
+class InMemoryMessageGroupRepository(MessageGroupRepository):
+    """In-memory implementation for message group management"""
+    
+    def __init__(self):
+        self.groups_store = {}
+        self.memberships_store = {}
+        self.next_group_id = 1
+        self.next_membership_id = 1
+    
+    async def create_group(self, group: MessageGroupCreate, created_by: int) -> MessageGroup:
+        # Check for duplicate name for this user
+        if await self.group_name_exists(group.name, created_by):
+            raise ValueError(f"Group with name '{group.name}' already exists")
+        
+        # Create group
+        group_id = self.next_group_id
+        self.next_group_id += 1
+        
+        now = datetime.datetime.now(datetime.timezone.utc)
+        new_group = MessageGroup(
+            id=group_id,
+            name=group.name,
+            description=group.description,
+            is_active=group.is_active,
+            created_by=created_by,
+            created_at=now,
+            updated_at=now
+        )
+        
+        self.groups_store[group_id] = new_group
+        return new_group
+    
+    async def get_group(self, group_id: int, created_by: int) -> Optional[MessageGroup]:
+        group = self.groups_store.get(group_id)
+        if group and group.created_by == created_by:
+            return group
+        return None
+    
+    async def get_all_groups(self, created_by: int) -> List[MessageGroup]:
+        return [group for group in self.groups_store.values() if group.created_by == created_by]
+    
+    async def update_group(self, group_id: int, group_update: MessageGroupUpdate, created_by: int) -> Optional[MessageGroup]:
+        group = await self.get_group(group_id, created_by)
+        if not group:
+            return None
+        
+        # Check for duplicate name if name is being updated
+        if group_update.name is not None and group_update.name != group.name:
+            if await self.group_name_exists(group_update.name, created_by, exclude_id=group_id):
+                raise ValueError(f"Group with name '{group_update.name}' already exists")
+        
+        # Update fields
+        if group_update.name is not None:
+            group.name = group_update.name
+        if group_update.description is not None:
+            group.description = group_update.description
+        if group_update.is_active is not None:
+            group.is_active = group_update.is_active
+        
+        group.updated_at = datetime.datetime.now(datetime.timezone.utc)
+        self.groups_store[group_id] = group
+        return group
+    
+    async def delete_group(self, group_id: int, created_by: int) -> bool:
+        group = await self.get_group(group_id, created_by)
+        if not group:
+            return False
+        
+        # Delete all memberships for this group
+        memberships_to_delete = [
+            membership_id for membership_id, membership in self.memberships_store.items()
+            if membership.group_id == group_id
+        ]
+        for membership_id in memberships_to_delete:
+            del self.memberships_store[membership_id]
+        
+        # Delete the group
+        del self.groups_store[group_id]
+        return True
+    
+    async def group_name_exists(self, name: str, created_by: int, exclude_id: Optional[int] = None) -> bool:
+        for group_id, group in self.groups_store.items():
+            if (group.name == name and 
+                group.created_by == created_by and 
+                (exclude_id is None or group_id != exclude_id)):
+                return True
+        return False
+    
+    async def add_member(self, group_id: int, person_id: int, added_by: int) -> Optional[MessageGroupMembership]:
+        # Check if already a member
+        if await self.is_member(group_id, person_id):
+            raise ValueError("Person is already a member of this group")
+        
+        # Create membership
+        membership_id = self.next_membership_id
+        self.next_membership_id += 1
+        
+        membership = MessageGroupMembership(
+            id=membership_id,
+            group_id=group_id,
+            person_id=person_id,
+            added_by=added_by,
+            joined_at=datetime.datetime.now(datetime.timezone.utc)
+        )
+        
+        self.memberships_store[membership_id] = membership
+        return membership
+    
+    async def remove_member(self, group_id: int, person_id: int) -> bool:
+        # Find membership
+        membership_to_delete = None
+        for membership_id, membership in self.memberships_store.items():
+            if membership.group_id == group_id and membership.person_id == person_id:
+                membership_to_delete = membership_id
+                break
+        
+        if membership_to_delete:
+            del self.memberships_store[membership_to_delete]
+            return True
+        return False
+    
+    async def get_group_members(self, group_id: int) -> List[MessageGroupMembership]:
+        return [
+            membership for membership in self.memberships_store.values()
+            if membership.group_id == group_id
+        ]
+    
+    async def is_member(self, group_id: int, person_id: int) -> bool:
+        for membership in self.memberships_store.values():
+            if membership.group_id == group_id and membership.person_id == person_id:
+                return True
+        return False
+    
+    async def add_multiple_members(self, group_id: int, person_ids: List[int], added_by: int) -> BulkGroupMembershipResponse:
+        added_count = 0
+        skipped_count = 0
+        failed_count = 0
+        failed_person_ids = []
+        
+        for person_id in person_ids:
+            try:
+                # Check if already a member
+                if await self.is_member(group_id, person_id):
+                    skipped_count += 1
+                    continue
+                
+                # Add member
+                await self.add_member(group_id, person_id, added_by)
+                added_count += 1
+                
+            except Exception:
+                failed_count += 1
+                failed_person_ids.append(person_id)
+        
+        return BulkGroupMembershipResponse(
+            added_count=added_count,
+            skipped_count=skipped_count,
+            failed_count=failed_count,
+            failed_person_ids=failed_person_ids
+        )

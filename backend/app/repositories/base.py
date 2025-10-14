@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import List, Optional, Union
 from app.models import Youth, Leader, Event, User
+from app.messaging_models import MessageGroup, MessageGroupCreate, MessageGroupUpdate, MessageGroupMembership, MessageGroupMembershipCreate, BulkGroupMembershipResponse
 from datetime import datetime
 
 class PersonRepository(ABC):
@@ -83,4 +84,52 @@ class UserRepository(ABC):
     
     @abstractmethod
     async def delete_user(self, user_id: int) -> bool:
+        pass
+
+
+class MessageGroupRepository(ABC):
+    """Abstract interface for message group storage"""
+    
+    @abstractmethod
+    async def create_group(self, group: MessageGroupCreate, created_by: int) -> MessageGroup:
+        pass
+    
+    @abstractmethod
+    async def get_group(self, group_id: int, created_by: int) -> Optional[MessageGroup]:
+        pass
+    
+    @abstractmethod
+    async def get_all_groups(self, created_by: int) -> List[MessageGroup]:
+        pass
+    
+    @abstractmethod
+    async def update_group(self, group_id: int, group_update: MessageGroupUpdate, created_by: int) -> Optional[MessageGroup]:
+        pass
+    
+    @abstractmethod
+    async def delete_group(self, group_id: int, created_by: int) -> bool:
+        pass
+    
+    @abstractmethod
+    async def group_name_exists(self, name: str, created_by: int, exclude_id: Optional[int] = None) -> bool:
+        pass
+    
+    @abstractmethod
+    async def add_member(self, group_id: int, person_id: int, added_by: int) -> Optional[MessageGroupMembership]:
+        pass
+    
+    @abstractmethod
+    async def remove_member(self, group_id: int, person_id: int) -> bool:
+        pass
+    
+    @abstractmethod
+    async def get_group_members(self, group_id: int) -> List[MessageGroupMembership]:
+        pass
+    
+    @abstractmethod
+    async def is_member(self, group_id: int, person_id: int) -> bool:
+        pass
+    
+    @abstractmethod
+    async def add_multiple_members(self, group_id: int, person_ids: List[int], added_by: int) -> BulkGroupMembershipResponse:
         pass
