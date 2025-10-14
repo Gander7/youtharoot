@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from app.repositories.base import PersonRepository, EventRepository, UserRepository
 from app.models import Youth, Leader, Event, EventPerson, User
 from app.db_models import PersonDB, EventDB, UserDB
-from datetime import datetime
+from datetime import datetime, timezone
 import datetime as dt
 
 class PostgreSQLPersonRepository(PersonRepository):
@@ -120,7 +120,7 @@ class PostgreSQLPersonRepository(PersonRepository):
     async def archive_person(self, person_id: int) -> bool:
         db_person = self.db.query(PersonDB).filter(PersonDB.id == person_id).first()
         if db_person:
-            db_person.archived_on = datetime.now()
+            db_person.archived_on = datetime.now(timezone.utc)
             self.db.commit()
             return True
         return False

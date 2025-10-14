@@ -544,9 +544,6 @@ export default function CheckIn({ eventId, viewOnly = false }) {
                   <Typography variant="h6" color="primary.contrastText">
                     Total Attendance: {attendees.length}
                   </Typography>
-                  <Typography variant="body2" color="primary.contrastText" sx={{ opacity: 0.8 }}>
-                    {getCheckedOutCount()} completed • {getCheckedInCount()} still checked in
-                  </Typography>
                 </Box>
               </Box>
             </CardContent>
