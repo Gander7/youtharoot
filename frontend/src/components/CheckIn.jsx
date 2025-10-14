@@ -110,24 +110,30 @@ export default function CheckIn({ eventId, viewOnly = false }) {
         setAttendees(attendanceData);
       }
 
-      // Fetch all people (youth and leaders)
-      const allPeopleData = [];
-      
-      // Fetch youth
-      const youthResponse = await apiRequest('/person/youth');
-      if (youthResponse.ok) {
-        const youthData = await youthResponse.json();
-        allPeopleData.push(...youthData.map(person => ({ ...person, person_type: 'youth' })));
+      // Only fetch all people if not in view-only mode
+      if (!viewOnly) {
+        // Fetch all people (youth and leaders)
+        const allPeopleData = [];
+        
+        // Fetch youth
+        const youthResponse = await apiRequest('/person/youth');
+        if (youthResponse.ok) {
+          const youthData = await youthResponse.json();
+          allPeopleData.push(...youthData.map(person => ({ ...person, person_type: 'youth' })));
+        }
+        
+        // Fetch leaders
+        const leadersResponse = await apiRequest('/person/leaders');
+        if (leadersResponse.ok) {
+          const leadersData = await leadersResponse.json();
+          allPeopleData.push(...leadersData.map(person => ({ ...person, person_type: 'leader' })));
+        }
+        
+        setAllPeople(allPeopleData);
+      } else {
+        // In view-only mode, we don't need all people data
+        setAllPeople([]);
       }
-      
-      // Fetch leaders
-      const leadersResponse = await apiRequest('/person/leaders');
-      if (leadersResponse.ok) {
-        const leadersData = await leadersResponse.json();
-        allPeopleData.push(...leadersData.map(person => ({ ...person, person_type: 'leader' })));
-      }
-      
-      setAllPeople(allPeopleData);
     } catch (error) {
       console.error('Error fetching data:', error);
       setSnackbar({ 
@@ -166,65 +172,95 @@ export default function CheckIn({ eventId, viewOnly = false }) {
   useEffect(() => {
     let filtered = [];
     
-    if (filter === 'available') {
-      // Show people who are NOT checked in at all
-      const checkedInIds = attendees.map(a => a.person_id);
-      filtered = allPeople.filter(person => !checkedInIds.includes(person.id));
-    } else if (filter === 'checked-in') {
-      // Show people who ARE checked in but NOT checked out
-      const checkedInPeople = attendees
-        .filter(attendee => !attendee.check_out) // Only those who haven't checked out
-        .map(attendee => {
-          const person = allPeople.find(p => p.id === attendee.person_id);
-          return person ? { 
-            ...person, 
-            check_in: attendee.check_in, 
-            check_out: attendee.check_out,
-            // Use the data from attendance record if person not found in allPeople
-            first_name: person.first_name || attendee.first_name,
-            last_name: person.last_name || attendee.last_name,
-            grade: person.grade || attendee.grade,
-            school_name: person.school_name || attendee.school_name,
-            role: person.role || attendee.role,
-            person_type: person.person_type || attendee.person_type
-          } : {
-            id: attendee.person_id,
-            first_name: attendee.first_name,
-            last_name: attendee.last_name,
-            grade: attendee.grade,
-            school_name: attendee.school_name,
-            check_in: attendee.check_in,
-            check_out: attendee.check_out
-          };
-        });
-      filtered = checkedInPeople;
-    } else if (filter === 'checked-out') {
-      // Show people who ARE checked out
-      const checkedOutPeople = attendees
-        .filter(attendee => attendee.check_out) // Only those who have checked out
-        .map(attendee => {
-          const person = allPeople.find(p => p.id === attendee.person_id);
-          return person ? { 
-            ...person, 
-            check_in: attendee.check_in, 
-            check_out: attendee.check_out,
-            first_name: person.first_name || attendee.first_name,
-            last_name: person.last_name || attendee.last_name,
-            grade: person.grade || attendee.grade,
-            school_name: person.school_name || attendee.school_name,
-            role: person.role || attendee.role,
-            person_type: person.person_type || attendee.person_type
-          } : {
-            id: attendee.person_id,
-            first_name: attendee.first_name,
-            last_name: attendee.last_name,
-            grade: attendee.grade,
-            school_name: attendee.school_name,
-            check_in: attendee.check_in,
-            check_out: attendee.check_out
-          };
-        });
-      filtered = checkedOutPeople;
+    if (viewOnly) {
+      // In view-only mode, show all attendees (people who checked in)
+      filtered = attendees.map(attendee => {
+        const person = allPeople.find(p => p.id === attendee.person_id);
+        return person ? { 
+          ...person, 
+          check_in: attendee.check_in, 
+          check_out: attendee.check_out,
+          // Use the data from attendance record if person not found in allPeople
+          first_name: person.first_name || attendee.first_name,
+          last_name: person.last_name || attendee.last_name,
+          grade: person.grade || attendee.grade,
+          school_name: person.school_name || attendee.school_name,
+          role: person.role || attendee.role,
+          person_type: person.person_type || attendee.person_type
+        } : {
+          id: attendee.person_id,
+          first_name: attendee.first_name,
+          last_name: attendee.last_name,
+          grade: attendee.grade,
+          school_name: attendee.school_name,
+          role: attendee.role,
+          person_type: attendee.person_type,
+          check_in: attendee.check_in,
+          check_out: attendee.check_out
+        };
+      });
+    } else {
+      // Normal mode - filter based on selected tab
+      if (filter === 'available') {
+        // Show people who are NOT checked in at all
+        const checkedInIds = attendees.map(a => a.person_id);
+        filtered = allPeople.filter(person => !checkedInIds.includes(person.id));
+      } else if (filter === 'checked-in') {
+        // Show people who ARE checked in but NOT checked out
+        const checkedInPeople = attendees
+          .filter(attendee => !attendee.check_out) // Only those who haven't checked out
+          .map(attendee => {
+            const person = allPeople.find(p => p.id === attendee.person_id);
+            return person ? { 
+              ...person, 
+              check_in: attendee.check_in, 
+              check_out: attendee.check_out,
+              // Use the data from attendance record if person not found in allPeople
+              first_name: person.first_name || attendee.first_name,
+              last_name: person.last_name || attendee.last_name,
+              grade: person.grade || attendee.grade,
+              school_name: person.school_name || attendee.school_name,
+              role: person.role || attendee.role,
+              person_type: person.person_type || attendee.person_type
+            } : {
+              id: attendee.person_id,
+              first_name: attendee.first_name,
+              last_name: attendee.last_name,
+              grade: attendee.grade,
+              school_name: attendee.school_name,
+              check_in: attendee.check_in,
+              check_out: attendee.check_out
+            };
+          });
+        filtered = checkedInPeople;
+      } else if (filter === 'checked-out') {
+        // Show people who ARE checked out
+        const checkedOutPeople = attendees
+          .filter(attendee => attendee.check_out) // Only those who have checked out
+          .map(attendee => {
+            const person = allPeople.find(p => p.id === attendee.person_id);
+            return person ? { 
+              ...person, 
+              check_in: attendee.check_in, 
+              check_out: attendee.check_out,
+              first_name: person.first_name || attendee.first_name,
+              last_name: person.last_name || attendee.last_name,
+              grade: person.grade || attendee.grade,
+              school_name: person.school_name || attendee.school_name,
+              role: person.role || attendee.role,
+              person_type: person.person_type || attendee.person_type
+            } : {
+              id: attendee.person_id,
+              first_name: attendee.first_name,
+              last_name: attendee.last_name,
+              grade: attendee.grade,
+              school_name: attendee.school_name,
+              check_in: attendee.check_in,
+              check_out: attendee.check_out
+            };
+          });
+        filtered = checkedOutPeople;
+      }
     }
 
     // Apply search filter
@@ -239,7 +275,7 @@ export default function CheckIn({ eventId, viewOnly = false }) {
     }
 
     setFilteredPeople(filtered);
-  }, [allPeople, attendees, searchTerm, filter]);
+  }, [allPeople, attendees, searchTerm, filter, viewOnly]);
 
   const handleCheckIn = async (person) => {
     try {
@@ -496,6 +532,27 @@ export default function CheckIn({ eventId, viewOnly = false }) {
           </Card>
         )}
 
+        {/* View Only Attendance Summary */}
+        {viewOnly && (
+          <Card sx={{ mb: 3, bgcolor: 'primary.dark' }}>
+            <CardContent>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                <Avatar sx={{ bgcolor: 'primary.main' }}>
+                  <PersonIcon />
+                </Avatar>
+                <Box>
+                  <Typography variant="h6" color="primary.contrastText">
+                    Total Attendance: {attendees.length}
+                  </Typography>
+                  <Typography variant="body2" color="primary.contrastText" sx={{ opacity: 0.8 }}>
+                    {getCheckedOutCount()} completed • {getCheckedInCount()} still checked in
+                  </Typography>
+                </Box>
+              </Box>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Admin Check Out All Button */}
         {event && isAdmin() && !viewOnly && isEventEnded() && getCheckedInCount() > 0 && (
           <Card sx={{ mb: 3, bgcolor: 'warning.dark' }}>
@@ -539,22 +596,24 @@ export default function CheckIn({ eventId, viewOnly = false }) {
               }}
               fullWidth
             />
-            <ToggleButtonGroup
-              value={filter}
-              exclusive
-              onChange={(e, newFilter) => newFilter && setFilter(newFilter)}
-              size="small"
-            >
-              <ToggleButton value="available">
-                Available ({getAvailableCount()})
-              </ToggleButton>
-              <ToggleButton value="checked-in">
-                Checked In ({getCheckedInCount()})
-              </ToggleButton>
-              <ToggleButton value="checked-out">
-                Checked Out ({getCheckedOutCount()})
-              </ToggleButton>
-            </ToggleButtonGroup>
+            {!viewOnly && (
+              <ToggleButtonGroup
+                value={filter}
+                exclusive
+                onChange={(e, newFilter) => newFilter && setFilter(newFilter)}
+                size="small"
+              >
+                <ToggleButton value="available">
+                  Available ({getAvailableCount()})
+                </ToggleButton>
+                <ToggleButton value="checked-in">
+                  Checked In ({getCheckedInCount()})
+                </ToggleButton>
+                <ToggleButton value="checked-out">
+                  Checked Out ({getCheckedOutCount()})
+                </ToggleButton>
+              </ToggleButtonGroup>
+            )}
           </Stack>
         </Paper>
 
@@ -563,13 +622,15 @@ export default function CheckIn({ eventId, viewOnly = false }) {
           <Paper sx={{ p: 4, textAlign: 'center' }}>
             <PersonIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }} />
             <Typography variant="h6" color="text.secondary">
-              {searchTerm ? 'No people found' : 
+              {searchTerm ? 'No attendees found' : 
+                viewOnly ? 'No one attended this event' :
                 filter === 'available' ? 'No one available to check in' : 
                 filter === 'checked-in' ? 'No one checked in yet' : 'No one checked out yet'
               }
             </Typography>
             <Typography color="text.secondary">
               {searchTerm ? 'Try adjusting your search' : 
+                viewOnly ? 'Nobody checked in to this event' :
                 filter === 'available' ? 'All youth are already checked in' : 
                 filter === 'checked-in' ? 'Start checking people in' : 'No one has checked out yet'
               }
@@ -591,7 +652,16 @@ export default function CheckIn({ eventId, viewOnly = false }) {
                         <Typography variant="subtitle1" fontWeight="medium">
                           {person.first_name} {person.last_name}
                         </Typography>
-                        {filter === 'checked-in' && (
+                        {viewOnly ? (
+                          // In view-only mode, show status chips
+                          <Chip
+                            icon={person.check_out ? <CheckOutIcon /> : <CheckInIcon />}
+                            label={person.check_out ? 'Attended' : 'Checked In'}
+                            size="small"
+                            color={person.check_out ? 'primary' : 'success'}
+                            variant="outlined"
+                          />
+                        ) : filter === 'checked-in' && (
                           <Chip
                             icon={<CheckInIcon />}
                             label="Checked In"
@@ -617,7 +687,7 @@ export default function CheckIn({ eventId, viewOnly = false }) {
                             'Youth'
                           )}
                         </Typography>
-                        {(filter === 'checked-in' || filter === 'checked-out') && person.check_in && (
+                        {(viewOnly || filter === 'checked-in' || filter === 'checked-out') && person.check_in && (
                           <Typography variant="body2" color="text.secondary">
                             ⏰ In: {formatTime(person.check_in)}
                             {person.check_out && ` • Out: ${formatTime(person.check_out)}`}
@@ -653,8 +723,7 @@ export default function CheckIn({ eventId, viewOnly = false }) {
                     ) : (
                       // View-only mode - show status instead of buttons
                       <Typography variant="body2" color="text.secondary">
-                        {filter === 'available' ? 'Not checked in' : 
-                         person.check_out ? 'Checked out' : 'Checked in'}
+                        {person.check_out ? 'Attended' : 'Still checked in'}
                       </Typography>
                     )}
                   </ListItemSecondaryAction>
