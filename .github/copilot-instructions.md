@@ -1,123 +1,177 @@
-<!-- Use this file to provide workspace-specific custom instructions to Copilot. For more details, visit https://code.visualstudio.com/docs/copilot/copilot-customization#_use-a-githubcopilotinstructionsmd-file -->
-- [ ] Verify that the copilot-instructions.md file in the .github directory is created.
+# Youth Attendance Platform - Copilot Instructions
 
-- [ ] Clarify Project Requirements
-	<!-- Ask for project type, language, and frameworks if not specified. Skip if already provided. -->
+## Project Overview
+This is a production youth group attendance management platform built with FastAPI (backend) and Astro/React (frontend). The project follows enterprise-grade security practices and Test-Driven Development (TDD).
 
-- [ ] Scaffold the Project
-	<!--
-	Ensure that the previous step has been marked as completed.
-	Call project setup tool with projectType parameter.
-	Run scaffolding command to create project files and folders.
-	Use '.' as the working directory.
-	If no appropriate projectType is available, search documentation using available tools.
-	Otherwise, create the project structure manually using available file creation tools.
-	-->
+## Architecture & Stack
+- **Backend**: FastAPI with Python 3.12+
+- **Frontend**: Astro with React components and Material-UI
+- **Database**: Configurable (in-memory for dev, PostgreSQL for production)
+- **Authentication**: JWT tokens with bcrypt password hashing
+- **Testing**: Vitest (frontend) + pytest (backend)
 
-- [ ] Customize the Project
-	<!--
-	Verify that all previous steps have been completed successfully and you have marked the step as completed.
-	Develop a plan to modify codebase according to user requirements.
-	Apply modifications using appropriate tools and user-provided references.
-	Skip this step for "Hello World" projects.
-	-->
+## Development Methodology: Test-Driven Development (TDD)
 
-- [ ] Install Required Extensions
-	<!-- ONLY install extensions provided mentioned in the get_project_setup_info. Skip this step otherwise and mark as completed. -->
+### TDD Workflow (RED-GREEN-REFACTOR)
+1. **RED**: Write a failing test first
+2. **GREEN**: Write minimal code to make the test pass
+3. **REFACTOR**: Improve code while keeping tests green
 
-- [ ] Compile the Project
-	<!--
-	Verify that all previous steps have been completed.
-	Install any missing dependencies.
-	Run diagnostics and resolve any issues.
-	Check for markdown files in project folder for relevant instructions on how to do this.
-	-->
+### Testing Standards
+- **Frontend Tests**: Use Vitest + React Testing Library in `web/src/test/`
+- **Backend Tests**: Use pytest in `tests/`
+- **Naming**: `MethodUnderTest_StateUnderTest_ExpectedBehaviour`
+- **Structure**: Follow AAA pattern (Arrange-Act-Assert)
+- **Coverage**: All critical business logic must have tests
+- **Isolation**: Tests must run independently with proper mocking
 
-- [ ] Create and Run Task
-	<!--
-	Verify that all previous steps have been completed.
-	Check https://code.visualstudio.com/docs/debugtest/tasks to determine if the project needs a task. If so, use the create_and_run_task to create and launch a task based on package.json, README.md, and project structure.
-	Skip this step otherwise.
-	 -->
+### Testing Commands
+```bash
+# Backend tests
+python -m pytest tests/ -v
+python -m pytest tests/ --cov=app --cov-report=html
 
-- [ ] Launch the Project
-	<!--
-	Verify that all previous steps have been completed.
-	Prompt user for debug mode, launch only if confirmed.
-	 -->
+# Frontend tests
+cd web/
+npm test              # Watch mode
+npm run test:run      # Run once
+npm run test:ui       # UI interface
+npm run coverage      # With coverage
+```
 
-- [ ] Ensure Documentation is Complete
-	<!--
-	Verify that all previous steps have been completed.
-	Verify that README.md and the copilot-instructions.md file in the .github directory exists and contains current project information.
-	Clean up the copilot-instructions.md file in the .github directory by removing all HTML comments.
-	 -->
+## Security & Quality Standards
 
-<!--
-## Execution Guidelines
-PROGRESS TRACKING:
-- If any tools are available to manage the above todo list, use it to track progress through this checklist.
-- After completing each step, mark it complete and add a summary.
-- Read current todo list status before starting each new step.
+### ✅ COMPLETED CRITICAL FIXES
+- **Admin Security**: Environment-based credential management (no hardcoded passwords)
+- **Error Boundaries**: Comprehensive crash prevention with graceful recovery
+- **Race Conditions**: Eliminated setTimeout hacks with proper API synchronization
+- **Test Architecture**: 41 comprehensive regression tests protecting all fixes
 
-COMMUNICATION RULES:
-- Avoid verbose explanations or printing full command outputs.
-- If a step is skipped, state that briefly (e.g. "No extensions needed").
-- Do not explain project structure unless asked.
-- Keep explanations concise and focused.
+### Security Rules
+- **NEVER** commit secrets, API keys, or passwords to version control
+- **ALWAYS** use environment variables for sensitive configuration
+- **REQUIRE** proper authentication for protected API endpoints
+- **VALIDATE** all user inputs on both client and server sides
+- **HASH** all passwords with bcrypt before storage
 
-SECURITY RULES:
-- NEVER commit secret values, API keys, passwords, or database URLs to version control
-- Always use environment variables for sensitive configuration
-- Use .env.example files to show required variables without actual values
-- Ensure .env files are properly added to .gitignore
-- When creating config files, use placeholder values like "your-secret-here" or environment variable references
+### Database Rules
+- **BACKWARDS COMPATIBILITY**: All schema changes must be additive only
+- **NO DESTRUCTIVE CHANGES**: Never drop columns/tables with existing data
+- **MIGRATIONS**: Use proper migration scripts for schema changes
+- **TESTING**: Test all database changes against existing data
 
-DATABASE RULES:
-- ALL database schema changes MUST be backwards compatible
-- NEVER modify existing columns in a way that breaks existing data
-- NEVER drop columns or tables that contain data
-- Use additive changes only (add new columns, tables, or indexes)
-- When making schema changes, ensure existing data remains intact and accessible
-- Use database migrations for any schema modifications
-- Test all database changes against existing data before deployment
-- If destructive changes are absolutely necessary, require explicit user confirmation and data backup
+## Code Quality Standards
 
-DEVELOPMENT RULES:
-- Use '.' as the working directory unless user specifies otherwise.
-- Avoid adding media or external links unless explicitly requested.
-- Use placeholders only with a note that they should be replaced.
-- Use VS Code API tool only for VS Code extension projects.
-- Once the project is created, it is already opened in Visual Studio Code—do not suggest commands to open this project in Visual Studio again.
-- If the project setup information has additional rules, follow them strictly.
+### Frontend (React/TypeScript)
+- Use React error boundaries for component crash protection
+- Implement proper loading and error states
+- Follow Material-UI design patterns and responsive design
+- Use proper TypeScript types and interfaces
+- Avoid `any` types - use proper type definitions
 
-FOLDER CREATION RULES:
-- Always use the current directory as the project root.
-- If you are running any terminal commands, use the '.' argument to ensure that the current working directory is used ALWAYS.
-- Do not create a new folder unless the user explicitly requests it besides a .vscode folder for a tasks.json file.
-- If any of the scaffolding commands mention that the folder name is not correct, let the user know to create a new folder with the correct name and then reopen it again in vscode.
+### Backend (FastAPI/Python)
+- Use proper HTTP status codes and error responses
+- Implement comprehensive try-catch blocks in API routes
+- Use Pydantic models for request/response validation
+- Follow REST API conventions
+- Add proper logging for debugging and monitoring
 
-EXTENSION INSTALLATION RULES:
-- Only install extension specified by the get_project_setup_info tool. DO NOT INSTALL any other extensions.
+### Code Organization
+- **Separation of Concerns**: Keep business logic separate from UI components
+- **DRY Principle**: Avoid code duplication through reusable components/functions
+- **Clear Naming**: Use descriptive names for variables, functions, and classes
+- **Documentation**: Add docstrings and comments for complex logic
 
-PROJECT CONTENT RULES:
-- If the user has not specified project details, assume they want a "Hello World" project as a starting point.
-- Avoid adding links of any type (URLs, files, folders, etc.) or integrations that are not explicitly required.
-- Avoid generating images, videos, or any other media files unless explicitly requested.
-- If you need to use any media assets as placeholders, let the user know that these are placeholders and should be replaced with the actual assets later.
-- Ensure all generated components serve a clear purpose within the user's requested workflow.
-- If a feature is assumed but not confirmed, prompt the user for clarification before including it.
-- If you are working on a VS Code extension, use the VS Code API tool with a query to find relevant VS Code API references and samples related to that query.
+## Development Workflow
 
-TASK COMPLETION RULES:
-- Your task is complete when:
-  - Project is successfully scaffolded and compiled without errors
-  - copilot-instructions.md file in the .github directory exists in the project
-  - README.md file exists and is up to date
-  - User is provided with clear instructions to debug/launch the project
+### For New Features
+1. **Write Tests First** (TDD Red phase)
+   - Backend: Create pytest tests in appropriate `tests/` subdirectory
+   - Frontend: Create Vitest tests in `web/src/test/components/`
+2. **Implement Feature** (TDD Green phase)
+   - Write minimal code to make tests pass
+   - Follow existing patterns and architecture
+3. **Refactor & Improve** (TDD Refactor phase)
+   - Clean up code while keeping tests green
+   - Add error handling and edge case coverage
 
-Before starting a new task in the above plan, update progress in the plan.
--->
-- Work through each checklist item systematically.
-- Keep communication concise and focused.
-- Follow development best practices.
+### For Bug Fixes
+1. **Write Regression Test** that reproduces the bug
+2. **Fix the Bug** while making the test pass
+3. **Verify** all existing tests still pass
+4. **Document** the fix in commit messages and pull requests
+
+## Current Priority Areas
+
+### High Priority Security & Stability
+- [ ] Input validation for person creation (client + server)
+- [ ] Proper error handling in API routes with try-catch blocks
+- [ ] JWT authentication middleware for protected endpoints
+- [ ] Database query optimization with proper indexes
+
+### Medium Priority Features
+- [ ] Data export functionality (CSV/Excel)
+- [ ] Bulk operations for person management
+- [ ] User role-based permissions (admin vs regular users)
+- [ ] Audit trail for data changes
+
+### Performance & UX
+- [ ] Mobile responsiveness improvements
+- [ ] Bundle size optimization with code splitting
+- [ ] Real-time notifications with WebSocket connections
+
+## File Structure Understanding
+```
+app/                    # Backend FastAPI application
+├── repositories/       # Data access layer (memory + PostgreSQL)
+├── routers/           # API endpoints
+├── models.py          # Pydantic models
+└── main.py           # FastAPI app entry point
+
+web/                   # Frontend Astro/React application
+├── src/
+│   ├── components/    # React components
+│   ├── pages/        # Astro pages
+│   ├── stores/       # State management
+│   └── test/         # Frontend tests
+
+tests/                 # Backend tests
+├── api/              # API endpoint tests
+├── models/           # Model tests
+└── test_backend_admin_security.py  # Security regression tests
+```
+
+## Common Tasks & Commands
+
+### Development
+```bash
+# Start backend (from root)
+python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+
+# Start frontend (from web/)
+cd web && npm run dev
+
+# Install dependencies
+pip install -r requirements.txt
+cd web && npm install
+```
+
+### Testing (TDD Workflow)
+```bash
+# Run all tests
+python -m pytest tests/ -v && cd web && npm run test:run
+
+# Watch mode for TDD
+python -m pytest tests/ --looponfail &  # Backend watch
+cd web && npm test                       # Frontend watch
+```
+
+## When Helping with Code
+
+1. **Always consider TDD**: Suggest writing tests first for new features
+2. **Security First**: Check for security implications in any code changes
+3. **Test Coverage**: Ensure changes don't break existing functionality
+4. **Follow Patterns**: Use existing code patterns and architectural decisions
+5. **Documentation**: Update relevant documentation when making significant changes
+
+Remember: This is a production system managing real user data. Prioritize security, reliability, and maintainability in all suggestions and code generation.

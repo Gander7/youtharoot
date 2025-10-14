@@ -151,21 +151,68 @@ See [DEPLOYMENT.md](DEPLOYMENT.md) for detailed deployment instructions.
 
 ## 🧪 Testing
 
-Run all tests with:
+This project uses a proper separation between frontend and backend testing frameworks for optimal development experience.
+
+### **Backend Tests (Python/pytest)**
+
+Tests API logic, database operations, business logic, and security.
+
 ```bash
-pytest
+# Run all backend tests
+python -m pytest tests/ -v
+
+# Run with coverage
+python -m pytest tests/ --cov=app --cov-report=html
+
+# Run specific test file
+python -m pytest tests/test_backend_admin_security.py -v
 ```
 
-To check coverage:
+### **Frontend Tests (JavaScript/Vitest)**
+
+Tests React components, user interactions, UI logic, and frontend race conditions.
+
 ```bash
-pytest --cov=app --cov-report=term-missing
+# Navigate to web directory
+cd web/
+
+# Run tests (watch mode)
+npm test
+
+# Run tests once
+npm run test:run
+
+# Run with UI interface
+npm run test:ui
+
+# Run with coverage
+npm run coverage
 ```
 
-To view a detailed coverage report:
-```bash
-pytest --cov=app --cov-report=html
-# Open htmlcov/index.html in your browser
+### **Test Coverage Summary**
+
+- ✅ **Backend Security Tests:** 10 tests protecting admin initialization and credential security
+- ✅ **Frontend Error Boundary Tests:** 19 tests ensuring crash prevention and recovery
+- ✅ **Frontend Race Condition Tests:** 12 tests eliminating timing dependencies and API synchronization issues
+- **Total:** 41 comprehensive regression tests
+
+### **Test Architecture**
+
 ```
+📁 tests/                          # Backend (Python/pytest)
+├── test_backend_admin_security.py  # Admin initialization security
+├── api/test_*.py                   # API endpoint tests
+└── models/test_*.py                # Model validation tests
+
+📁 web/src/test/                    # Frontend (JavaScript/Vitest)
+├── components/
+│   ├── ErrorBoundary.test.jsx     # Crash prevention tests
+│   └── CheckIn.test.jsx           # Race condition tests  
+├── integration/                   # Future integration tests
+└── setup.js                       # Test configuration
+```
+
+See [TEST_ARCHITECTURE.md](TEST_ARCHITECTURE.md) for detailed testing documentation.
 
 ---
 
@@ -193,22 +240,27 @@ This project is licensed under the MIT License. See [LICENSE](LICENSE) for detai
 ## 🛠️ Technical Debt & Code Quality TODOs
 
 ### Critical Issues 🚨
-- [ ] **Remove hardcoded credentials** - Remove hardcoded admin password hash from app/repositories/memory.py. Replace with secure environment variable initialization
-- [ ] **Implement error boundaries** - Add React error boundaries to prevent crashes and provide graceful error handling
-- [ ] **Fix race conditions** - Remove setTimeout hack in CheckIn.jsx line 395 and implement proper state synchronization
+- [x] **Remove hardcoded credentials** - ✅ COMPLETED: Replaced hardcoded admin password hash with secure environment variable initialization for both memory and PostgreSQL repositories
+- [x] **Implement error boundaries** - ✅ COMPLETED: Added comprehensive React error boundaries with crash prevention, graceful error handling, and retry mechanisms
+- [x] **Fix race conditions** - ✅ COMPLETED: Eliminated setTimeout hack in CheckIn.jsx and implemented proper synchronous API response handling
 
 ### High Priority ⚠️
+- [ ] **Add input validation** - Implement client-side and server-side validation for required fields, phone number format, email format
+- [ ] **Implement proper error handling in API routes** - Add try-catch blocks and proper HTTP status codes in FastAPI routes
+- [ ] **Add authentication middleware** - Implement JWT token validation middleware for protected API endpoints
 - [ ] **Add request cancellation** - Implement AbortController for API requests and cleanup in useEffect hooks
 - [ ] **Replace localStorage communication** - Replace localStorage-based cross-component communication with proper state management
 - [ ] **Implement proper routing** - Replace window.location.href direct manipulation with proper Astro/React routing
 - [ ] **Centralize API error handling** - Create consistent error response format across all API endpoints
 
 ### Medium Priority 🔧
+- [x] **Add comprehensive unit tests** - ✅ COMPLETED: Created comprehensive regression tests with proper frontend (Vitest) and backend (pytest) separation
 - [ ] **Improve type safety** - Convert remaining JavaScript to TypeScript and add proper type definitions
 - [ ] **Separate business logic from UI** - Extract business logic from CheckIn.jsx into custom hooks and service layers
 - [ ] **Add debouncing to search inputs** - Implement debouncing to prevent excessive API calls
 - [ ] **Centralize theme definitions** - Move all inline styles and scattered theme definitions to centralized configuration
-- [ ] **Add comprehensive unit tests** - Create unit tests for React components, API endpoints, and critical business logic
+- [ ] **Optimize database queries** - Add database indexes for frequently queried fields and implement query optimization
+- [ ] **Add comprehensive logging system** - Implement structured logging for debugging and monitoring
 
 ### Low Priority 📱
 - [ ] **Implement accessibility features** - Add ARIA labels, keyboard navigation support, and improve color contrast
@@ -216,6 +268,9 @@ This project is licensed under the MIT License. See [LICENSE](LICENSE) for detai
 - [ ] **Remove debug console logs** - Clean up console.log statements and implement proper logging framework
 - [ ] **Add rate limiting** - Implement API rate limiting and request throttling
 - [ ] **Implement integration tests** - Create end-to-end tests for critical user flows
+- [ ] **Improve mobile responsiveness** - Optimize UI components for mobile devices and touch interfaces
+- [ ] **Add data export functionality** - Add CSV/Excel export for attendance records and person data
+- [ ] **Add bulk operations** - Implement bulk import/export and bulk edit operations for person management
 
 ---
 
