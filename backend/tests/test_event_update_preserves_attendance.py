@@ -4,17 +4,18 @@ This addresses the bug where updating an event's end time caused
 checked-in people to lose their check-in status.
 """
 import pytest
-from app.models import Event, Youth, Leader
+from app.models import Event, EventPerson
+import datetime
 
 @pytest.mark.asyncio
 async def test_update_event_preserves_attendance_memory():
     """Test that updating event details in memory repository preserves attendance data"""
-    from app.repositories.memory import EventRepository
+    from app.repositories.memory import InMemoryEventRepository
     
     # Create repository and test event with attendance
-    repo = EventRepository()
+    repo = InMemoryEventRepository()
     
-    # Create an event with some attendees
+    # Create an event with some checked-in attendees
     original_event = Event(
         date="2025-10-13",
         name="Youth Group",
@@ -23,14 +24,10 @@ async def test_update_event_preserves_attendance_memory():
         end_time="21:00",
         location="BLT",
         youth=[
-            Youth(id=1, first_name="John", last_name="Doe", phone_number="555-0001", 
-                  grade=10, school_name="Test High", birth_date="2008-01-01", 
-                  emergency_contact_name="Jane Doe", emergency_contact_phone="555-0002",
-                  emergency_contact_relationship="Mother")
+            EventPerson(person_id=1, check_in=datetime.datetime.now())
         ],
         leaders=[
-            Leader(id=2, first_name="Pastor", last_name="Smith", phone_number="555-0003",
-                   role="Youth Pastor", birth_date="1985-01-01")
+            EventPerson(person_id=2, check_in=datetime.datetime.now())
         ]
     )
     
@@ -41,8 +38,8 @@ async def test_update_event_preserves_attendance_memory():
     # Verify the event has attendees
     assert len(created_event.youth) == 1
     assert len(created_event.leaders) == 1
-    assert created_event.youth[0].first_name == "John"
-    assert created_event.leaders[0].first_name == "Pastor"
+    assert created_event.youth[0].person_id == 1
+    assert created_event.leaders[0].person_id == 2
     
     # Update the event with only basic details (simulating EventForm submission)
     update_event = Event(
@@ -67,8 +64,8 @@ async def test_update_event_preserves_attendance_memory():
     # CRITICAL: Verify attendance data was preserved despite empty arrays in update
     assert len(updated_event.youth) == 1, "Youth attendance should be preserved"
     assert len(updated_event.leaders) == 1, "Leader attendance should be preserved"
-    assert updated_event.youth[0].first_name == "John", "Youth data should be unchanged"
-    assert updated_event.leaders[0].first_name == "Pastor", "Leader data should be unchanged"
+    assert updated_event.youth[0].person_id == 1, "Youth data should be unchanged"
+    assert updated_event.leaders[0].person_id == 2, "Leader data should be unchanged"
     
     print("✅ Memory repository correctly preserves attendance data during event updates")
 
@@ -79,29 +76,35 @@ async def test_update_event_preserves_attendance_postgresql():
     # Note: PostgreSQL repository stores attendance in separate EventPersonDB table
     # so this test verifies the separation works correctly
     
-    from app.repositories.postgresql import EventRepository, PersonRepository
-    from app.database import get_database
+    from app.repositories.postgresql import PostgreSQLEventRepository, PostgreSQLPersonRepository
+    from app.database import get_db
     from app.db_models import EventDB, PersonDB, EventPersonDB
     from sqlalchemy.orm import Session
     
     # Get database session
-    db = next(get_database())
+    db = next(get_db())
+    
+    # Skip this test if no database session available (in-memory mode)
+    if db is None:
+        pytest.skip("PostgreSQL test requires database connection")
     
     try:
         # Create repositories  
-        event_repo = EventRepository(db)
-        person_repo = PersonRepository(db)
+        event_repo = PostgreSQLEventRepository(db)
+        person_repo = PostgreSQLPersonRepository(db)
         
         # Create test persons first
+        from app.models import Youth, Leader
+        
         youth = Youth(
             first_name="Alice", last_name="Johnson", phone_number="555-0004",
-            grade=11, school_name="Test High", birth_date="2007-05-15",
+            grade=11, school_name="Test High", birth_date=datetime.date(2007, 5, 15),
             emergency_contact_name="Bob Johnson", emergency_contact_phone="555-0005", 
             emergency_contact_relationship="Father"
         )
         leader = Leader(
             first_name="Sarah", last_name="Wilson", phone_number="555-0006",
-            role="Assistant", birth_date="1990-03-10"
+            role="Assistant", birth_date=datetime.date(1990, 3, 10)
         )
         
         created_youth = await person_repo.create_person(youth)
@@ -191,11 +194,12 @@ async def test_update_event_preserves_attendance_postgresql():
         
     finally:
         # Clean up test data
-        db.query(EventPersonDB).filter(EventPersonDB.event_id == event_id).delete()
-        db.query(EventDB).filter(EventDB.id == event_id).delete()
-        db.query(PersonDB).filter(PersonDB.id.in_([created_youth.id, created_leader.id])).delete()
-        db.commit()
-        db.close()
+        if db is not None:
+            db.query(EventPersonDB).filter(EventPersonDB.event_id == event_id).delete()
+            db.query(EventDB).filter(EventDB.id == event_id).delete()
+            db.query(PersonDB).filter(PersonDB.id.in_([created_youth.id, created_leader.id])).delete()
+            db.commit()
+            db.close()
 
 
 if __name__ == "__main__":

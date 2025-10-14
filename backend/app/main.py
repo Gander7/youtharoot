@@ -7,6 +7,7 @@ from app.routers.event import router as event_router
 from app.routers.attendance import router as attendance_router
 from app.routers.user import router as user_router
 from app.routers.groups import router as groups_router
+from app.routers.sms import router as sms_router
 from app.database import init_database
 from app.repositories import init_repositories
 from app.config import settings
@@ -76,6 +77,7 @@ app.include_router(event_router)
 app.include_router(attendance_router)
 app.include_router(user_router)
 app.include_router(groups_router)
+app.include_router(sms_router)
 
 @app.get("/")
 async def root():

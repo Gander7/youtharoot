@@ -12,7 +12,7 @@ def connect_to_db():
     from app.database import get_db
     return get_db
 
-def get_current_user_dependency():
+def get_current_user_lazy():
     """Lazily import and return current user dependency"""
     from app.auth import get_current_user
     return get_current_user
@@ -38,7 +38,7 @@ async def check_in_person(
     event_id: int, 
     request: CheckInRequest, 
     db: Session = Depends(connect_to_db()),
-    current_user: User = Depends(get_current_user_dependency())
+    current_user: User = Depends(get_current_user_lazy())
 ):
     """Check in a person to an event"""
     try:
@@ -119,7 +119,7 @@ async def check_out_person(
     event_id: int, 
     request: CheckOutRequest, 
     db: Session = Depends(connect_to_db()),
-    current_user: User = Depends(get_current_user_dependency())
+    current_user: User = Depends(get_current_user_lazy())
 ):
     """Check out a person from an event"""
     try:
@@ -186,7 +186,7 @@ async def check_out_person(
 async def check_out_all_people(
     event_id: int, 
     db: Session = Depends(connect_to_db()),
-    current_user: User = Depends(get_current_user_dependency())
+    current_user: User = Depends(get_current_user_lazy())
 ):
     """Check out all people who are still checked in to an event"""
     try:
@@ -287,7 +287,7 @@ async def check_out_all_people(
 async def get_event_attendance(
     event_id: int, 
     db: Session = Depends(connect_to_db()),
-    current_user: User = Depends(get_current_user_dependency())
+    current_user: User = Depends(get_current_user_lazy())
 ):
     """Get all attendance records for an event"""
     try:
