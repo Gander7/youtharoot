@@ -5,42 +5,42 @@
 ### Create Backup
 ```bash
 # Recommended for production use
-./scripts/backup_db.sh --format custom --retention 7
+./backend/scripts/backup_db.sh --format custom --retention 7
 
 # Simple backup
-./scripts/backup_db.sh
+./backend/scripts/backup_db.sh
 ```
 
 ### Verify Backup
 ```bash
 # Check what's in your backup (row counts)
-./scripts/show_backup_rows.sh backups/your_backup_file.dump
+./backend/scripts/show_backup_rows.sh backend/backups/your_backup_file.dump
 ```
 
 ### List Backups
 ```bash
 # Show all backups
-ls -la scripts/backups/
+ls -la backend/scripts/backups/
 
 # Show newest backup
-ls -t scripts/backups/*.dump | head -1
+ls -t backend/scripts/backups/*.dump | head -1
 ```
 
 ### Restore Backup (DESTRUCTIVE)
 ```bash
 # ⚠️ WARNING: This replaces ALL data in your database
 pg_restore --clean --if-exists --no-owner --no-privileges \
-  --dbname="$DATABASE_URL" backups/your_backup_file.dump
+  --dbname="$DATABASE_URL" backend/backups/your_backup_file.dump
 ```
 
 ## 📂 Files You Need
 
 ### ✅ Keep These Files:
-- `scripts/backup_db.sh` - Main backup script
-- `scripts/show_backup_rows.sh` - Verify backup contents  
-- `scripts/setup_automated_backup.sh` - Setup daily backups
-- `scripts/README.md` - Full documentation
-- `scripts/backups/` - Your backup files directory
+- `backend/scripts/backup_db.sh` - Main backup script
+- `backend/scripts/show_backup_rows.sh` - Verify backup contents  
+- `backend/scripts/setup_automated_backup.sh` - Setup daily backups
+- `backend/scripts/README.md` - Full documentation
+- `backend/scripts/backups/` - Your backup files directory
 
 ### 🗑️ Cleaned Up:
 - Removed test/experimental backup scripts
@@ -62,4 +62,4 @@ pg_restore --clean --if-exists --no-owner --no-privileges \
 ✅ **Verified**: Perfect match with live database  
 ✅ **Ready for production use**
 
-For detailed documentation, see `scripts/README.md`
+For detailed documentation, see `backend/scripts/README.md`

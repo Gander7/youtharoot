@@ -18,8 +18,8 @@ This is a production youth group attendance management platform built with FastA
 3. **REFACTOR**: Improve code while keeping tests green
 
 ### Testing Standards
-- **Frontend Tests**: Use Vitest + React Testing Library in `web/src/test/`
-- **Backend Tests**: Use pytest in `tests/`
+- **Frontend Tests**: Use Vitest + React Testing Library in `frontend/src/test/`
+- **Backend Tests**: Use pytest in `backend/tests/`
 - **Naming**: `MethodUnderTest_StateUnderTest_ExpectedBehaviour`
 - **Structure**: Follow AAA pattern (Arrange-Act-Assert)
 - **Coverage**: All critical business logic must have tests
@@ -28,11 +28,11 @@ This is a production youth group attendance management platform built with FastA
 ### Testing Commands
 ```bash
 # Backend tests
-python -m pytest tests/ -v
-python -m pytest tests/ --cov=app --cov-report=html
+cd backend && python -m pytest tests/ -v
+cd backend && python -m pytest tests/ --cov=app --cov-report=html
 
 # Frontend tests
-cd web/
+cd frontend/
 npm test              # Watch mode
 npm run test:run      # Run once
 npm run test:ui       # UI interface
@@ -86,8 +86,8 @@ npm run coverage      # With coverage
 
 ### For New Features
 1. **Write Tests First** (TDD Red phase)
-   - Backend: Create pytest tests in appropriate `tests/` subdirectory
-   - Frontend: Create Vitest tests in `web/src/test/components/`
+   - Backend: Create pytest tests in appropriate `backend/tests/` subdirectory
+   - Frontend: Create Vitest tests in `frontend/src/test/components/`
 2. **Implement Feature** (TDD Green phase)
    - Write minimal code to make tests pass
    - Follow existing patterns and architecture
@@ -122,23 +122,26 @@ npm run coverage      # With coverage
 
 ## File Structure Understanding
 ```
-app/                    # Backend FastAPI application
-├── repositories/       # Data access layer (memory + PostgreSQL)
-├── routers/           # API endpoints
-├── models.py          # Pydantic models
-└── main.py           # FastAPI app entry point
+backend/               # Backend FastAPI application
+├── app/
+│   ├── repositories/ # Data access layer (memory + PostgreSQL)
+│   ├── routers/      # API endpoints
+│   ├── models.py     # Pydantic models
+│   └── main.py       # FastAPI app entry point
+├── tests/            # Backend tests
+│   ├── api/          # API endpoint tests
+│   ├── models/       # Model tests
+│   └── test_backend_admin_security.py  # Security regression tests
+└── requirements.txt  # Python dependencies
 
-web/                   # Frontend Astro/React application
+frontend/              # Frontend Astro/React application
 ├── src/
 │   ├── components/    # React components
 │   ├── pages/        # Astro pages
 │   ├── stores/       # State management
 │   └── test/         # Frontend tests
-
-tests/                 # Backend tests
-├── api/              # API endpoint tests
-├── models/           # Model tests
-└── test_backend_admin_security.py  # Security regression tests
+├── package.json      # Node.js dependencies
+└── vitest.config.js  # Test configuration
 ```
 
 ## Common Tasks & Commands
@@ -146,24 +149,24 @@ tests/                 # Backend tests
 ### Development
 ```bash
 # Start backend (from root)
-python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+cd backend && python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 
-# Start frontend (from web/)
-cd web && npm run dev
+# Start frontend (from root)
+cd frontend && npm run dev
 
 # Install dependencies
-pip install -r requirements.txt
-cd web && npm install
+cd backend && pip install -r requirements.txt
+cd frontend && npm install
 ```
 
 ### Testing (TDD Workflow)
 ```bash
 # Run all tests
-python -m pytest tests/ -v && cd web && npm run test:run
+cd backend && python -m pytest tests/ -v && cd ../frontend && npm run test:run
 
 # Watch mode for TDD
-python -m pytest tests/ --looponfail &  # Backend watch
-cd web && npm test                       # Frontend watch
+cd backend && python -m pytest tests/ --looponfail &  # Backend watch
+cd frontend && npm test                               # Frontend watch
 ```
 
 ## When Helping with Code

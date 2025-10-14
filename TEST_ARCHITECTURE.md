@@ -4,7 +4,7 @@ This project uses a proper separation between frontend and backend testing frame
 
 ## Backend Tests (Python/pytest)
 
-Located in: `tests/`
+Located in: `backend/tests/`
 
 **Framework:** pytest
 **Purpose:** API logic, database operations, business logic, security
@@ -16,7 +16,8 @@ Located in: `tests/`
 
 ### Running Backend Tests:
 ```bash
-# From project root
+# From backend directory
+cd backend/
 python -m pytest tests/ -v
 
 # Or with coverage
@@ -25,7 +26,7 @@ python -m pytest tests/ --cov=app --cov-report=html
 
 ## Frontend Tests (JavaScript/Vitest)
 
-Located in: `web/src/test/`
+Located in: `frontend/src/test/`
 
 **Framework:** Vitest + React Testing Library
 **Purpose:** Component behavior, user interactions, UI logic, frontend race conditions
@@ -35,22 +36,14 @@ Located in: `web/src/test/`
 - `components/CheckIn.test.jsx` - Race condition fixes and checkout logic
 - `integration/` - Integration tests (future)
 
-### Running Frontend Tests:
+### Testing (TDD Workflow)
 ```bash
-# From web/ directory
-cd web/
+# Run all tests
+cd backend && python -m pytest tests/ -v && cd ../frontend && npm run test:run
 
-# Run tests
-npm test
-
-# Run tests once
-npm run test:run
-
-# Run with UI
-npm run test:ui
-
-# Run with coverage
-npm run coverage
+# Watch mode for TDD
+cd backend && python -m pytest tests/ --looponfail &  # Backend watch
+cd frontend && npm test                                # Frontend watch
 ```
 
 ## Test Coverage Summary

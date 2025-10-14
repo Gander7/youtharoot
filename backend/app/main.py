@@ -1,3 +1,4 @@
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -9,7 +10,42 @@ from app.database import init_database
 from app.repositories import init_repositories
 from app.config import settings
 
-app = FastAPI(title="Youtharoot API", description="API for managing youth group attendance")
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup
+    print(f"🚀 Starting Youtharoot API")
+    print(f"📊 Database type: {settings.DATABASE_TYPE}")
+    print(f"🔧 Debug mode: {settings.DEBUG}")
+    print(f"💾 Database URL present: {'Yes' if settings.DATABASE_URL else 'No'}")
+    
+    # Mask sensitive info in database URL for security
+    if settings.database_url:
+        # Extract just the scheme and host for logging
+        try:
+            from urllib.parse import urlparse
+            parsed = urlparse(settings.database_url)
+            safe_url = f"{parsed.scheme}://{'***:***@' if parsed.username else ''}{parsed.hostname}{':' + str(parsed.port) if parsed.port else ''}{parsed.path}"
+            print(f"🔗 Database connection: {safe_url}")
+        except Exception:
+            print(f"🔗 Database connection: [URL parsing error - connection configured]")
+    else:
+        print(f"🔗 Database connection: In-memory storage")
+    
+    init_database()
+    init_repositories()
+    
+    print("✅ Application startup complete")
+    
+    yield
+    
+    # Shutdown (if needed)
+    print("🛑 Application shutdown")
+
+app = FastAPI(
+    title="Youtharoot API", 
+    description="API for managing youth group attendance",
+    lifespan=lifespan
+)
 
 # Configure CORS
 cors_origins = [
@@ -33,20 +69,6 @@ app.add_middleware(
     allow_headers=["*"],
     expose_headers=["*"],
 )
-
-# Initialize database and repositories on startup
-@app.on_event("startup")
-async def startup_event():
-    print(f"🚀 Starting Youtharoot API")
-    print(f"📊 Database type: {settings.DATABASE_TYPE}")
-    print(f"🔧 Debug mode: {settings.DEBUG}")
-    print(f"💾 Database URL present: {'Yes' if settings.DATABASE_URL else 'No'}")
-    print(f"🔗 Effective database URL: {settings.database_url}")
-    
-    init_database()
-    init_repositories()
-    
-    print("✅ Application startup complete")
 
 app.include_router(person_router)
 app.include_router(event_router)

@@ -96,7 +96,7 @@ If you prefer command-line deployment:
 1. **Connect Vercel to GitHub:**
    - Go to [vercel.com](https://vercel.com)
    - Import your GitHub repository
-   - Set the **Root Directory** to `web/`
+   - Set the **Root Directory** to `frontend/`
 
 2. **Environment Variables in Vercel:**
    ```
@@ -116,7 +116,7 @@ Deploy both frontend and backend on Railway using multiple services:
 2. **Add Frontend Service:**
    - In Railway dashboard: "New Service" → "GitHub Repo"
    - **Same repository** but set:
-     - **Root Directory**: `web/`
+     - **Root Directory**: `frontend/`
      - **Build Command**: `npm run build`
      - **Start Command**: `npm run preview`
 

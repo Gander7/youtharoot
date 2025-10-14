@@ -127,15 +127,23 @@ async def get_current_admin_user(current_user: User = Depends(get_current_user))
     return current_user
 
 
-async def authenticate_user(username: str, password: str, db: Session) -> Union[User, bool]:
+async def authenticate_user(username: str, password: str, db: Session = None) -> Union[User, bool]:
     """Authenticate a user by username and password."""
     user_repo = get_user_repository(db)
+    
+    if not user_repo:
+        print("❌ User repository not available")
+        return False
+    
     user = await user_repo.get_user_by_username(username)
     
     if not user:
+        print(f"❌ User '{username}' not found")
         return False
     
     if not verify_password(password, user.password_hash):
+        print(f"❌ Invalid password for user '{username}'")
         return False
     
+    print(f"✅ User '{username}' authenticated successfully")
     return user

@@ -56,7 +56,7 @@ VALUES ('{username}', '{password_hash}', 'admin', '{current_time}', '{current_ti
     print(postgresql_sql)
     
     # For in-memory (development)
-    print("\n-- For in-memory database (development), add to app/repositories/memory.py:")
+    print("\n-- For in-memory database (development), add to backend/app/repositories/memory.py:")
     memory_code = f"""User(
     id=1,  # or next available ID
     username="{username}",

@@ -310,6 +310,23 @@ export default function CheckIn({ eventId, viewOnly = false }) {
     return `${time} ${timezone}`;
   };
 
+  // Helper functions to safely parse event date in local timezone
+  const parseEventDate = (dateStr) => {
+    if (!dateStr) return new Date();
+    const [year, month, day] = dateStr.split('-').map(Number);
+    return new Date(year, month - 1, day);
+  };
+
+  const getEventDisplayDate = (dateStr) => {
+    return parseEventDate(dateStr).toLocaleDateString();
+  };
+
+  const getEventDisplayDateLong = (dateStr) => {
+    return parseEventDate(dateStr).toLocaleDateString('en-US', { 
+      weekday: 'long', month: 'long', day: 'numeric' 
+    });
+  };
+
   const getAvailableCount = () => {
     const checkedInIds = attendees.map(a => a.person_id);
     return allPeople.filter(person => !checkedInIds.includes(person.id)).length;
@@ -328,12 +345,14 @@ export default function CheckIn({ eventId, viewOnly = false }) {
     if (!event) return false;
     
     const now = new Date();
-    const eventDate = new Date(event.date);
+    
+    // Parse the event date properly to avoid timezone issues
+    // event.date comes as "YYYY-MM-DD" format from the server
+    const [year, month, day] = event.date.split('-').map(Number);
     const [hours, minutes] = event.end_time.split(':').map(Number);
     
-    // Set the end time for the event date
-    const eventEndTime = new Date(eventDate);
-    eventEndTime.setHours(hours, minutes, 0, 0);
+    // Create the end time in local timezone (not UTC)
+    const eventEndTime = new Date(year, month - 1, day, hours, minutes, 0, 0);
     
     return now > eventEndTime;
   };
@@ -443,7 +462,7 @@ export default function CheckIn({ eventId, viewOnly = false }) {
             </Typography>
             {event && (
               <Typography variant="subtitle1" color="text.secondary">
-                {event.name} • {new Date(event.date).toLocaleDateString()}
+                {event.name} • {getEventDisplayDate(event.date)}
                 {viewOnly && (
                   <Typography component="span" sx={{ ml: 1, color: 'warning.main', fontWeight: 'medium' }}>
                     (View Only)
@@ -465,9 +484,7 @@ export default function CheckIn({ eventId, viewOnly = false }) {
                 <Box>
                   <Typography variant="h6">{event.name}</Typography>
                   <Typography variant="body2" color="text.secondary">
-                    📅 {new Date(event.date).toLocaleDateString('en-US', { 
-                      weekday: 'long', month: 'long', day: 'numeric' 
-                    })}
+                    📅 {getEventDisplayDateLong(event.date)}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
                     ⏰ {event.start_time} - {event.end_time}

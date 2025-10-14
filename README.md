@@ -91,23 +91,29 @@ An API-first, mobile-friendly platform for managing youth group events, attendan
 	python -m venv venv
 	source venv/bin/activate
 	```
-3. **Install dependencies:**
+3. **Install backend dependencies:**
 	```bash
+	cd backend
 	pip install -r requirements.txt
 	```
-4. **Run the API server:**
+4. **Install frontend dependencies:**
 	```bash
-	source venv/bin/activate
+	cd ../frontend
+	npm install
+	```
+5. **Run the API server:**
+	```bash
+	cd ../backend
 	python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 	```
 
-5. **Run the frontend (in another terminal):**
+6. **Run the frontend (in another terminal):**
 	```bash
-	cd web
+	cd frontend
 	npm run dev
 	```
 
-6. **Access the application:**
+7. **Access the application:**
 	- Frontend: http://localhost:4321
 	- API Documentation: http://localhost:8000/docs
 
@@ -149,6 +155,23 @@ See [DEPLOYMENT.md](DEPLOYMENT.md) for detailed deployment instructions.
 
 ---
 
+## 🔐 Demo Credentials
+
+For development and testing, the application creates a default admin user with these credentials:
+
+```
+Username: admin
+Password: admin123
+```
+
+**⚠️ Important Security Notes:**
+- These credentials are set via the `ADMIN_PASSWORD` environment variable
+- In production, **always** change the default password via environment variables
+- The application uses bcrypt password hashing for security
+- JWT tokens expire after 2 hours for security
+
+---
+
 ## 🧪 Testing
 
 This project uses a proper separation between frontend and backend testing frameworks for optimal development experience.
@@ -158,6 +181,9 @@ This project uses a proper separation between frontend and backend testing frame
 Tests API logic, database operations, business logic, and security.
 
 ```bash
+# Navigate to backend directory
+cd backend/
+
 # Run all backend tests
 python -m pytest tests/ -v
 
@@ -173,8 +199,8 @@ python -m pytest tests/test_backend_admin_security.py -v
 Tests React components, user interactions, UI logic, and frontend race conditions.
 
 ```bash
-# Navigate to web directory
-cd web/
+# Navigate to frontend directory
+cd frontend/
 
 # Run tests (watch mode)
 npm test
@@ -199,17 +225,23 @@ npm run coverage
 ### **Test Architecture**
 
 ```
-📁 tests/                          # Backend (Python/pytest)
-├── test_backend_admin_security.py  # Admin initialization security
-├── api/test_*.py                   # API endpoint tests
-└── models/test_*.py                # Model validation tests
+📁 backend/
+├── tests/                          # Backend (Python/pytest)
+│   ├── test_backend_admin_security.py  # Admin initialization security
+│   ├── api/test_*.py                   # API endpoint tests
+│   └── models/test_*.py                # Model validation tests
+├── app/                            # FastAPI application
+└── requirements.txt                # Python dependencies
 
-📁 web/src/test/                    # Frontend (JavaScript/Vitest)
-├── components/
-│   ├── ErrorBoundary.test.jsx     # Crash prevention tests
-│   └── CheckIn.test.jsx           # Race condition tests  
-├── integration/                   # Future integration tests
-└── setup.js                       # Test configuration
+📁 frontend/
+├── src/test/                       # Frontend (JavaScript/Vitest)
+│   ├── components/
+│   │   ├── ErrorBoundary.test.jsx     # Crash prevention tests
+│   │   └── CheckIn.test.jsx           # Race condition tests  
+│   ├── integration/                   # Future integration tests
+│   └── setup.js                      # Test configuration
+├── src/                            # React/Astro source code
+└── package.json                    # Node.js dependencies
 ```
 
 See [TEST_ARCHITECTURE.md](TEST_ARCHITECTURE.md) for detailed testing documentation.

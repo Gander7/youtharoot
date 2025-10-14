@@ -1,14 +1,28 @@
 import pytest
 from fastapi.testclient import TestClient
 from app.main import app
-from app.routers.event import event_store
+from app.repositories.memory import InMemoryEventRepository
+from tests.test_helpers import get_authenticated_client
 
-client = TestClient(app)
+# Use authenticated client for all tests
+client = get_authenticated_client()
 EVENT_ENDPOINT = "/event"
 
 @pytest.fixture(autouse=True)
 def clear_event_store():
-    event_store.clear()
+    """Clear event store for each test."""
+    # Get the memory repository instance and clear it
+    from app.repositories import get_event_repository
+    from app.database import get_db
+    
+    # Create a mock session for memory repository
+    class MockSession:
+        pass
+    
+    mock_session = MockSession()
+    event_repo = get_event_repository(mock_session)
+    if isinstance(event_repo, InMemoryEventRepository):
+        event_repo.store.clear()
 
 def make_checkin_checkout(event_date, check_in_time, check_out_time):
     from zoneinfo import ZoneInfo

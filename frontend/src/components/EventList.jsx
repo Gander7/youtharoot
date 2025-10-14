@@ -84,8 +84,15 @@ const darkTheme = createTheme({
 });
 
 const EventForm = ({ open, onClose, event, onSave }) => {
-  // Get today's date in YYYY-MM-DD format
-  const today = new Date().toISOString().split('T')[0];
+  // Get today's date in YYYY-MM-DD format in local timezone
+  const getLocalDateString = (date = new Date()) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+  
+  const today = getLocalDateString();
   
   const [formData, setFormData] = useState({
     date: today,
@@ -96,6 +103,30 @@ const EventForm = ({ open, onClose, event, onSave }) => {
     location: 'BLT',
     ...event
   });
+
+  // Update form data when event prop changes (for editing)
+  useEffect(() => {
+    if (event) {
+      setFormData({
+        date: event.date || today,
+        name: event.name || 'Youth Group',
+        desc: event.desc || '',
+        start_time: event.start_time || '19:00',
+        end_time: event.end_time || '21:00',
+        location: event.location || 'BLT',
+      });
+    } else {
+      // Reset to defaults for new event
+      setFormData({
+        date: today,
+        name: 'Youth Group',
+        desc: '',
+        start_time: '19:00',
+        end_time: '21:00',
+        location: 'BLT',
+      });
+    }
+  }, [event, today]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

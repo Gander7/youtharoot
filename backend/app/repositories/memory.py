@@ -106,9 +106,24 @@ class InMemoryEventRepository(EventRepository):
         if event_id not in self.store:
             raise ValueError(f"Event with ID {event_id} not found")
         
-        event.id = event_id  # Ensure ID matches
-        self.store[event_id] = event
-        return event
+        # Get the existing event to preserve attendance data
+        existing_event = self.store[event_id]
+        
+        # Update only the editable fields, preserve attendance data
+        updated_event = Event(
+            id=event_id,
+            date=event.date,
+            name=event.name,
+            desc=event.desc,
+            start_time=event.start_time,
+            end_time=event.end_time,
+            location=event.location,
+            youth=existing_event.youth,  # Preserve existing attendance
+            leaders=existing_event.leaders  # Preserve existing attendance
+        )
+        
+        self.store[event_id] = updated_event
+        return updated_event
     
     async def delete_event(self, event_id: int) -> bool:
         if event_id not in self.store:

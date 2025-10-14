@@ -1,9 +1,27 @@
 import pytest
 from fastapi.testclient import TestClient
 from app.main import app
+from app.repositories.memory import InMemoryPersonRepository
+from tests.test_helpers import get_authenticated_client
 
-client = TestClient(app)
+# Use authenticated client for all tests
+client = get_authenticated_client()
 PERSON_ENDPOINT = "/person"
+
+@pytest.fixture(autouse=True)
+def clear_person_store():
+    """Clear person store for each test."""
+    # Get the memory repository instance and clear it
+    from app.repositories import get_person_repository
+    
+    # Create a mock session for memory repository
+    class MockSession:
+        pass
+    
+    mock_session = MockSession()
+    person_repo = get_person_repository(mock_session)
+    if isinstance(person_repo, InMemoryPersonRepository):
+        person_repo.store.clear()
 
 def valid_youth_payload():
     return {
@@ -33,10 +51,6 @@ def valid_leader_payload():
     "first_name",
     "last_name",
     "birth_date",
-    "grade",
-    "emergency_contact_name",
-    "emergency_contact_phone",
-    "emergency_contact_relationship"
 ])
 def test_missing_required_youth_field_returns_422(missing_field):
     payload = valid_youth_payload()
@@ -44,6 +58,19 @@ def test_missing_required_youth_field_returns_422(missing_field):
     response = client.post(PERSON_ENDPOINT, json=payload)
     print(f"DEBUG: Response status code: {response.status_code}")
     assert response.status_code == 422
+
+@pytest.mark.parametrize("missing_field", [
+    "grade",
+    "emergency_contact_name",
+    "emergency_contact_phone",
+    "emergency_contact_relationship"
+])
+def test_missing_optional_youth_field_returns_200(missing_field):
+    payload = valid_youth_payload()
+    del payload[missing_field]
+    response = client.post(PERSON_ENDPOINT, json=payload)
+    print(f"DEBUG: Response status code: {response.status_code}")
+    assert response.status_code == 200
 
 @pytest.mark.parametrize("missing_field", [
     "first_name",
