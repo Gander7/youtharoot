@@ -134,8 +134,9 @@ class MessageDB(Base):
     sent_by = Column(BigInteger, ForeignKey("users.id"), nullable=False)
     status = Column(String(20), default="queued", nullable=False, index=True)  # queued, sending, sent, delivered, failed
     
-    # Individual message recipient (for non-group messages)
+    # Individual message recipient (for non-group messages and tracking in group messages)
     recipient_phone = Column(String(20), nullable=True, index=True)  # For individual SMS messages
+    recipient_person_id = Column(BigInteger, ForeignKey("persons.id"), nullable=True, index=True)  # Link to person record
     
     # External service tracking
     twilio_sid = Column(String(100), nullable=True, index=True)  # Twilio message SID

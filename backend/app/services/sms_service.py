@@ -256,14 +256,28 @@ class SMSService:
         Raises:
             ValidationError: If webhook signature is invalid
         """
+        print(f"🔍 SMS Service webhook validation:")
+        print(f"   URL: {url}")
+        print(f"   Signature: {signature}")
+        print(f"   Webhook data: {webhook_data}")
+        print(f"   Auth token configured: {bool(self.client.auth[1] if hasattr(self.client, 'auth') else False)}")
+        
         # Validate webhook signature for security
-        if not self.validator.validate(url, webhook_data, signature):
+        is_valid = self.validator.validate(url, webhook_data, signature)
+        print(f"   Signature valid: {is_valid}")
+        
+        if not is_valid:
             logger.warning(f"Invalid webhook signature for URL: {url}")
+            print(f"❌ Webhook validation failed!")
             raise ValidationError("Invalid webhook signature")
         
         message_sid = webhook_data.get("MessageSid")
         message_status = webhook_data.get("MessageStatus")
         error_code = webhook_data.get("ErrorCode")
+        
+        print(f"   Message SID: {message_sid}")
+        print(f"   Message Status: {message_status}")
+        print(f"   Error Code: {error_code}")
         
         logger.info(f"Processing webhook for message {message_sid}, status: {message_status}")
         
@@ -289,6 +303,7 @@ class SMSService:
                 self.db.commit()
                 updated = True
                 logger.info(f"Updated message {message_sid} status to {message_status}")
+                print(f"✅ Message status updated in database")
         
         return {
             "valid": True,

@@ -18,7 +18,20 @@ import {
   ListItem,
   ListItemText,
   ListItemIcon,
-  Divider
+  Divider,
+  Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+  IconButton
 } from '@mui/material';
 import { 
   CheckCircle, 
@@ -27,7 +40,9 @@ import {
   Send,
   Group,
   Person,
-  Phone
+  Phone,
+  Visibility,
+  Close
 } from '@mui/icons-material';
 import { apiRequest } from '../stores/auth';
 
@@ -53,10 +68,11 @@ function MessageStatusChip({ status }) {
           label: 'Sent'
         };
       case 'queued':
+      case 'sending':
         return { 
           color: 'default', 
           icon: <Schedule fontSize="small" />,
-          label: 'Queued'
+          label: 'Pending'
         };
       default:
         return { 
@@ -80,7 +96,108 @@ function MessageStatusChip({ status }) {
   );
 }
 
-function MessageCard({ message }) {
+function GroupMessageDetailsDialog({ open, onClose, groupId, messageContent, sendTime }) {
+  const [loading, setLoading] = useState(false);
+  const [recipients, setRecipients] = useState([]);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    if (open && groupId && messageContent && sendTime) {
+      loadRecipientDetails();
+    }
+  }, [open, groupId, messageContent, sendTime]);
+
+  const loadRecipientDetails = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const params = new URLSearchParams({
+        message_content: messageContent,
+        send_time: sendTime
+      });
+      
+      const response = await apiRequest(`/api/sms/history/group/${groupId}/details?${params}`);
+      if (response.ok) {
+        const data = await response.json();
+        setRecipients(data);
+      } else {
+        throw new Error('Failed to load recipient details');
+      }
+    } catch (err) {
+      setError('Failed to load recipient details');
+      console.error('Error loading recipient details:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const formatDate = (dateString) => {
+    if (!dateString) return 'N/A';
+    return new Date(dateString).toLocaleString();
+  };
+
+  return (
+    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
+      <DialogTitle>
+        <Box display="flex" justifyContent="space-between" alignItems="center">
+          <Typography variant="h6">Group Message Recipients</Typography>
+          <IconButton onClick={onClose}>
+            <Close />
+          </IconButton>
+        </Box>
+      </DialogTitle>
+      <DialogContent>
+        {loading ? (
+          <Box display="flex" justifyContent="center" p={3}>
+            <CircularProgress />
+          </Box>
+        ) : error ? (
+          <Alert severity="error">{error}</Alert>
+        ) : (
+          <TableContainer component={Paper}>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell>Recipient</TableCell>
+                  <TableCell>Phone Number</TableCell>
+                  <TableCell>Status</TableCell>
+                  <TableCell>Sent At</TableCell>
+                  <TableCell>Delivered At</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {recipients.map((recipient, index) => (
+                  <TableRow key={index}>
+                    <TableCell>{recipient.person_name}</TableCell>
+                    <TableCell>{recipient.phone_number || 'N/A'}</TableCell>
+                    <TableCell>
+                      <MessageStatusChip status={recipient.status} />
+                      {recipient.failure_reason && (
+                        <Typography variant="caption" color="error" display="block">
+                          {recipient.failure_reason}
+                        </Typography>
+                      )}
+                    </TableCell>
+                    <TableCell>{formatDate(recipient.sent_at)}</TableCell>
+                    <TableCell>{formatDate(recipient.delivered_at)}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        )}
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={onClose}>Close</Button>
+      </DialogActions>
+    </Dialog>
+  );
+}
+
+function TopLevelMessageCard({ message, onViewDetails }) {
+  console.log('Rendering TopLevelMessageCard with message:', message);
+  
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleString();
   };
@@ -90,33 +207,60 @@ function MessageCard({ message }) {
     return text.substring(0, maxLength) + '...';
   };
 
+  const isGroupMessage = message.message_type === 'group';
+
   return (
     <Card sx={{ mb: 2 }}>
       <CardContent>
         <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={2}>
           <Box flex={1}>
             <Box display="flex" alignItems="center" mb={1}>
-              {message.group_id ? (
+              {isGroupMessage ? (
                 <Group fontSize="small" color="action" sx={{ mr: 1 }} />
               ) : (
                 <Person fontSize="small" color="action" sx={{ mr: 1 }} />
               )}
               <Typography variant="subtitle2">
-                {message.group_name || 'Individual Message'}
+                {isGroupMessage ? message.group_name : message.recipient_name}
               </Typography>
             </Box>
             
-            {!message.group_id && (
+            {!isGroupMessage && message.recipient_phone && (
               <Box display="flex" alignItems="center" mb={1}>
                 <Phone fontSize="small" color="action" sx={{ mr: 1 }} />
                 <Typography variant="body2" color="text.secondary">
-                  {message.recipient_phone || 'Phone number not available'}
+                  {message.recipient_phone}
+                </Typography>
+              </Box>
+            )}
+
+            {isGroupMessage && (
+              <Box display="flex" alignItems="center" mb={1}>
+                <Typography variant="body2" color="text.secondary">
+                  {message.total_recipients} recipients
                 </Typography>
               </Box>
             )}
           </Box>
           
-          <MessageStatusChip status={message.status} />
+          {!isGroupMessage ? (
+            <MessageStatusChip status={message.status} />
+          ) : (
+            <Box display="flex" gap={0.5} flexWrap="wrap">
+              {message.delivered_count > 0 && (
+                <Chip size="small" color="success" label={`${message.delivered_count} delivered`} />
+              )}
+              {message.sent_count > 0 && (
+                <Chip size="small" color="primary" label={`${message.sent_count} sent`} />
+              )}
+              {message.failed_count > 0 && (
+                <Chip size="small" color="error" label={`${message.failed_count} failed`} />
+              )}
+              {message.pending_count > 0 && (
+                <Chip size="small" color="default" label={`${message.pending_count} pending`} />
+              )}
+            </Box>
+          )}
         </Box>
 
         <Typography variant="body2" sx={{ mb: 2 }}>
@@ -128,25 +272,15 @@ function MessageCard({ message }) {
             Sent: {formatDate(message.created_at)}
           </Typography>
           
-          {message.delivered_at && (
-            <Typography variant="caption" color="text.secondary">
-              Delivered: {formatDate(message.delivered_at)}
-            </Typography>
-          )}
-          
-          {message.twilio_sid && (
-            <Typography variant="caption" color="text.secondary" sx={{ fontFamily: 'monospace' }}>
-              ID: {message.twilio_sid}
-            </Typography>
-          )}
-          
-          {message.error_code && (
-            <Chip
+          {isGroupMessage && (
+            <Button
               size="small"
-              label={`Error: ${message.error_code}`}
-              color="error"
+              startIcon={<Visibility />}
+              onClick={() => onViewDetails(message)}
               variant="outlined"
-            />
+            >
+              View Details
+            </Button>
           )}
         </Box>
       </CardContent>
@@ -156,39 +290,21 @@ function MessageCard({ message }) {
 
 function MessageHistory({ refreshTrigger }) {
   const [messages, setMessages] = useState([]);
-  const [groups, setGroups] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   
-  // Filters
-  const [groupFilter, setGroupFilter] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
-  const [searchTerm, setSearchTerm] = useState('');
+  // Dialog state for group message details
+  const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
+  const [selectedGroupMessage, setSelectedGroupMessage] = useState(null);
   
   // Pagination
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const messagesPerPage = 10;
-
-  useEffect(() => {
-    loadGroups();
-  }, []);
+  const messagesPerPage = 20;
 
   useEffect(() => {
     loadMessages();
-  }, [refreshTrigger, page, groupFilter, statusFilter, searchTerm]);
-
-  const loadGroups = async () => {
-    try {
-      const response = await apiRequest('/groups');
-      if (response.ok) {
-        const groupsData = await response.json();
-        setGroups(groupsData);
-      }
-    } catch (err) {
-      console.error('Error loading groups:', err);
-    }
-  };
+  }, [refreshTrigger, page]);
 
   const loadMessages = async () => {
     try {
@@ -196,27 +312,22 @@ function MessageHistory({ refreshTrigger }) {
       setError(null);
       
       const params = new URLSearchParams({
-        page: page.toString(),
-        limit: messagesPerPage.toString()
+        limit: messagesPerPage.toString(),
+        offset: ((page - 1) * messagesPerPage).toString(),
+        days: '30'  // Default to last 30 days
       });
-      
-      if (groupFilter) {
-        params.append('group_id', groupFilter);
-      }
-      
-      if (statusFilter) {
-        params.append('status', statusFilter);
-      }
-      
-      if (searchTerm) {
-        params.append('search', searchTerm);
-      }
 
-      const response = await apiRequest(`/api/sms/history?${params}`);
+      console.log('Loading messages from:', `/api/sms/history/top-level?${params}`);
+      const response = await apiRequest(`/api/sms/history/top-level?${params}`);
       if (response.ok) {
         const data = await response.json();
+        console.log('Received message data:', data);
         setMessages(data.messages || []);
-        setTotalPages(Math.ceil((data.total || 0) / messagesPerPage));
+        setTotalPages(Math.ceil((data.total_count || 0) / messagesPerPage));
+      } else {
+        const errorText = await response.text();
+        console.error('API error:', response.status, errorText);
+        throw new Error(`API returned ${response.status}`);
       }
       
     } catch (err) {
@@ -227,77 +338,28 @@ function MessageHistory({ refreshTrigger }) {
     }
   };
 
-  const handlePageChange = (event, newPage) => {
-    setPage(newPage);
+  const handleViewDetails = (message) => {
+    setSelectedGroupMessage(message);
+    setDetailsDialogOpen(true);
   };
 
-  const resetFilters = () => {
-    setGroupFilter('');
-    setStatusFilter('');
-    setSearchTerm('');
-    setPage(1);
+  const handleCloseDetails = () => {
+    setDetailsDialogOpen(false);
+    setSelectedGroupMessage(null);
+  };
+
+  const handlePageChange = (event, newPage) => {
+    setPage(newPage);
   };
 
   return (
     <Box>
       <Typography variant="h6" gutterBottom>
         Message History
+        <Typography variant="body2" color="text.secondary" component="span" sx={{ ml: 1 }}>
+          (Last 30 days)
+        </Typography>
       </Typography>
-
-      {/* Filters */}
-      <Card sx={{ mb: 3 }}>
-        <CardContent>
-          <Grid container spacing={2} alignItems="center">
-            <Grid item xs={12} sm={4}>
-              <FormControl fullWidth size="small">
-                <InputLabel>Filter by Group</InputLabel>
-                <Select
-                  value={groupFilter}
-                  onChange={(e) => setGroupFilter(e.target.value)}
-                  label="Filter by Group"
-                >
-                  <MenuItem value="">All Messages</MenuItem>
-                  <MenuItem value="individual">Individual Messages</MenuItem>
-                  {groups.map((group) => (
-                    <MenuItem key={group.id} value={group.id}>
-                      {group.name}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
-            
-            <Grid item xs={12} sm={4}>
-              <FormControl fullWidth size="small">
-                <InputLabel>Filter by Status</InputLabel>
-                <Select
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                  label="Filter by Status"
-                >
-                  <MenuItem value="">All Statuses</MenuItem>
-                  <MenuItem value="queued">Queued</MenuItem>
-                  <MenuItem value="sent">Sent</MenuItem>
-                  <MenuItem value="delivered">Delivered</MenuItem>
-                  <MenuItem value="failed">Failed</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
-            
-            <Grid item xs={12} sm={4}>
-              <TextField
-                fullWidth
-                size="small"
-                label="Search messages"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Search in message content..."
-                inputProps={{ "aria-label": "Search messages" }}
-              />
-            </Grid>
-          </Grid>
-        </CardContent>
-      </Card>
 
       {error && (
         <Alert severity="error" sx={{ mb: 2 }}>
@@ -311,8 +373,7 @@ function MessageHistory({ refreshTrigger }) {
         </Box>
       ) : messages.length === 0 ? (
         <Alert severity="info">
-          No messages found. {(groupFilter || statusFilter || searchTerm) && 
-            'Try adjusting your filters or '}Send your first message to get started!
+          No messages found in the last 30 days. Send your first message to get started!
         </Alert>
       ) : (
         <>
@@ -320,8 +381,14 @@ function MessageHistory({ refreshTrigger }) {
             Showing {messages.length} messages
           </Typography>
           
+          {console.log('Rendering messages:', messages)}
+          
           {messages.map((message) => (
-            <MessageCard key={message.id} message={message} />
+            <TopLevelMessageCard 
+              key={message.id} 
+              message={message} 
+              onViewDetails={handleViewDetails}
+            />
           ))}
 
           {totalPages > 1 && (
@@ -337,6 +404,15 @@ function MessageHistory({ refreshTrigger }) {
           )}
         </>
       )}
+
+      {/* Group Message Details Dialog */}
+      <GroupMessageDetailsDialog
+        open={detailsDialogOpen}
+        onClose={handleCloseDetails}
+        groupId={selectedGroupMessage?.group_id}
+        messageContent={selectedGroupMessage?.content}
+        sendTime={selectedGroupMessage?.created_at}
+      />
     </Box>
   );
 }

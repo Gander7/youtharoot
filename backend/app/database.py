@@ -43,10 +43,38 @@ def evolve_schema(engine):
                     """))
                     print("✅ Added recipient_phone column to messages table")
                 
+                # Add recipient_person_id column if it doesn't exist
+                result = conn.execute(text("""
+                    SELECT column_name FROM information_schema.columns 
+                    WHERE table_name = 'messages' AND column_name = 'recipient_person_id'
+                """))
+                
+                if not result.fetchone():
+                    conn.execute(text("""
+                        ALTER TABLE messages 
+                        ADD COLUMN recipient_person_id BIGINT REFERENCES persons(id)
+                    """))
+                    print("✅ Added recipient_person_id column to messages table")
+                
                 conn.commit()
                 print("🎉 Schema evolution completed successfully!")
             else:
-                print("✅ Messages table schema is already up to date")
+                # Check for recipient_person_id even if group_id is already nullable
+                result = conn.execute(text("""
+                    SELECT column_name FROM information_schema.columns 
+                    WHERE table_name = 'messages' AND column_name = 'recipient_person_id'
+                """))
+                
+                if not result.fetchone():
+                    print("🔄 Adding recipient_person_id column to messages table...")
+                    conn.execute(text("""
+                        ALTER TABLE messages 
+                        ADD COLUMN recipient_person_id BIGINT REFERENCES persons(id)
+                    """))
+                    conn.commit()
+                    print("✅ Added recipient_person_id column to messages table")
+                else:
+                    print("✅ Messages table schema is already up to date")
                 
     except Exception as e:
         print(f"⚠️ Schema evolution error (this may be normal for new installations): {e}")

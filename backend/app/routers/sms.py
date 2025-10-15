@@ -69,6 +69,48 @@ class MessageHistoryResponse(BaseModel):
     group_id: Optional[int] = None
 
 
+class MessageRecipientDetail(BaseModel):
+    """Individual recipient detail for group messages."""
+    person_id: int
+    person_name: str
+    phone_number: Optional[str]
+    status: str
+    twilio_sid: Optional[str] = None
+    sent_at: Optional[str] = None
+    delivered_at: Optional[str] = None
+    failed_at: Optional[str] = None
+    failure_reason: Optional[str] = None
+
+
+class HistoryHeaderMessage(BaseModel):
+    """Top-level message summary for history display."""
+    id: int
+    message_type: str  # 'individual' or 'group'
+    content: str
+    created_at: str
+    sent_by: int
+    
+    # Individual message fields
+    recipient_name: Optional[str] = None
+    recipient_phone: Optional[str] = None
+    status: Optional[str] = None
+    
+    # Group message fields
+    group_id: Optional[int] = None
+    group_name: Optional[str] = None
+    total_recipients: Optional[int] = None
+    sent_count: Optional[int] = None
+    delivered_count: Optional[int] = None
+    failed_count: Optional[int] = None
+    pending_count: Optional[int] = None
+
+
+class HistoryHeaderMessageResponse(BaseModel):
+    """Response model for top-level message history."""
+    messages: List[HistoryHeaderMessage]
+    total_count: int
+
+
 class SMSAnalyticsResponse(BaseModel):
     """Response model for SMS analytics."""
     total_sent: int
@@ -135,6 +177,7 @@ async def send_individual_sms(
                 channel=MessageChannel.SMS,
                 content=request.message,
                 recipient_phone=request.phone_number,  # Store recipient phone for individual messages
+                recipient_person_id=request.person_id,  # Store person ID if provided
                 sent_by=current_user.id,
                 status=MessageStatus.SENT,
                 twilio_sid=result["message_sid"],
@@ -225,6 +268,8 @@ async def send_group_sms(
                         channel=MessageChannel.SMS,
                         content=request.message,
                         group_id=request.group_id,
+                        recipient_phone=recipient["phone_number"],
+                        recipient_person_id=recipient["id"],
                         sent_by=current_user.id,
                         status=MessageStatus.SENT,
                         twilio_sid=result["message_sid"],
@@ -233,6 +278,20 @@ async def send_group_sms(
                     db.add(message_record)
                 else:
                     failed_count += 1
+                    
+                    # Log failed message to database
+                    message_record = MessageDB(
+                        channel=MessageChannel.SMS,
+                        content=request.message,
+                        group_id=request.group_id,
+                        recipient_phone=recipient["phone_number"],
+                        recipient_person_id=recipient["id"],
+                        sent_by=current_user.id,
+                        status=MessageStatus.FAILED,
+                        failure_reason=result.get("error", "Unknown error"),
+                        failed_at=datetime.now(timezone.utc)
+                    )
+                    db.add(message_record)
                 
                 results.append({
                     "person_id": recipient["id"],
@@ -347,6 +406,243 @@ async def get_message_history(
         )
 
 
+@router.get("/history/top-level", response_model=HistoryHeaderMessageResponse)
+async def get_top_level_message_history(
+    days: int = Query(30, ge=1, le=365, description="Number of days to look back"),
+    limit: int = Query(50, ge=1, le=100, description="Maximum number of messages"),
+    offset: int = Query(0, ge=0, description="Number of messages to skip"),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Get top-level message history showing individual messages and group message summaries.
+    
+    Returns:
+    - Individual messages with recipient details
+    - Group messages with aggregated status counts (one row per group send)
+    """
+    try:
+        from app.config import settings
+        if settings.DATABASE_TYPE == "memory":
+            return HistoryHeaderMessageResponse(messages=[], total_count=0)
+        
+        from datetime import timedelta
+        from sqlalchemy import func
+        
+        # Calculate date cutoff
+        cutoff_date = datetime.now(timezone.utc) - timedelta(days=days)
+        
+        # Simplified approach: Get all messages and group them in Python
+        # This is less efficient but more compatible and easier to debug
+        
+        # Get all group messages
+        group_messages = db.query(MessageDB).filter(
+            MessageDB.channel == MessageChannel.SMS,
+            MessageDB.group_id.isnot(None),
+            MessageDB.created_at >= cutoff_date
+        ).order_by(MessageDB.created_at.desc()).all()
+        
+        # Get all individual messages  
+        individual_messages = db.query(MessageDB).filter(
+            MessageDB.channel == MessageChannel.SMS,
+            MessageDB.group_id.is_(None),
+            MessageDB.created_at >= cutoff_date
+        ).order_by(MessageDB.created_at.desc()).all()
+        
+        messages = []
+        
+        # Process group messages - group by (group_id, content, rounded created_at)
+        group_sends = {}
+        for msg in group_messages:
+            # Round created_at to the nearest minute for grouping
+            rounded_time = msg.created_at.replace(second=0, microsecond=0)
+            group_key = (msg.group_id, msg.content, rounded_time)
+            
+            if group_key not in group_sends:
+                group_sends[group_key] = {
+                    'representative': msg,
+                    'total_recipients': 0,
+                    'sent_count': 0,
+                    'delivered_count': 0,
+                    'failed_count': 0,
+                    'pending_count': 0
+                }
+            
+            group_data = group_sends[group_key]
+            group_data['total_recipients'] += 1
+            
+            if msg.status == 'sent':
+                group_data['sent_count'] += 1
+            elif msg.status == 'delivered':
+                group_data['delivered_count'] += 1
+            elif msg.status == 'failed':
+                group_data['failed_count'] += 1
+            elif msg.status in ['queued', 'sending']:
+                group_data['pending_count'] += 1
+        
+        # Convert group sends to HistoryHeaderMessage objects
+        for group_key, group_data in group_sends.items():
+            representative = group_data['representative']
+            
+            # Get group name
+            group_name = "Unknown Group"
+            if representative.group_id:
+                from app.repositories import get_group_repository
+                group_repo = get_group_repository(db)
+                group = await group_repo.get_group(representative.group_id, current_user.id)
+                if group:
+                    group_name = group.name
+            
+            messages.append(HistoryHeaderMessage(
+                id=representative.id,
+                message_type="group",
+                content=representative.content,
+                created_at=representative.created_at.isoformat(),
+                sent_by=representative.sent_by,
+                group_id=representative.group_id,
+                group_name=group_name,
+                total_recipients=group_data['total_recipients'],
+                sent_count=group_data['sent_count'],
+                delivered_count=group_data['delivered_count'],
+                failed_count=group_data['failed_count'],
+                pending_count=group_data['pending_count']
+            ))        # Process individual messages
+        for msg in individual_messages[:limit]:  # Apply limit to individual messages
+            # Get person name if we have person_id
+            recipient_name = "Unknown"
+            if msg.recipient_person_id:
+                from app.repositories import get_person_repository
+                person_repo = get_person_repository(db)
+                person = await person_repo.get_person(msg.recipient_person_id)
+                if person:
+                    recipient_name = f"{person.first_name} {person.last_name}"
+            elif msg.recipient_phone:
+                # Fallback to phone number if no person_id
+                recipient_name = msg.recipient_phone
+
+            messages.append(HistoryHeaderMessage(
+                id=msg.id,
+                message_type="individual",
+                content=msg.content,
+                created_at=msg.created_at.isoformat(),
+                sent_by=msg.sent_by,
+                recipient_name=recipient_name,
+                recipient_phone=msg.recipient_phone,
+                status=msg.status
+            ))
+        
+        # Sort all messages by creation time (most recent first)
+        messages.sort(key=lambda x: x.created_at, reverse=True)
+        
+        # Apply limit again after sorting (simplified pagination)
+        messages = messages[:limit]
+        
+        # Get total count
+        total_count = len(group_sends) + len(individual_messages)
+
+        return HistoryHeaderMessageResponse(
+            messages=messages,
+            total_count=total_count
+        )
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error retrieving top-level message history: {str(e)}"
+        )
+
+
+@router.get("/history/group/{group_id}/details", response_model=List[MessageRecipientDetail])
+async def get_group_message_details(
+    group_id: int,
+    message_content: str = Query(..., description="Message content to identify the specific group send"),
+    send_time: str = Query(..., description="ISO timestamp of when the message was sent"),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Get detailed recipient list for a specific group message send.
+    
+    Returns list of all recipients with their individual message status.
+    """
+    try:
+        from app.config import settings
+        if settings.DATABASE_TYPE == "memory":
+            return []
+        
+        from datetime import datetime, timedelta
+        
+        # Parse the send time and create a window to find the messages
+        try:
+            send_datetime = datetime.fromisoformat(send_time.replace('Z', '+00:00'))
+        except ValueError:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid send_time format. Use ISO format."
+            )
+        
+        # Create a 1-minute window around the send time to find related messages
+        start_time = send_datetime - timedelta(seconds=30)
+        end_time = send_datetime + timedelta(seconds=30)
+        
+        # Get all messages for this group send
+        messages = db.query(MessageDB).filter(
+            MessageDB.channel == MessageChannel.SMS,
+            MessageDB.group_id == group_id,
+            MessageDB.content == message_content,
+            MessageDB.created_at >= start_time,
+            MessageDB.created_at <= end_time
+        ).all()
+        
+        if not messages:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Group message not found"
+            )
+        
+        # Get person details for each message
+        recipient_details = []
+        from app.repositories import get_person_repository
+        person_repo = get_person_repository(db)
+        
+        for msg in messages:
+            # Get person info
+            person_name = "Unknown"
+            person_id = 0
+            phone_number = msg.recipient_phone
+            
+            if msg.recipient_person_id:
+                person_id = msg.recipient_person_id
+                person = await person_repo.get_person(person_id)
+                if person:
+                    person_name = f"{person.first_name} {person.last_name}"
+            elif phone_number:
+                # Fallback to phone number if no person_id
+                person_name = phone_number
+            
+            recipient_details.append(MessageRecipientDetail(
+                person_id=person_id,
+                person_name=person_name,
+                phone_number=phone_number,
+                status=msg.status,
+                twilio_sid=msg.twilio_sid,
+                sent_at=msg.sent_at.isoformat() if msg.sent_at else None,
+                delivered_at=msg.delivered_at.isoformat() if msg.delivered_at else None,
+                failed_at=msg.failed_at.isoformat() if msg.failed_at else None,
+                failure_reason=msg.failure_reason
+            ))
+        
+        return recipient_details
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error retrieving group message details: {str(e)}"
+        )
+
+
 @router.get("/status/{message_id}")
 async def get_message_status(
     message_id: int,
@@ -428,8 +724,17 @@ async def handle_twilio_webhook(
         signature = request.headers.get("X-Twilio-Signature", "")
         url = str(request.url)
         
+        # Log webhook details for debugging
+        print(f"🔗 Webhook received:")
+        print(f"   URL: {url}")
+        print(f"   Signature: {signature}")
+        print(f"   Data: {webhook_data}")
+        print(f"   Headers: {dict(request.headers)}")
+        
         # Process webhook through SMS service
         result = sms_service.handle_webhook(webhook_data, url, signature)
+        
+        print(f"✅ Webhook processed successfully: {result}")
         
         return {
             "status": "processed",
@@ -438,11 +743,15 @@ async def handle_twilio_webhook(
         }
         
     except ValidationError as e:
+        print(f"❌ Webhook validation error: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Invalid webhook signature: {str(e)}"
         )
     except Exception as e:
+        print(f"💥 Webhook processing error: {str(e)}")
+        import traceback
+        traceback.print_exc()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error processing webhook: {str(e)}"
