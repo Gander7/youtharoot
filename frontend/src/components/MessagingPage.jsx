@@ -8,11 +8,32 @@ import {
   Paper,
   Alert
 } from '@mui/material';
+import { ThemeProvider, createTheme } from '@mui/material/styles';
 import ErrorBoundary from './ErrorBoundary';
 import GroupList from './GroupList';
 import MessageForm from './MessageForm';
 import MessageHistory from './MessageHistory';
 import ApiErrorBoundary from './ApiErrorBoundary';
+
+const darkTheme = createTheme({
+  palette: {
+    mode: 'dark',
+    primary: {
+      main: '#90caf9',
+    },
+    secondary: {
+      main: '#f48fb1',
+    },
+    background: {
+      default: '#181818',
+      paper: '#242424',
+    },
+    text: {
+      primary: '#f5f5f5',
+      secondary: '#e0e0e0',
+    },
+  },
+});
 
 function TabPanel({ children, value, index, ...other }) {
   return (
@@ -56,54 +77,57 @@ function MessagingPage() {
   };
 
   return (
-    <ErrorBoundary>
-      <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-        <Typography variant="h4" component="h1" gutterBottom>
-          SMS Messaging
-        </Typography>
-        
-        <Paper sx={{ width: '100%' }}>
-          <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-            <Tabs 
-              value={tabValue} 
-              onChange={handleTabChange} 
-              aria-label="messaging tabs"
-            >
-              <Tab label="Message Groups" />
-              <Tab label="Send Message" />
-              <Tab label="Message History" />
-            </Tabs>
-          </Box>
+    <ThemeProvider theme={darkTheme}>
+      <ErrorBoundary>
+        <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+          <Typography variant="h4" component="h1" gutterBottom>
+            SMS Messaging
+          </Typography>
           
-          <TabPanel value={tabValue} index={0}>
-            <ApiErrorBoundary>
-              <GroupList 
-                onGroupSelect={handleGroupSelect}
-                onGroupCreated={handleGroupCreated}
-                refreshTrigger={refreshTrigger}
-              />
-            </ApiErrorBoundary>
-          </TabPanel>
-          
-          <TabPanel value={tabValue} index={1}>
-            <ApiErrorBoundary>
-              <MessageForm 
-                selectedGroup={selectedGroup}
-                onMessageSent={handleMessageSent}
-              />
-            </ApiErrorBoundary>
-          </TabPanel>
-          
-          <TabPanel value={tabValue} index={2}>
-            <ApiErrorBoundary>
-              <MessageHistory 
-                refreshTrigger={refreshTrigger}
-              />
-            </ApiErrorBoundary>
-          </TabPanel>
-        </Paper>
-      </Container>
-    </ErrorBoundary>
+          <Paper sx={{ width: '100%' }}>
+            <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+              <Tabs 
+                value={tabValue} 
+                onChange={handleTabChange} 
+                aria-label="messaging tabs"
+              >
+                <Tab label="Message Groups" />
+                <Tab label="Send Message" />
+                <Tab label="Message History" />
+              </Tabs>
+            </Box>
+            
+            <TabPanel value={tabValue} index={0}>
+              <ApiErrorBoundary>
+                <GroupList 
+                  onGroupSelect={handleGroupSelect}
+                  onGroupCreated={handleGroupCreated}
+                  refreshTrigger={refreshTrigger}
+                />
+              </ApiErrorBoundary>
+            </TabPanel>
+            
+            <TabPanel value={tabValue} index={1}>
+              <ApiErrorBoundary>
+                <MessageForm 
+                  selectedGroup={selectedGroup}
+                  onMessageSent={handleMessageSent}
+                  refreshTrigger={refreshTrigger}
+                />
+              </ApiErrorBoundary>
+            </TabPanel>
+            
+            <TabPanel value={tabValue} index={2}>
+              <ApiErrorBoundary>
+                <MessageHistory 
+                  refreshTrigger={refreshTrigger}
+                />
+              </ApiErrorBoundary>
+            </TabPanel>
+          </Paper>
+        </Container>
+      </ErrorBoundary>
+    </ThemeProvider>
   );
 }
 

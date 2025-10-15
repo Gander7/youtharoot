@@ -586,7 +586,7 @@ describe('MessageForm Component', () => {
     });
   });
 
-describe('MessageForm_FormReset_WorksCorrectly', () => {
+  describe('MessageForm_FormReset_WorksCorrectly', () => {
     it('should clear form after successful submission', async () => {
       const user = userEvent.setup();
       render(<MessageForm {...mockProps} />);

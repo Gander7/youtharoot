@@ -2,7 +2,7 @@ from typing import List, Optional, Union
 from sqlalchemy.orm import Session
 from app.repositories.base import PersonRepository, EventRepository, UserRepository, MessageGroupRepository
 from app.models import Youth, Leader, Event, EventPerson, User
-from app.messaging_models import MessageGroup, MessageGroupCreate, MessageGroupUpdate, MessageGroupMembership, BulkGroupMembershipResponse
+from app.messaging_models import MessageGroup, MessageGroupCreate, MessageGroupUpdate, MessageGroupMembership, MessageGroupMembershipWithPerson, BulkGroupMembershipResponse
 from app.db_models import PersonDB, EventDB, UserDB, MessageGroupDB, MessageGroupMembershipDB
 from datetime import datetime, timezone
 import datetime as dt
@@ -404,12 +404,18 @@ class PostgreSQLMessageGroupRepository(MessageGroupRepository):
     
     def _db_to_pydantic_group(self, db_group: MessageGroupDB) -> MessageGroup:
         """Convert database model to Pydantic model"""
+        # Calculate member count
+        member_count = self.db.query(MessageGroupMembershipDB).filter(
+            MessageGroupMembershipDB.group_id == db_group.id
+        ).count()
+        
         return MessageGroup(
             id=db_group.id,
             name=db_group.name,
             description=db_group.description,
             is_active=db_group.is_active,
             created_by=db_group.created_by,
+            member_count=member_count,
             created_at=db_group.created_at,
             updated_at=db_group.updated_at
         )
@@ -578,6 +584,29 @@ class PostgreSQLMessageGroupRepository(MessageGroupRepository):
         ).all()
         
         return [self._db_to_pydantic_membership(db_membership) for db_membership in db_memberships]
+    
+    async def get_group_members_with_person(self, group_id: int) -> List[MessageGroupMembershipWithPerson]:
+        """Get all members of a message group with full person details"""
+        # Get the person repository to fetch person details
+        from app.repositories import get_person_repository
+        person_repo = get_person_repository(self.db)
+        
+        # Get basic memberships first
+        memberships = await self.get_group_members(group_id)
+        
+        result = []
+        for membership in memberships:
+            # Fetch full person details
+            person = await person_repo.get_person(membership.person_id)
+            if person:
+                # Create the combined model
+                membership_with_person = MessageGroupMembershipWithPerson(
+                    **membership.model_dump(),
+                    person=person
+                )
+                result.append(membership_with_person)
+        
+        return result
     
     async def is_member(self, group_id: int, person_id: int) -> bool:
         """Check if a person is a member of a group"""

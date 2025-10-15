@@ -5,21 +5,23 @@ import MessagingPage from '../../components/MessagingPage.jsx';
 
 // Mock the child components
 vi.mock('../../components/GroupList.jsx', () => ({
-  default: ({ onGroupSelect, onGroupCreated }) => (
+  default: ({ onGroupSelect, onGroupCreated, refreshTrigger }) => (
     <div data-testid="group-list">
       <button onClick={() => onGroupSelect({ id: 1, name: 'Test Group' })}>
         Select Test Group
       </button>
       <button onClick={() => onGroupCreated()}>Create Group</button>
+      <div data-testid="group-refresh-trigger">{refreshTrigger}</div>
     </div>
   )
 }));
 
 vi.mock('../../components/MessageForm.jsx', () => ({
-  default: ({ selectedGroup, onMessageSent }) => (
+  default: ({ selectedGroup, onMessageSent, refreshTrigger }) => (
     <div data-testid="message-form">
       <div>{selectedGroup ? `Group: ${selectedGroup.name}` : 'No group selected'}</div>
       <button onClick={() => onMessageSent()}>Send Message</button>
+      <div data-testid="form-refresh-trigger">{refreshTrigger}</div>
     </div>
   )
 }));
@@ -195,6 +197,29 @@ describe('MessagingPage Component', () => {
       
       // Group creation should trigger a refresh of the group list
       expect(screen.getByTestId('group-list')).toBeInTheDocument();
+    });
+
+    it('should pass refreshTrigger to MessageForm when group is created', async () => {
+      const user = userEvent.setup();
+      render(<MessagingPage />);
+      
+      // Initially refresh trigger should be 0
+      expect(screen.getByTestId('group-refresh-trigger')).toHaveTextContent('0');
+      
+      // Create a group to increment refresh trigger
+      const createButton = screen.getByText('Create Group');
+      await user.click(createButton);
+      
+      // Check that refresh trigger was incremented
+      expect(screen.getByTestId('group-refresh-trigger')).toHaveTextContent('1');
+      
+      // Switch to Send Message tab to check MessageForm received the trigger
+      const sendMessageTab = screen.getByRole('tab', { name: /send message/i });
+      await user.click(sendMessageTab);
+      
+      await waitFor(() => {
+        expect(screen.getByTestId('form-refresh-trigger')).toHaveTextContent('1');
+      });
     });
   });
 

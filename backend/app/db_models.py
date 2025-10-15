@@ -130,9 +130,12 @@ class MessageDB(Base):
     channel = Column(String(20), nullable=False, index=True)  # 'sms' or 'email'
     content = Column(Text, nullable=False)
     subject = Column(String(200), nullable=True)  # For email messages
-    group_id = Column(BigInteger, ForeignKey("message_groups.id"), nullable=False)
+    group_id = Column(BigInteger, ForeignKey("message_groups.id"), nullable=True)  # Nullable for individual messages
     sent_by = Column(BigInteger, ForeignKey("users.id"), nullable=False)
     status = Column(String(20), default="queued", nullable=False, index=True)  # queued, sending, sent, delivered, failed
+    
+    # Individual message recipient (for non-group messages)
+    recipient_phone = Column(String(20), nullable=True, index=True)  # For individual SMS messages
     
     # External service tracking
     twilio_sid = Column(String(100), nullable=True, index=True)  # Twilio message SID

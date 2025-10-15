@@ -24,6 +24,7 @@ from app.models import User
 from app.messaging_models import (
     MessageGroup, MessageGroupCreate, MessageGroupUpdate,
     MessageGroupMembership, MessageGroupMembershipCreate,
+    MessageGroupMembershipWithPerson,
     BulkGroupMembershipCreate, BulkGroupMembershipResponse
 )
 
@@ -180,13 +181,13 @@ async def add_member_to_group(
         )
 
 
-@router.get("/{group_id}/members", response_model=List[MessageGroupMembership])
+@router.get("/{group_id}/members", response_model=List[MessageGroupMembershipWithPerson])
 async def list_group_members(
     group_id: int,
     db: Session = Depends(connect_to_db()),
     current_user: User = Depends(get_current_user_lazy())
 ):
-    """List all members of a group."""
+    """List all members of a group with person details."""
     repos = get_repositories(db)
     
     # Verify group exists and belongs to current user
@@ -197,8 +198,8 @@ async def list_group_members(
             detail="Group not found"
         )
     
-    # Get all memberships for this group
-    memberships = await repos["group"].get_group_members(group_id)
+    # Get all memberships for this group with person details
+    memberships = await repos["group"].get_group_members_with_person(group_id)
     return memberships
 
 

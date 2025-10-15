@@ -1,7 +1,7 @@
 from typing import List, Optional, Union
 from app.repositories.base import PersonRepository, EventRepository, UserRepository, MessageGroupRepository
 from app.models import Youth, Leader, Event, User
-from app.messaging_models import MessageGroup, MessageGroupCreate, MessageGroupUpdate, MessageGroupMembership, MessageGroupMembershipCreate, BulkGroupMembershipResponse
+from app.messaging_models import MessageGroup, MessageGroupCreate, MessageGroupUpdate, MessageGroupMembership, MessageGroupMembershipCreate, MessageGroupMembershipWithPerson, BulkGroupMembershipResponse
 import datetime
 
 class InMemoryPersonRepository(PersonRepository):
@@ -285,11 +285,19 @@ class InMemoryMessageGroupRepository(MessageGroupRepository):
     async def get_group(self, group_id: int, created_by: int) -> Optional[MessageGroup]:
         group = self.groups_store.get(group_id)
         if group and group.created_by == created_by:
+            # Calculate member count
+            member_count = len([m for m in self.memberships_store.values() if m.group_id == group.id])
+            group.member_count = member_count
             return group
         return None
     
     async def get_all_groups(self, created_by: int) -> List[MessageGroup]:
-        return [group for group in self.groups_store.values() if group.created_by == created_by]
+        groups = [group for group in self.groups_store.values() if group.created_by == created_by]
+        # Calculate member count for each group
+        for group in groups:
+            member_count = len([m for m in self.memberships_store.values() if m.group_id == group.id])
+            group.member_count = member_count
+        return groups
     
     async def update_group(self, group_id: int, group_update: MessageGroupUpdate, created_by: int) -> Optional[MessageGroup]:
         group = await self.get_group(group_id, created_by)
@@ -376,6 +384,25 @@ class InMemoryMessageGroupRepository(MessageGroupRepository):
             membership for membership in self.memberships_store.values()
             if membership.group_id == group_id
         ]
+    
+    async def get_group_members_with_person(self, group_id: int) -> List[MessageGroupMembershipWithPerson]:
+        """Get all members of a message group with full person details"""
+        from app.repositories import get_person_repository
+        person_repo = get_person_repository(None)  # Memory mode doesn't need db session
+        
+        memberships = await self.get_group_members(group_id)
+        result = []
+        
+        for membership in memberships:
+            person = await person_repo.get_person(membership.person_id)
+            if person:
+                membership_with_person = MessageGroupMembershipWithPerson(
+                    **membership.model_dump(),
+                    person=person
+                )
+                result.append(membership_with_person)
+        
+        return result
     
     async def is_member(self, group_id: int, person_id: int) -> bool:
         for membership in self.memberships_store.values():

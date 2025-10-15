@@ -18,8 +18,9 @@ import {
   CircularProgress,
   Grid
 } from '@mui/material';
-import { Add, Edit, Delete, Group, Person } from '@mui/icons-material';
+import { Add, Edit, Delete, Group, Person, People } from '@mui/icons-material';
 import { apiRequest } from '../stores/auth';
+import GroupMemberManager from './GroupMemberManager';
 
 function GroupForm({ open, onClose, onSubmit, group = null }) {
   const [formData, setFormData] = useState({
@@ -141,6 +142,8 @@ function GroupList({ onGroupSelect, onGroupCreated, refreshTrigger }) {
   const [error, setError] = useState(null);
   const [formOpen, setFormOpen] = useState(false);
   const [editingGroup, setEditingGroup] = useState(null);
+  const [memberManagerOpen, setMemberManagerOpen] = useState(false);
+  const [selectedGroupForMembers, setSelectedGroupForMembers] = useState(null);
 
   useEffect(() => {
     loadGroups();
@@ -234,6 +237,21 @@ function GroupList({ onGroupSelect, onGroupCreated, refreshTrigger }) {
     setEditingGroup(null);
   };
 
+  const handleManageMembers = (group) => {
+    setSelectedGroupForMembers(group);
+    setMemberManagerOpen(true);
+  };
+
+  const handleMemberManagerClose = () => {
+    setMemberManagerOpen(false);
+    setSelectedGroupForMembers(null);
+  };
+
+  const handleMembershipChange = () => {
+    // Refresh the groups list to update member counts
+    loadGroups();
+  };
+
   if (loading) {
     return (
       <Box display="flex" justifyContent="center" p={3}>
@@ -311,7 +329,16 @@ function GroupList({ onGroupSelect, onGroupCreated, refreshTrigger }) {
                       </IconButton>
                     </Box>
                   </Box>
-                  <Box mt={2}>
+                  <Box mt={2} display="flex" gap={1}>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      startIcon={<People />}
+                      onClick={() => handleManageMembers(group)}
+                      disabled={!group.is_active}
+                    >
+                      Manage Members
+                    </Button>
                     <Button
                       variant="outlined"
                       size="small"
@@ -334,6 +361,13 @@ function GroupList({ onGroupSelect, onGroupCreated, refreshTrigger }) {
         onClose={closeForm}
         onSubmit={editingGroup ? handleUpdateGroup : handleCreateGroup}
         group={editingGroup}
+      />
+
+      <GroupMemberManager
+        open={memberManagerOpen}
+        onClose={handleMemberManagerClose}
+        group={selectedGroupForMembers}
+        onMembershipChange={handleMembershipChange}
       />
     </Box>
   );

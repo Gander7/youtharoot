@@ -130,10 +130,11 @@ async def send_individual_sms(
             )
         
         # Log message to database if successful
-        if result["success"] and request.person_id:
+        if result["success"]:
             message_record = MessageDB(
                 channel=MessageChannel.SMS,
                 content=request.message,
+                recipient_phone=request.phone_number,  # Store recipient phone for individual messages
                 sent_by=current_user.id,
                 status=MessageStatus.SENT,
                 twilio_sid=result["message_sid"],
@@ -179,7 +180,7 @@ async def send_group_sms(
         group_repo = get_group_repository(db)
         
         # Check if group exists
-        group = group_repo.get_group(request.group_id)
+        group = await group_repo.get_group(request.group_id, current_user.id)
         if not group:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -187,7 +188,7 @@ async def send_group_sms(
             )
         
         # Get group members who haven't opted out
-        members = group_repo.get_group_members(request.group_id)
+        members = await group_repo.get_group_members(request.group_id)
         if not members:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -325,6 +326,7 @@ async def get_message_history(
                 "content": msg.content,
                 "status": msg.status,
                 "group_id": msg.group_id,
+                "recipient_phone": msg.recipient_phone,  # Include recipient phone for individual messages
                 "sent_by": msg.sent_by,
                 "twilio_sid": msg.twilio_sid,
                 "sent_at": msg.sent_at.isoformat() if msg.sent_at else None,

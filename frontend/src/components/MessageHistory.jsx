@@ -106,11 +106,11 @@ function MessageCard({ message }) {
               </Typography>
             </Box>
             
-            {message.recipient_phone && (
+            {!message.group_id && (
               <Box display="flex" alignItems="center" mb={1}>
                 <Phone fontSize="small" color="action" sx={{ mr: 1 }} />
                 <Typography variant="body2" color="text.secondary">
-                  {message.recipient_phone}
+                  {message.recipient_phone || 'Phone number not available'}
                 </Typography>
               </Box>
             )}

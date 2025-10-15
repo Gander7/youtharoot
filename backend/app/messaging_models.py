@@ -13,8 +13,14 @@ Following TDD approach - these models support the test requirements.
 
 from pydantic import BaseModel, Field, field_validator, model_validator, ConfigDict
 from datetime import datetime
-from typing import Optional, List, Literal
+from typing import Optional, List, Literal, TYPE_CHECKING, Union
 from enum import Enum
+
+if TYPE_CHECKING:
+    from app.models import Person, Youth, Leader
+else:
+    # At runtime, we'll import these directly
+    from app.models import Youth, Leader
 
 
 # Enums for type safety
@@ -73,6 +79,7 @@ class MessageGroup(MessageGroupBase, TimestampMixin):
     """Complete message group model."""
     id: int
     created_by: int
+    member_count: int = 0  # Number of members in the group
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -94,6 +101,13 @@ class MessageGroupMembership(MessageGroupMembershipBase):
     id: int
     added_by: int
     joined_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class MessageGroupMembershipWithPerson(MessageGroupMembership):
+    """Group membership model with full person details for frontend display."""
+    person: Union[Youth, Leader]  # Use Union instead of forward reference
 
     model_config = ConfigDict(from_attributes=True)
 

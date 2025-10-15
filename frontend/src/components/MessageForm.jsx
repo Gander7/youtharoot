@@ -22,7 +22,7 @@ import { Send, Group, Person } from '@mui/icons-material';
 import { apiRequest } from '../stores/auth';
 import SimplePhoneInput from './SimplePhoneInput';
 
-function MessageForm({ selectedGroup, onMessageSent }) {
+function MessageForm({ selectedGroup, onMessageSent, refreshTrigger }) {
   const [messageType, setMessageType] = useState('group'); // 'group' or 'individual'
   const [groups, setGroups] = useState([]);
   const [selectedGroupId, setSelectedGroupId] = useState('');
@@ -34,7 +34,7 @@ function MessageForm({ selectedGroup, onMessageSent }) {
 
   useEffect(() => {
     loadGroups();
-  }, []);
+  }, [refreshTrigger]); // Add refreshTrigger as dependency
 
   useEffect(() => {
     if (selectedGroup) {
@@ -202,7 +202,7 @@ function MessageForm({ selectedGroup, onMessageSent }) {
               <Box sx={{ mb: 3 }}>
                 <SimplePhoneInput
                   value={phoneNumber}
-                  onChange={setPhoneNumber}
+                  onChange={(e) => setPhoneNumber(e.target.value)}
                   label="Phone Number"
                   placeholder="+1234567890"
                   required

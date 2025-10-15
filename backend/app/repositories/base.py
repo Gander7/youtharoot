@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import List, Optional, Union
 from app.models import Youth, Leader, Event, User
-from app.messaging_models import MessageGroup, MessageGroupCreate, MessageGroupUpdate, MessageGroupMembership, MessageGroupMembershipCreate, BulkGroupMembershipResponse
+from app.messaging_models import MessageGroup, MessageGroupCreate, MessageGroupUpdate, MessageGroupMembership, MessageGroupMembershipCreate, MessageGroupMembershipWithPerson, BulkGroupMembershipResponse
 from datetime import datetime
 
 class PersonRepository(ABC):
@@ -124,6 +124,11 @@ class MessageGroupRepository(ABC):
     
     @abstractmethod
     async def get_group_members(self, group_id: int) -> List[MessageGroupMembership]:
+        pass
+    
+    @abstractmethod
+    async def get_group_members_with_person(self, group_id: int) -> List[MessageGroupMembershipWithPerson]:
+        """Get all members of a group with full person details."""
         pass
     
     @abstractmethod
