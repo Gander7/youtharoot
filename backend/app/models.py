@@ -28,6 +28,8 @@ class Youth(Person):
 	emergency_contact_2_name: Optional[str] = ""
 	emergency_contact_2_phone: Optional[str] = ""
 	emergency_contact_2_relationship: Optional[str] = ""
+	allergies: Optional[str] = ""
+	other_considerations: Optional[str] = ""
 
 class Leader(Person):
 	role: str

@@ -107,6 +107,8 @@ const PersonForm = ({ open, onClose, person, onSave, personType }) => {
     emergency_contact_2_name: '',
     emergency_contact_2_phone: '',
     emergency_contact_2_relationship: '',
+    allergies: '',
+    other_considerations: '',
     role: '',
     ...person
   });
@@ -130,6 +132,8 @@ const PersonForm = ({ open, onClose, person, onSave, personType }) => {
       emergency_contact_2_name: '',
       emergency_contact_2_phone: '',
       emergency_contact_2_relationship: '',
+      allergies: '',
+      other_considerations: '',
       role: '',
       ...(person || {}),
     };
@@ -205,6 +209,8 @@ const PersonForm = ({ open, onClose, person, onSave, personType }) => {
       personData.emergency_contact_2_name = formData.emergency_contact_2_name || '';
       personData.emergency_contact_2_phone = formData.emergency_contact_2_phone || '';
       personData.emergency_contact_2_relationship = formData.emergency_contact_2_relationship || '';
+      personData.allergies = formData.allergies || '';
+      personData.other_considerations = formData.other_considerations || '';
     } else {
       console.log(formData);
       personData.role = formData.role;
@@ -276,6 +282,7 @@ const PersonForm = ({ open, onClose, person, onSave, personType }) => {
               <Tabs value={tabValue} onChange={(e, newValue) => setTabValue(newValue)} sx={{ mb: 2 }}>
                 <Tab label="Personal Info" />
                 <Tab label="Emergency Contacts" />
+                <Tab label="Health and Allergy" />
               </Tabs>
               
               {tabValue === 0 && (
@@ -315,35 +322,36 @@ const PersonForm = ({ open, onClose, person, onSave, personType }) => {
                     }}
                     inputProps={{
                       pattern: "^(\\+?1[\\-\\s]?)?\\(?[0-9]{3}\\)?[\\-\\s]?[0-9]{3}[\\-\\s]?[0-9]{4}$",
-                      title: "Please enter a valid Canadian phone number: (416) 555-1234 or +1-416-555-1234"
+                      title: "Please enter a valid Canadian phone number: 4165551234, (416) 555-1234, +1-416-555-1234"
                     }}
-                    placeholder="(416) 555-1234"
-                    helperText="Canadian format: (416) 555-1234 or +1-416-555-1234"
                     fullWidth
                   />
 
-                  <FormControlLabel
-                    control={
-                      <Checkbox
-                        checked={formData.sms_opt_out}
-                        onChange={(e) => setFormData({ ...formData, sms_opt_out: e.target.checked })}
-                      />
-                    }
-                    label="Opt out of SMS messages"
-                  />
 
                   <Grid container spacing={2}>
-                    <Grid item xs={4}>
+                    <Grid item xs={8} sm={6}>
                       <TextField
                         label="Grade"
                         type="number"
                         value={formData.grade}
                         onChange={(e) => setFormData({ ...formData, grade: e.target.value })}
-                        inputProps={{ min: 1, max: 12 }}
+                        slotProps={{
+                          htmlInput: { min: 1, max: 12 },
+                          inputLabel: {
+                            style: { 
+                              fontSize: '1rem',
+                              whiteSpace: 'nowrap'
+                            }
+                          },
+                          input: {
+                            style: { minWidth: '120px' }
+                          }
+                        }}
                         fullWidth
+                        style={{ minWidth: '120px' }}
                       />
                     </Grid>
-                    <Grid item xs={8}>
+                    <Grid item xs={10} sm={6}>
                       <TextField
                         label="Birth Date"
                         type="date"
@@ -353,6 +361,17 @@ const PersonForm = ({ open, onClose, person, onSave, personType }) => {
                         fullWidth
                         InputLabelProps={{ shrink: true }}
                       />
+                    </Grid>
+                    <Grid item xs={6} sm={6}>
+                    <FormControlLabel
+                      control={
+                        <Checkbox
+                          checked={formData.sms_opt_out}
+                          onChange={(e) => setFormData({ ...formData, sms_opt_out: e.target.checked })}
+                        />
+                      }
+                      label="SMS Opt out"
+                    />
                     </Grid>
                   </Grid>
                   
@@ -472,6 +491,46 @@ const PersonForm = ({ open, onClose, person, onSave, personType }) => {
                     placeholder="(416) 555-1234"
                     helperText="Canadian format: (416) 555-1234 or +1-416-555-1234"
                     fullWidth
+                  />
+                </Stack>
+              )}
+              
+              {tabValue === 2 && (
+                <Stack spacing={3} sx={{ mt: 1 }}>
+                  <Typography variant="h6" color="primary">Health and Allergy Information</Typography>
+                  
+                  <TextField
+                    label="Allergies"
+                    multiline
+                    rows={4}
+                    value={formData.allergies || ''}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      if (value.length <= 1000) {
+                        setFormData({ ...formData, allergies: value });
+                      }
+                    }}
+                    fullWidth
+                    placeholder="Please list any known allergies (food, environmental, medications, etc.)"
+                    helperText={`${(formData.allergies || '').length}/1000 characters`}
+                    inputProps={{ maxLength: 1000 }}
+                  />
+                  
+                  <TextField
+                    label="Other Medical Considerations"
+                    multiline
+                    rows={4}
+                    value={formData.other_considerations || ''}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      if (value.length <= 1000) {
+                        setFormData({ ...formData, other_considerations: value });
+                      }
+                    }}
+                    fullWidth
+                    placeholder="Please list any other medical conditions, medications, or considerations staff should be aware of"
+                    helperText={`${(formData.other_considerations || '').length}/1000 characters`}
+                    inputProps={{ maxLength: 1000 }}
                   />
                 </Stack>
               )}

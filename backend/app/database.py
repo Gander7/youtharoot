@@ -35,7 +35,9 @@ def evolve_schema(engine):
             fields_to_add = [
                 ('emergency_contact_2_name', 'VARCHAR(100)'),
                 ('emergency_contact_2_phone', 'VARCHAR(20)'),
-                ('emergency_contact_2_relationship', 'VARCHAR(50)')
+                ('emergency_contact_2_relationship', 'VARCHAR(50)'),
+                ('allergies', 'TEXT'),
+                ('other_considerations', 'TEXT')
             ]
             
             for field_name, field_type in fields_to_add:

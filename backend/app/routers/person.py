@@ -40,11 +40,14 @@ async def get_all_non_archived_youth(
 	repos = get_repositories(db)
 	youth_list = await repos["person"].get_all_youth()
 	
-	# Return youth dicts without archived_on field
+	# Return youth dicts without archived_on field and without health fields (privacy)
 	result = []
 	for youth in youth_list:
 		data = youth.model_dump()
 		data.pop("archived_on", None)
+		# Remove health fields for privacy in list endpoints
+		data.pop("allergies", None)
+		data.pop("other_considerations", None)
 		result.append(data)
 	return result
 
@@ -95,6 +98,7 @@ async def get_person(
 	if not person:
 		raise HTTPException(**ERRORS[PERSON_NOT_FOUND])
 	
+	# For individual person requests, return all fields including health data
 	data = person.model_dump()
 	data.pop("archived_on", None)
 	return data

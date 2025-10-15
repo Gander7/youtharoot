@@ -35,7 +35,9 @@ class PostgreSQLPersonRepository(PersonRepository):
                 emergency_contact_relationship=db_person.emergency_contact_relationship or "",
                 emergency_contact_2_name=db_person.emergency_contact_2_name or "",
                 emergency_contact_2_phone=db_person.emergency_contact_2_phone or "",
-                emergency_contact_2_relationship=db_person.emergency_contact_2_relationship or ""
+                emergency_contact_2_relationship=db_person.emergency_contact_2_relationship or "",
+                allergies=db_person.allergies or "",
+                other_considerations=db_person.other_considerations or ""
             )
         else:
             return Leader(
@@ -66,6 +68,8 @@ class PostgreSQLPersonRepository(PersonRepository):
             db_person.emergency_contact_2_name = person.emergency_contact_2_name
             db_person.emergency_contact_2_phone = person.emergency_contact_2_phone
             db_person.emergency_contact_2_relationship = person.emergency_contact_2_relationship
+            db_person.allergies = person.allergies
+            db_person.other_considerations = person.other_considerations
         else:
             db_person.role = person.role
             db_person.birth_date = person.birth_date
@@ -121,6 +125,8 @@ class PostgreSQLPersonRepository(PersonRepository):
             db_person.emergency_contact_2_name = person.emergency_contact_2_name
             db_person.emergency_contact_2_phone = person.emergency_contact_2_phone
             db_person.emergency_contact_2_relationship = person.emergency_contact_2_relationship
+            db_person.allergies = person.allergies
+            db_person.other_considerations = person.other_considerations
         else:
             db_person.role = person.role
             db_person.birth_date = person.birth_date

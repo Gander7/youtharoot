@@ -29,6 +29,8 @@ class PersonDB(Base):
     emergency_contact_2_name = Column(String(100), nullable=True)
     emergency_contact_2_phone = Column(String(20), nullable=True)
     emergency_contact_2_relationship = Column(String(50), nullable=True)
+    allergies = Column(Text, nullable=True)
+    other_considerations = Column(Text, nullable=True)
     
     # Leader-specific fields
     role = Column(String(100), nullable=True)
