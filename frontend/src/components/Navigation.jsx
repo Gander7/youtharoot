@@ -21,7 +21,8 @@ import {
   People as PeopleIcon,
   Home as HomeIcon,
   AccountCircle,
-  Logout
+  Logout,
+  Message as MessageIcon
 } from '@mui/icons-material';
 import { authStore, logout } from '../stores/auth';
 
@@ -44,6 +45,7 @@ export default function Navigation() {
   React.useEffect(() => {
     if (currentPath.includes('/Events')) setValue(1);
     else if (currentPath.includes('/People')) setValue(2);
+    else if (currentPath.includes('/Messaging')) setValue(3);
     else setValue(0);
   }, [currentPath]);
 
@@ -86,7 +88,7 @@ export default function Navigation() {
           value={value}
           onChange={(event, newValue) => {
             setValue(newValue);
-            const paths = ['/', '/Events', '/People'];
+            const paths = ['/', '/Events', '/People', '/Messaging'];
             navigate(paths[newValue]);
           }}
           showLabels
@@ -102,6 +104,10 @@ export default function Navigation() {
           <BottomNavigationAction 
             label="People" 
             icon={<PeopleIcon />} 
+          />
+          <BottomNavigationAction 
+            label="Messages" 
+            icon={<MessageIcon />} 
           />
         </BottomNavigation>
       </Paper>
@@ -143,6 +149,14 @@ export default function Navigation() {
               sx={{ borderRadius: 2 }}
             >
               People
+            </Button>
+            <Button 
+              color="inherit" 
+              onClick={() => navigate('/Messaging')}
+              variant={currentPath.includes('/Messaging') ? 'contained' : 'text'}
+              sx={{ borderRadius: 2 }}
+            >
+              Messages
             </Button>
             
             {/* User Menu */}

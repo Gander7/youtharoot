@@ -295,7 +295,17 @@ async def get_message_history(
     Returns paginated list of SMS messages with status and delivery info.
     """
     try:
-        # Build query
+        # Check if using in-memory database (no message storage yet)
+        from app.config import settings
+        if settings.DATABASE_TYPE == "memory":
+            # Return empty history for in-memory mode
+            return MessageHistoryResponse(
+                messages=[],
+                total_count=0,
+                group_id=group_id
+            )
+        
+        # Build query for PostgreSQL mode
         query = db.query(MessageDB).filter(MessageDB.channel == MessageChannel.SMS)
         
         if group_id:
@@ -347,6 +357,15 @@ async def get_message_status(
     Returns detailed information about message delivery status.
     """
     try:
+        # Check if using in-memory database (no message storage yet)
+        from app.config import settings
+        if settings.DATABASE_TYPE == "memory":
+            # Return not found for in-memory mode
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Message not found (in-memory mode)"
+            )
+        
         message = db.query(MessageDB).filter(
             MessageDB.id == message_id,
             MessageDB.channel == MessageChannel.SMS

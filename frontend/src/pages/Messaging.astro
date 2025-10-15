@@ -1,0 +1,12 @@
+---
+import MessagingPage from "../components/MessagingPage.jsx";
+import AuthLayout from "../layouts/AuthLayout.astro";
+import Navigation from "../components/Navigation.jsx";
+---
+
+<AuthLayout title="SMS Messaging - Youtharoot">
+  <Navigation client:load />
+  <main>
+    <MessagingPage client:load />
+  </main>
+</AuthLayout>
