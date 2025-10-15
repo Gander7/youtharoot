@@ -14,6 +14,47 @@ def evolve_schema(engine):
     """
     try:
         with engine.connect() as conn:
+            # Evolution for persons table - add new youth fields
+            print("🔄 Checking persons table schema...")
+            
+            # Check if email column exists
+            result = conn.execute(text("""
+                SELECT column_name FROM information_schema.columns 
+                WHERE table_name = 'persons' AND column_name = 'email'
+            """))
+            
+            if not result.fetchone():
+                print("🔄 Adding email column to persons table...")
+                conn.execute(text("""
+                    ALTER TABLE persons 
+                    ADD COLUMN email VARCHAR(200)
+                """))
+                print("✅ Added email column to persons table")
+            
+            # Check if second emergency contact fields exist
+            fields_to_add = [
+                ('emergency_contact_2_name', 'VARCHAR(100)'),
+                ('emergency_contact_2_phone', 'VARCHAR(20)'),
+                ('emergency_contact_2_relationship', 'VARCHAR(50)')
+            ]
+            
+            for field_name, field_type in fields_to_add:
+                result = conn.execute(text(f"""
+                    SELECT column_name FROM information_schema.columns 
+                    WHERE table_name = 'persons' AND column_name = '{field_name}'
+                """))
+                
+                if not result.fetchone():
+                    print(f"🔄 Adding {field_name} column to persons table...")
+                    conn.execute(text(f"""
+                        ALTER TABLE persons 
+                        ADD COLUMN {field_name} {field_type}
+                    """))
+                    print(f"✅ Added {field_name} column to persons table")
+            
+            # Evolution for messages table
+            print("🔄 Checking messages table schema...")
+            
             # Check if messages table exists and has the old schema
             result = conn.execute(text("""
                 SELECT column_name, is_nullable 
@@ -56,8 +97,7 @@ def evolve_schema(engine):
                     """))
                     print("✅ Added recipient_person_id column to messages table")
                 
-                conn.commit()
-                print("🎉 Schema evolution completed successfully!")
+                print("🎉 Messages table schema evolution completed!")
             else:
                 # Check for recipient_person_id even if group_id is already nullable
                 result = conn.execute(text("""
@@ -71,10 +111,12 @@ def evolve_schema(engine):
                         ALTER TABLE messages 
                         ADD COLUMN recipient_person_id BIGINT REFERENCES persons(id)
                     """))
-                    conn.commit()
                     print("✅ Added recipient_person_id column to messages table")
                 else:
                     print("✅ Messages table schema is already up to date")
+            
+            conn.commit()
+            print("🎉 Schema evolution completed successfully!")
                 
     except Exception as e:
         print(f"⚠️ Schema evolution error (this may be normal for new installations): {e}")
