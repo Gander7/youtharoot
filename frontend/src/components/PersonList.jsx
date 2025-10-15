@@ -31,7 +31,9 @@ import {
   Divider,
   Stack,
   Checkbox,
-  FormControlLabel
+  FormControlLabel,
+  Tabs,
+  Tab
 } from '@mui/material';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { apiRequest } from '../stores/auth';
@@ -108,6 +110,8 @@ const PersonForm = ({ open, onClose, person, onSave, personType }) => {
     role: '',
     ...person
   });
+
+  const [tabValue, setTabValue] = useState(0);
 
   // Reset form data when person prop changes
   useEffect(() => {
@@ -267,7 +271,214 @@ const PersonForm = ({ open, onClose, person, onSave, personType }) => {
           {person ? 'Edit' : 'Add'} {personType === 'youth' ? 'Youth' : 'Leader'}
         </DialogTitle>
         <DialogContent>
-          <Stack spacing={3} sx={{ mt: 1 }}>
+          {personType === 'youth' ? (
+            <Box>
+              <Tabs value={tabValue} onChange={(e, newValue) => setTabValue(newValue)} sx={{ mb: 2 }}>
+                <Tab label="Personal Info" />
+                <Tab label="Emergency Contacts" />
+              </Tabs>
+              
+              {tabValue === 0 && (
+                <Stack spacing={3} sx={{ mt: 1 }}>
+                  <Grid container spacing={2}>
+                    <Grid item xs={6}>
+                      <TextField
+                        label="First Name"
+                        value={formData.first_name}
+                        onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
+                        required
+                        fullWidth
+                      />
+                    </Grid>
+                    <Grid item xs={6}>
+                      <TextField
+                        label="Last Name"
+                        value={formData.last_name}
+                        onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
+                        required
+                        fullWidth
+                      />
+                    </Grid>
+                  </Grid>
+
+                  <TextField
+                    type="tel"
+                    label="Phone Number"
+                    value={formData.phone_number}
+                    onChange={(e) => setFormData({ ...formData, phone_number: e.target.value })}
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <PhoneIcon />
+                        </InputAdornment>
+                      ),
+                    }}
+                    inputProps={{
+                      pattern: "^(\\+?1[\\-\\s]?)?\\(?[0-9]{3}\\)?[\\-\\s]?[0-9]{3}[\\-\\s]?[0-9]{4}$",
+                      title: "Please enter a valid Canadian phone number: (416) 555-1234 or +1-416-555-1234"
+                    }}
+                    placeholder="(416) 555-1234"
+                    helperText="Canadian format: (416) 555-1234 or +1-416-555-1234"
+                    fullWidth
+                  />
+
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        checked={formData.sms_opt_out}
+                        onChange={(e) => setFormData({ ...formData, sms_opt_out: e.target.checked })}
+                      />
+                    }
+                    label="Opt out of SMS messages"
+                  />
+
+                  <Grid container spacing={2}>
+                    <Grid item xs={4}>
+                      <TextField
+                        label="Grade"
+                        type="number"
+                        value={formData.grade}
+                        onChange={(e) => setFormData({ ...formData, grade: e.target.value })}
+                        inputProps={{ min: 1, max: 12 }}
+                        fullWidth
+                      />
+                    </Grid>
+                    <Grid item xs={8}>
+                      <TextField
+                        label="Birth Date"
+                        type="date"
+                        value={formData.birth_date}
+                        onChange={(e) => setFormData({ ...formData, birth_date: e.target.value })}
+                        required
+                        fullWidth
+                        InputLabelProps={{ shrink: true }}
+                      />
+                    </Grid>
+                  </Grid>
+                  
+                  <TextField
+                    label="Email"
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    fullWidth
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <EmailIcon />
+                        </InputAdornment>
+                      ),
+                    }}
+                  />
+                  
+                  <TextField
+                    label="School Name"
+                    value={formData.school_name}
+                    onChange={(e) => setFormData({ ...formData, school_name: e.target.value })}
+                    fullWidth
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <SchoolIcon />
+                        </InputAdornment>
+                      ),
+                    }}
+                  />
+                </Stack>
+              )}
+
+              {tabValue === 1 && (
+                <Stack spacing={3} sx={{ mt: 1 }}>
+                  <Typography variant="h6" color="primary">Primary Emergency Contact</Typography>
+                  
+                  <Grid container spacing={2}>
+                    <Grid item xs={12} sm={6}>
+                      <TextField
+                        label="Contact Name"
+                        value={formData.emergency_contact_name}
+                        onChange={(e) => setFormData({ ...formData, emergency_contact_name: e.target.value })}
+                        fullWidth
+                      />
+                    </Grid>
+                    <Grid item xs={12} sm={6}>
+                      <TextField
+                        label="Relationship"
+                        value={formData.emergency_contact_relationship}
+                        onChange={(e) => setFormData({ ...formData, emergency_contact_relationship: e.target.value })}
+                        fullWidth
+                      />
+                    </Grid>
+                  </Grid>
+                  
+                  <TextField
+                    type="tel"
+                    label="Emergency Contact Phone"
+                    value={formData.emergency_contact_phone}
+                    onChange={(e) => setFormData({ ...formData, emergency_contact_phone: e.target.value })}
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <PhoneIcon />
+                        </InputAdornment>
+                      ),
+                    }}
+                    inputProps={{
+                      pattern: "^(\\+?1[\\-\\s]?)?\\(?[0-9]{3}\\)?[\\-\\s]?[0-9]{3}[\\-\\s]?[0-9]{4}$",
+                      title: "Please enter a valid Canadian phone number: (416) 555-1234 or +1-416-555-1234"
+                    }}
+                    placeholder="(416) 555-1234"
+                    helperText="Canadian format: (416) 555-1234 or +1-416-555-1234"
+                    fullWidth
+                  />
+
+                  <Divider />
+                  <Typography variant="h6" color="primary">Second Emergency Contact</Typography>
+                  
+                  <Grid container spacing={2}>
+                    <Grid item xs={12} sm={6}>
+                      <TextField
+                        label="Contact Name"
+                        value={formData.emergency_contact_2_name}
+                        onChange={(e) => setFormData({ ...formData, emergency_contact_2_name: e.target.value })}
+                        fullWidth
+                      />
+                    </Grid>
+                    <Grid item xs={12} sm={6}>
+                      <TextField
+                        label="Relationship"
+                        value={formData.emergency_contact_2_relationship}
+                        onChange={(e) => setFormData({ ...formData, emergency_contact_2_relationship: e.target.value })}
+                        fullWidth
+                      />
+                    </Grid>
+                  </Grid>
+                  
+                  <TextField
+                    type="tel"
+                    label="Second Emergency Contact Phone"
+                    value={formData.emergency_contact_2_phone}
+                    onChange={(e) => setFormData({ ...formData, emergency_contact_2_phone: e.target.value })}
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <PhoneIcon />
+                        </InputAdornment>
+                      ),
+                    }}
+                    inputProps={{
+                      pattern: "^(\\+?1[\\-\\s]?)?\\(?[0-9]{3}\\)?[\\-\\s]?[0-9]{3}[\\-\\s]?[0-9]{4}$",
+                      title: "Please enter a valid Canadian phone number: (416) 555-1234 or +1-416-555-1234"
+                    }}
+                    placeholder="(416) 555-1234"
+                    helperText="Canadian format: (416) 555-1234 or +1-416-555-1234"
+                    fullWidth
+                  />
+                </Stack>
+              )}
+            </Box>
+          ) : (
+            // Leader form (no tabs needed)
+            <Stack spacing={3} sx={{ mt: 1 }}>
             <Grid container spacing={2}>
               <Grid item xs={6}>
                 <TextField
@@ -310,191 +521,41 @@ const PersonForm = ({ open, onClose, person, onSave, personType }) => {
               fullWidth
             />
 
-            {formData.phone_number && (
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    checked={formData.sms_opt_out}
-                    onChange={(e) => setFormData({ ...formData, sms_opt_out: e.target.checked })}
-                    name="sms_opt_out"
-                  />
-                }
-                label="Opt out of SMS notifications (uncheck to receive text messages)"
-                sx={{ mt: 1 }}
-              />
-            )}
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={formData.sms_opt_out}
+                  onChange={(e) => setFormData({ ...formData, sms_opt_out: e.target.checked })}
+                />
+              }
+              label="Opt out of SMS messages"
+            />
 
-            {personType === 'youth' ? (
-              <>
-                <Grid container spacing={2}>
-                  <Grid item xs={6}>
-                    <TextField
-                      label="Grade"
-                      type="number"
-                      value={formData.grade}
-                      onChange={(e) => setFormData({ ...formData, grade: e.target.value })}
-                      fullWidth
-                      inputProps={{ min: 1, max: 12 }}
-                      helperText="Optional"
-                    />
-                  </Grid>
-                  <Grid item xs={6}>
-                    <TextField
-                      label="Birth Date"
-                      type="date"
-                      value={formData.birth_date}
-                      onChange={(e) => setFormData({ ...formData, birth_date: e.target.value })}
-                      required
-                      fullWidth
-                      InputLabelProps={{ shrink: true }}
-                    />
-                  </Grid>
-                </Grid>
-                
-                <TextField
-                  label="Email"
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  fullWidth
-                  helperText="Optional"
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <EmailIcon />
-                      </InputAdornment>
-                    ),
-                  }}
-                />
-                
-                <TextField
-                  label="School Name"
-                  value={formData.school_name}
-                  onChange={(e) => setFormData({ ...formData, school_name: e.target.value })}
-                  fullWidth
-                  helperText="Optional"
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <SchoolIcon />
-                      </InputAdornment>
-                    ),
-                  }}
-                />
+            <TextField
+              label="Role"
+              value={formData.role}
+              onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+              required
+              fullWidth
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <WorkIcon />
+                  </InputAdornment>
+                ),
+              }}
+            />
 
-                <Divider />
-                <Typography variant="h6" color="primary">Emergency Contact</Typography>
-                
-                <Grid container spacing={2}>
-                  <Grid item xs={12} sm={6}>
-                    <TextField
-                      label="Contact Name (Optional)"
-                      value={formData.emergency_contact_name}
-                      onChange={(e) => setFormData({ ...formData, emergency_contact_name: e.target.value })}
-                      fullWidth
-                    />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <TextField
-                      label="Relationship (Optional)"
-                      value={formData.emergency_contact_relationship}
-                      onChange={(e) => setFormData({ ...formData, emergency_contact_relationship: e.target.value })}
-                      fullWidth
-                    />
-                  </Grid>
-                </Grid>
-                
-                <TextField
-                  type="tel"
-                  label="Emergency Contact Phone (Optional)"
-                  value={formData.emergency_contact_phone}
-                  onChange={(e) => setFormData({ ...formData, emergency_contact_phone: e.target.value })}
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <PhoneIcon />
-                      </InputAdornment>
-                    ),
-                  }}
-                  inputProps={{
-                    pattern: "^(\\+?1[\\-\\s]?)?\\(?[0-9]{3}\\)?[\\-\\s]?[0-9]{3}[\\-\\s]?[0-9]{4}$",
-                    title: "Please enter a valid Canadian phone number: (416) 555-1234 or +1-416-555-1234"
-                  }}
-                  placeholder="(416) 555-1234"
-                  helperText="Canadian format: (416) 555-1234 or +1-416-555-1234"
-                  fullWidth
-                />
-
-                <Divider />
-                <Typography variant="h6" color="primary">Second Emergency Contact</Typography>
-                
-                <Grid container spacing={2}>
-                  <Grid item xs={12} sm={6}>
-                    <TextField
-                      label="Contact Name (Optional)"
-                      value={formData.emergency_contact_2_name}
-                      onChange={(e) => setFormData({ ...formData, emergency_contact_2_name: e.target.value })}
-                      fullWidth
-                    />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <TextField
-                      label="Relationship (Optional)"
-                      value={formData.emergency_contact_2_relationship}
-                      onChange={(e) => setFormData({ ...formData, emergency_contact_2_relationship: e.target.value })}
-                      fullWidth
-                    />
-                  </Grid>
-                </Grid>
-                
-                <TextField
-                  type="tel"
-                  label="Second Emergency Contact Phone (Optional)"
-                  value={formData.emergency_contact_2_phone}
-                  onChange={(e) => setFormData({ ...formData, emergency_contact_2_phone: e.target.value })}
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <PhoneIcon />
-                      </InputAdornment>
-                    ),
-                  }}
-                  inputProps={{
-                    pattern: "^(\\+?1[\\-\\s]?)?\\(?[0-9]{3}\\)?[\\-\\s]?[0-9]{3}[\\-\\s]?[0-9]{4}$",
-                    title: "Please enter a valid Canadian phone number: (416) 555-1234 or +1-416-555-1234"
-                  }}
-                  placeholder="(416) 555-1234"
-                  helperText="Canadian format: (416) 555-1234 or +1-416-555-1234"
-                  fullWidth
-                />
-              </>
-            ) : (
-              <>
-                <TextField
-                  label="Role"
-                  value={formData.role}
-                  onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                  required
-                  fullWidth
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <WorkIcon />
-                      </InputAdornment>
-                    ),
-                  }}
-                />
-                <TextField
-                  label="Birth Date (Optional)"
-                  type="date"
-                  value={formData.birth_date}
-                  onChange={(e) => setFormData({ ...formData, birth_date: e.target.value })}
-                  fullWidth
-                  InputLabelProps={{ shrink: true }}
-                />
-              </>
-            )}
-          </Stack>
+            <TextField
+              label="Birth Date"
+              type="date"
+              value={formData.birth_date}
+              onChange={(e) => setFormData({ ...formData, birth_date: e.target.value })}
+              fullWidth
+              InputLabelProps={{ shrink: true }}
+            />
+            </Stack>
+          )}
         </DialogContent>
         <DialogActions>
           <Button onClick={onClose}>Cancel</Button>
