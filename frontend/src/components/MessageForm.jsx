@@ -210,7 +210,7 @@ function MessageForm({ selectedGroup, onMessageSent, refreshTrigger }) {
               </Box>
             )}
 
-            {selectedGroupData && (
+            {messageType === 'group' && selectedGroupData && (
               <Alert severity="info" sx={{ mb: 2 }}>
                 <Box>
                   <Typography variant="subtitle2">

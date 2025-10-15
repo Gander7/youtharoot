@@ -262,7 +262,7 @@ function GroupList({ onGroupSelect, onGroupCreated, refreshTrigger }) {
 
   return (
     <Box>
-      <Box display="flex" justifyContent="between" alignItems="center" mb={3}>
+      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
         <Typography variant="h6">Message Groups</Typography>
         <Button
           variant="contained"

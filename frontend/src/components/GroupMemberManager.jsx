@@ -414,14 +414,9 @@ function GroupMemberManager({ open, onClose, group, onMembershipChange }) {
                         </Box>
                       }
                       secondary={
-                        <Box>
-                          <Typography variant="body2">
-                            {member.person.phone_number}
-                          </Typography>
-                          <Typography variant="caption" color="text.secondary">
-                            Joined: {formatJoinDate(member.joined_at)}
-                          </Typography>
-                        </Box>
+                        <Typography variant="body2">
+                          {member.person.phone_number}
+                        </Typography>
                       }
                     />
                     <ListItemSecondaryAction>
