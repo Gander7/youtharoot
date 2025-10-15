@@ -21,9 +21,13 @@ class Youth(Person):
 	grade: Optional[int] = None
 	school_name: Optional[str] = None
 	birth_date: datetime.date
+	email: Optional[str] = ""
 	emergency_contact_name: Optional[str] = ""
 	emergency_contact_phone: Optional[str] = ""
 	emergency_contact_relationship: Optional[str] = ""
+	emergency_contact_2_name: Optional[str] = ""
+	emergency_contact_2_phone: Optional[str] = ""
+	emergency_contact_2_relationship: Optional[str] = ""
 
 class Leader(Person):
 	role: str

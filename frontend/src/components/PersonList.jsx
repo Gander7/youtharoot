@@ -98,9 +98,13 @@ const PersonForm = ({ open, onClose, person, onSave, personType }) => {
     grade: '',
     school_name: '',
     birth_date: '',
+    email: '',
     emergency_contact_name: '',
     emergency_contact_phone: '',
     emergency_contact_relationship: '',
+    emergency_contact_2_name: '',
+    emergency_contact_2_phone: '',
+    emergency_contact_2_relationship: '',
     role: '',
     ...person
   });
@@ -115,9 +119,13 @@ const PersonForm = ({ open, onClose, person, onSave, personType }) => {
       sms_opt_out: false,
       school_name: '',
       birth_date: '',
+      email: '',
       emergency_contact_name: '',
       emergency_contact_phone: '',
       emergency_contact_relationship: '',
+      emergency_contact_2_name: '',
+      emergency_contact_2_phone: '',
+      emergency_contact_2_relationship: '',
       role: '',
       ...(person || {}),
     };
@@ -186,9 +194,13 @@ const PersonForm = ({ open, onClose, person, onSave, personType }) => {
         personData.school_name = formData.school_name;
       }
       personData.birth_date = formData.birth_date;
+      personData.email = formData.email || '';
       personData.emergency_contact_name = formData.emergency_contact_name || '';
       personData.emergency_contact_phone = formData.emergency_contact_phone || '';
       personData.emergency_contact_relationship = formData.emergency_contact_relationship || '';
+      personData.emergency_contact_2_name = formData.emergency_contact_2_name || '';
+      personData.emergency_contact_2_phone = formData.emergency_contact_2_phone || '';
+      personData.emergency_contact_2_relationship = formData.emergency_contact_2_relationship || '';
     } else {
       console.log(formData);
       personData.role = formData.role;
@@ -340,6 +352,22 @@ const PersonForm = ({ open, onClose, person, onSave, personType }) => {
                 </Grid>
                 
                 <TextField
+                  label="Email"
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  fullWidth
+                  helperText="Optional"
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <EmailIcon />
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+                
+                <TextField
                   label="School Name"
                   value={formData.school_name}
                   onChange={(e) => setFormData({ ...formData, school_name: e.target.value })}
@@ -381,6 +409,49 @@ const PersonForm = ({ open, onClose, person, onSave, personType }) => {
                   label="Emergency Contact Phone (Optional)"
                   value={formData.emergency_contact_phone}
                   onChange={(e) => setFormData({ ...formData, emergency_contact_phone: e.target.value })}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <PhoneIcon />
+                      </InputAdornment>
+                    ),
+                  }}
+                  inputProps={{
+                    pattern: "^(\\+?1[\\-\\s]?)?\\(?[0-9]{3}\\)?[\\-\\s]?[0-9]{3}[\\-\\s]?[0-9]{4}$",
+                    title: "Please enter a valid Canadian phone number: (416) 555-1234 or +1-416-555-1234"
+                  }}
+                  placeholder="(416) 555-1234"
+                  helperText="Canadian format: (416) 555-1234 or +1-416-555-1234"
+                  fullWidth
+                />
+
+                <Divider />
+                <Typography variant="h6" color="primary">Second Emergency Contact</Typography>
+                
+                <Grid container spacing={2}>
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      label="Contact Name (Optional)"
+                      value={formData.emergency_contact_2_name}
+                      onChange={(e) => setFormData({ ...formData, emergency_contact_2_name: e.target.value })}
+                      fullWidth
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      label="Relationship (Optional)"
+                      value={formData.emergency_contact_2_relationship}
+                      onChange={(e) => setFormData({ ...formData, emergency_contact_2_relationship: e.target.value })}
+                      fullWidth
+                    />
+                  </Grid>
+                </Grid>
+                
+                <TextField
+                  type="tel"
+                  label="Second Emergency Contact Phone (Optional)"
+                  value={formData.emergency_contact_2_phone}
+                  onChange={(e) => setFormData({ ...formData, emergency_contact_2_phone: e.target.value })}
                   InputProps={{
                     startAdornment: (
                       <InputAdornment position="start">

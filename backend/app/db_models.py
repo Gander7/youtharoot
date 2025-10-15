@@ -22,9 +22,13 @@ class PersonDB(Base):
     grade = Column(Integer, nullable=True)
     school_name = Column(String(200), nullable=True)
     birth_date = Column(Date, nullable=True)
+    email = Column(String(200), nullable=True)
     emergency_contact_name = Column(String(100), nullable=True)
     emergency_contact_phone = Column(String(20), nullable=True)
     emergency_contact_relationship = Column(String(50), nullable=True)
+    emergency_contact_2_name = Column(String(100), nullable=True)
+    emergency_contact_2_phone = Column(String(20), nullable=True)
+    emergency_contact_2_relationship = Column(String(50), nullable=True)
     
     # Leader-specific fields
     role = Column(String(100), nullable=True)

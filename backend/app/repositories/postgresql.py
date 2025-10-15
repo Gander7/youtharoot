@@ -29,9 +29,13 @@ class PostgreSQLPersonRepository(PersonRepository):
                 grade=db_person.grade,
                 school_name=db_person.school_name,
                 birth_date=db_person.birth_date,
+                email=db_person.email or "",
                 emergency_contact_name=db_person.emergency_contact_name or "",
                 emergency_contact_phone=db_person.emergency_contact_phone or "",
-                emergency_contact_relationship=db_person.emergency_contact_relationship or ""
+                emergency_contact_relationship=db_person.emergency_contact_relationship or "",
+                emergency_contact_2_name=db_person.emergency_contact_2_name or "",
+                emergency_contact_2_phone=db_person.emergency_contact_2_phone or "",
+                emergency_contact_2_relationship=db_person.emergency_contact_2_relationship or ""
             )
         else:
             return Leader(
@@ -55,9 +59,13 @@ class PostgreSQLPersonRepository(PersonRepository):
             db_person.grade = person.grade
             db_person.school_name = person.school_name
             db_person.birth_date = person.birth_date
+            db_person.email = person.email
             db_person.emergency_contact_name = person.emergency_contact_name
             db_person.emergency_contact_phone = person.emergency_contact_phone
             db_person.emergency_contact_relationship = person.emergency_contact_relationship
+            db_person.emergency_contact_2_name = person.emergency_contact_2_name
+            db_person.emergency_contact_2_phone = person.emergency_contact_2_phone
+            db_person.emergency_contact_2_relationship = person.emergency_contact_2_relationship
         else:
             db_person.role = person.role
             db_person.birth_date = person.birth_date
@@ -106,9 +114,13 @@ class PostgreSQLPersonRepository(PersonRepository):
             db_person.grade = person.grade
             db_person.school_name = person.school_name
             db_person.birth_date = person.birth_date
+            db_person.email = person.email
             db_person.emergency_contact_name = person.emergency_contact_name
             db_person.emergency_contact_phone = person.emergency_contact_phone
             db_person.emergency_contact_relationship = person.emergency_contact_relationship
+            db_person.emergency_contact_2_name = person.emergency_contact_2_name
+            db_person.emergency_contact_2_phone = person.emergency_contact_2_phone
+            db_person.emergency_contact_2_relationship = person.emergency_contact_2_relationship
         else:
             db_person.role = person.role
             db_person.birth_date = person.birth_date
