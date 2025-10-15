@@ -1,4 +1,16 @@
 from contextlib import asynccontextmanager
+import logging
+import sys
+
+# Configure logging FIRST, before importing any app modules
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.StreamHandler(sys.stdout)
+    ]
+)
+
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -12,13 +24,15 @@ from app.database import init_database
 from app.repositories import init_repositories
 from app.config import settings
 
+logger = logging.getLogger(__name__)
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup
-    print(f"🚀 Starting Youtharoot API")
-    print(f"📊 Database type: {settings.DATABASE_TYPE}")
-    print(f"🔧 Debug mode: {settings.DEBUG}")
-    print(f"💾 Database URL present: {'Yes' if settings.DATABASE_URL else 'No'}")
+    logger.info("🚀 Starting Youtharoot API")
+    logger.info(f"📊 Database type: {settings.DATABASE_TYPE}")
+    logger.info(f"🔧 Debug mode: {settings.DEBUG}")
+    logger.info(f"💾 Database URL present: {'Yes' if settings.DATABASE_URL else 'No'}")
     
     # Mask sensitive info in database URL for security
     if settings.database_url:
@@ -27,21 +41,21 @@ async def lifespan(app: FastAPI):
             from urllib.parse import urlparse
             parsed = urlparse(settings.database_url)
             safe_url = f"{parsed.scheme}://{'***:***@' if parsed.username else ''}{parsed.hostname}{':' + str(parsed.port) if parsed.port else ''}{parsed.path}"
-            print(f"🔗 Database connection: {safe_url}")
+            logger.info(f"🔗 Database connection: {safe_url}")
         except Exception:
-            print(f"🔗 Database connection: [URL parsing error - connection configured]")
+            logger.info("🔗 Database connection: [URL parsing error - connection configured]")
     else:
-        print(f"🔗 Database connection: In-memory storage")
+        logger.info("🔗 Database connection: In-memory storage")
     
     init_database()
     init_repositories()
     
-    print("✅ Application startup complete")
+    logger.info("✅ Application startup complete")
     
     yield
     
     # Shutdown (if needed)
-    print("🛑 Application shutdown")
+    logger.info("🛑 Application shutdown")
 
 app = FastAPI(
     title="Youtharoot API", 
@@ -61,7 +75,7 @@ cors_origins = [
 if not settings.DEBUG or settings.DATABASE_URL:  # Railway usually sets DATABASE_URL
     cors_origins.append("*")
 
-print(f"🌐 CORS Origins: {cors_origins}")
+logger.info(f"🌐 CORS Origins: {cors_origins}")
 
 app.add_middleware(
     CORSMiddleware,

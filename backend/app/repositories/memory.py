@@ -1,7 +1,7 @@
 from typing import List, Optional, Union
 from app.repositories.base import PersonRepository, EventRepository, UserRepository, MessageGroupRepository
 from app.models import Youth, Leader, Event, User
-from app.messaging_models import MessageGroup, MessageGroupCreate, MessageGroupUpdate, MessageGroupMembership, MessageGroupMembershipCreate, MessageGroupMembershipWithPerson, BulkGroupMembershipResponse
+from app.messaging_models import MessageGroup, MessageGroupCreate, MessageGroupUpdate, MessageGroupMembership, MessageGroupMembershipCreate, MessageGroupMembershipWithPerson, BulkGroupMembershipResponse, YouthWithType, LeaderWithType
 import datetime
 
 class InMemoryPersonRepository(PersonRepository):
@@ -396,9 +396,15 @@ class InMemoryMessageGroupRepository(MessageGroupRepository):
         for membership in memberships:
             person = await person_repo.get_person(membership.person_id)
             if person:
+                # Create appropriate typed person object with person_type field
+                if isinstance(person, Youth):
+                    person_with_type = YouthWithType(**person.model_dump(), person_type="youth")
+                else:  # Leader
+                    person_with_type = LeaderWithType(**person.model_dump(), person_type="leader")
+                
                 membership_with_person = MessageGroupMembershipWithPerson(
                     **membership.model_dump(),
-                    person=person
+                    person=person_with_type
                 )
                 result.append(membership_with_person)
         

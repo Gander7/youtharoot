@@ -14,7 +14,7 @@ Following TDD methodology with comprehensive mocking strategy.
 import pytest
 import os
 from datetime import datetime, timezone
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import Mock, patch, MagicMock, AsyncMock
 from fastapi.testclient import TestClient
 
 from app.main import app
@@ -196,13 +196,13 @@ class TestSMSAPI:
             mock_group = Mock()
             mock_group.id = 1
             mock_group.name = "Test Group"
-            mock_group_repo.get_group.return_value = mock_group
+            mock_group_repo.get_group = AsyncMock(return_value=mock_group)
             
             mock_member1 = Mock()
             mock_member1.person_id = 1
             mock_member2 = Mock() 
             mock_member2.person_id = 3
-            mock_group_repo.get_group_members.return_value = [mock_member1, mock_member2]
+            mock_group_repo.get_group_members = AsyncMock(return_value=[mock_member1, mock_member2])
             mock_get_group_repo.return_value = mock_group_repo
             
             payload = {
@@ -236,11 +236,11 @@ class TestSMSAPI:
             mock_group = Mock()
             mock_group.id = 1
             mock_group.name = "Test Group"
-            mock_group_repo.get_group.return_value = mock_group
+            mock_group_repo.get_group = AsyncMock(return_value=mock_group)
             
             mock_member1 = Mock()
             mock_member1.person_id = 1
-            mock_group_repo.get_group_members.return_value = [mock_member1]
+            mock_group_repo.get_group_members = AsyncMock(return_value=[mock_member1])
             mock_get_group_repo.return_value = mock_group_repo
             
             payload = {
@@ -259,7 +259,7 @@ class TestSMSAPI:
         # Use patch to mock the group repository function
         with patch('app.routers.sms.get_group_repository') as mock_get_group_repo:
             mock_group_repo = Mock()
-            mock_group_repo.get_group.return_value = None
+            mock_group_repo.get_group = AsyncMock(return_value=None)
             mock_get_group_repo.return_value = mock_group_repo
             
             payload = {

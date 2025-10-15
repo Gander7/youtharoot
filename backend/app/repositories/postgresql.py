@@ -2,7 +2,7 @@ from typing import List, Optional, Union
 from sqlalchemy.orm import Session
 from app.repositories.base import PersonRepository, EventRepository, UserRepository, MessageGroupRepository
 from app.models import Youth, Leader, Event, EventPerson, User
-from app.messaging_models import MessageGroup, MessageGroupCreate, MessageGroupUpdate, MessageGroupMembership, MessageGroupMembershipWithPerson, BulkGroupMembershipResponse
+from app.messaging_models import MessageGroup, MessageGroupCreate, MessageGroupUpdate, MessageGroupMembership, MessageGroupMembershipWithPerson, BulkGroupMembershipResponse, YouthWithType, LeaderWithType
 from app.db_models import PersonDB, EventDB, UserDB, MessageGroupDB, MessageGroupMembershipDB
 from datetime import datetime, timezone
 import datetime as dt
@@ -617,10 +617,16 @@ class PostgreSQLMessageGroupRepository(MessageGroupRepository):
             # Fetch full person details
             person = await person_repo.get_person(membership.person_id)
             if person:
+                # Create appropriate typed person object with person_type field
+                if isinstance(person, Youth):
+                    person_with_type = YouthWithType(**person.model_dump(), person_type="youth")
+                else:  # Leader
+                    person_with_type = LeaderWithType(**person.model_dump(), person_type="leader")
+                
                 # Create the combined model
                 membership_with_person = MessageGroupMembershipWithPerson(
                     **membership.model_dump(),
-                    person=person
+                    person=person_with_type
                 )
                 result.append(membership_with_person)
         

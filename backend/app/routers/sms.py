@@ -17,6 +17,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query, Form, Requ
 from fastapi.responses import PlainTextResponse
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, Field
+import logging
 
 from app.database import get_db
 from app.auth import get_current_user
@@ -29,6 +30,8 @@ from app.config import settings
 
 
 router = APIRouter(prefix="/api/sms", tags=["SMS"])
+
+logger = logging.getLogger(__name__)
 
 
 # Pydantic models for API validation
@@ -247,13 +250,37 @@ async def send_group_sms(
                 detail="No eligible recipients found - all group members have opted out of SMS"
             )
         
+        # Remove duplicates based on phone number to prevent duplicate SMS sends
+        seen_phones = set()
+        deduplicated_recipients = []
+        duplicate_count = 0
+        
+        for recipient in eligible_recipients:
+            phone = recipient["phone_number"]
+            if phone not in seen_phones:
+                seen_phones.add(phone)
+                deduplicated_recipients.append(recipient)
+            else:
+                duplicate_count += 1
+                logger.warning(f"Duplicate phone number detected: {phone} (person_id: {recipient['id']}) - skipping to prevent duplicate SMS")
+        
+        if duplicate_count > 0:
+            logger.info(f"Removed {duplicate_count} duplicate phone numbers. Sending to {len(eligible_recipients)} unique recipients.")
+
+        # Update eligible_recipients to use deduplicated list
+        eligible_recipients = deduplicated_recipients
+        
         # Send SMS to each eligible recipient
         results = []
         sent_count = 0
         failed_count = 0
         
-        for recipient in eligible_recipients:
+        logger.info(f"Starting group SMS send to {len(eligible_recipients)} recipients for group {request.group_id}")
+        
+        for i, recipient in enumerate(eligible_recipients, 1):
             try:
+                logger.info(f"[{i}/{len(eligible_recipients)}] Sending SMS to {recipient['phone_number']} (person_id: {recipient['id']})")
+                
                 result = sms_service.send_message(
                     to_phone=recipient["phone_number"],
                     message_body=request.message,
@@ -262,6 +289,7 @@ async def send_group_sms(
                 
                 if result["success"]:
                     sent_count += 1
+                    logger.info(f"[{i}/{len(eligible_recipients)}] SMS SUCCESS - Twilio SID: {result['message_sid']}")
                     
                     # Log message to database
                     message_record = MessageDB(
@@ -278,6 +306,7 @@ async def send_group_sms(
                     db.add(message_record)
                 else:
                     failed_count += 1
+                    logger.warning(f"[{i}/{len(eligible_recipients)}] SMS FAILED to {recipient['phone_number']}: {result.get('error', 'Unknown error')}")
                     
                     # Log failed message to database
                     message_record = MessageDB(
@@ -304,6 +333,7 @@ async def send_group_sms(
                 
             except Exception as e:
                 failed_count += 1
+                logger.error(f"[{i}/{len(eligible_recipients)}] EXCEPTION sending SMS to {recipient['phone_number']}: {str(e)}")
                 results.append({
                     "person_id": recipient["id"],
                     "phone_number": recipient["phone_number"],
@@ -313,12 +343,16 @@ async def send_group_sms(
                     "error": str(e)
                 })
         
+        logger.info(f"Group SMS send completed: {sent_count} sent, {failed_count} failed, committing to database...")
         db.commit()
+        logger.info(f"Database commit completed for group {request.group_id}")
         
-        # Calculate skipped count (total members - eligible recipients)
+        # Calculate skipped count (total members - eligible recipients after deduplication)
         total_members = len(members)
-        skipped_count = total_members - len(eligible_recipients)
-        
+        skipped_count = total_members - len(eligible_recipients) - duplicate_count
+
+        logger.info(f"SMS Summary - Total members: {total_members}, Sent: {sent_count}, Failed: {failed_count}, Skipped (opted out): {skipped_count}, Duplicates removed: {duplicate_count}") 
+
         return GroupSMSSendResponse(
             success=sent_count > 0,
             sent_count=sent_count,

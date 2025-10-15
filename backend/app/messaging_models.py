@@ -12,15 +12,62 @@ Following TDD approach - these models support the test requirements.
 """
 
 from pydantic import BaseModel, Field, field_validator, model_validator, ConfigDict
-from datetime import datetime
+from datetime import datetime, date
 from typing import Optional, List, Literal, TYPE_CHECKING, Union
 from enum import Enum
 
 if TYPE_CHECKING:
     from app.models import Person, Youth, Leader
 else:
-    # At runtime, we'll import these directly
-    from app.models import Youth, Leader
+    # Avoid circular imports during runtime
+    Person = "Person"
+    Youth = "Youth"
+    Leader = "Leader"
+
+# Extended person models with person_type for frontend display
+class YouthWithType(BaseModel):
+    """Youth model with person_type field for frontend group member display."""
+    # All Youth fields
+    id: Optional[int] = None
+    first_name: str
+    last_name: str
+    phone_number: Optional[str] = None
+    archived_on: Optional[datetime] = None
+    sms_consent: bool = True
+    sms_opt_out: bool = False
+    grade: Optional[int] = None
+    school_name: Optional[str] = None
+    birth_date: date
+    email: Optional[str] = ""
+    emergency_contact_name: Optional[str] = ""
+    emergency_contact_phone: Optional[str] = ""
+    emergency_contact_relationship: Optional[str] = ""
+    emergency_contact_2_name: Optional[str] = ""
+    emergency_contact_2_phone: Optional[str] = ""
+    emergency_contact_2_relationship: Optional[str] = ""
+    allergies: Optional[str] = ""
+    other_considerations: Optional[str] = ""
+    # Additional field for frontend
+    person_type: Literal["youth"] = "youth"
+
+    model_config = ConfigDict(from_attributes=True)
+
+class LeaderWithType(BaseModel):
+    """Leader model with person_type field for frontend group member display."""
+    # All Leader fields
+    id: Optional[int] = None
+    first_name: str
+    last_name: str
+    phone_number: Optional[str] = None
+    archived_on: Optional[datetime] = None
+    sms_consent: bool = True
+    sms_opt_out: bool = False
+    role: str
+    birth_date: Optional[date] = None
+    # Additional field for frontend
+    person_type: Literal["leader"] = "leader"
+
+    model_config = ConfigDict(from_attributes=True)
 
 
 # Enums for type safety
@@ -107,7 +154,7 @@ class MessageGroupMembership(MessageGroupMembershipBase):
 
 class MessageGroupMembershipWithPerson(MessageGroupMembership):
     """Group membership model with full person details for frontend display."""
-    person: Union[Youth, Leader]  # Use Union instead of forward reference
+    person: Union[YouthWithType, LeaderWithType]  # Use types with person_type field
 
     model_config = ConfigDict(from_attributes=True)
 
