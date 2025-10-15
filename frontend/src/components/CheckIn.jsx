@@ -335,15 +335,38 @@ export default function CheckIn({ eventId, viewOnly = false }) {
 
   const formatTime = (timeStr) => {
     if (!timeStr) return '';
-    const date = new Date(timeStr);
-    const time = date.toLocaleTimeString('en-US', {
+    
+    // Backend sends UTC timestamps without timezone info
+    // We need to explicitly treat them as UTC and convert to Halifax timezone
+    let utcDate;
+    
+    if (timeStr.includes('T')) {
+      // ISO format: "2025-10-15T12:34:00" or "2025-10-15T12:34:00Z"
+      if (timeStr.endsWith('Z')) {
+        utcDate = new Date(timeStr);
+      } else {
+        // Assume UTC if no timezone specified
+        utcDate = new Date(timeStr + 'Z');
+      }
+    } else {
+      // Simple format, assume UTC
+      utcDate = new Date(timeStr + 'Z');
+    }
+    
+    // Convert to Halifax timezone (America/Halifax)
+    const halifaxTime = utcDate.toLocaleTimeString('en-US', {
       hour: 'numeric',
-      minute: '2-digit'
+      minute: '2-digit',
+      timeZone: 'America/Halifax'
     });
-    const timezone = date.toLocaleTimeString('en-US', {
-      timeZoneName: 'short'
+    
+    // Get timezone abbreviation for Halifax
+    const timezone = utcDate.toLocaleTimeString('en-US', {
+      timeZoneName: 'short',
+      timeZone: 'America/Halifax'
     }).split(' ').pop();
-    return `${time} ${timezone}`;
+    
+    return `${halifaxTime} ${timezone}`;
   };
 
   // Helper functions to safely parse event date in local timezone

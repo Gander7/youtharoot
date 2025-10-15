@@ -134,7 +134,34 @@ function GroupMessageDetailsDialog({ open, onClose, groupId, messageContent, sen
 
   const formatDate = (dateString) => {
     if (!dateString) return 'N/A';
-    return new Date(dateString).toLocaleString();
+    
+    // Backend sends UTC timestamps without timezone info
+    // Assume UTC and convert to Halifax timezone
+    let utcDate;
+    
+    if (dateString.includes('T')) {
+      // ISO format: "2025-10-15T12:34:00" or "2025-10-15T12:34:00Z"
+      if (dateString.endsWith('Z')) {
+        utcDate = new Date(dateString);
+      } else {
+        // Assume UTC if no timezone specified
+        utcDate = new Date(dateString + 'Z');
+      }
+    } else {
+      // Simple format, assume UTC
+      utcDate = new Date(dateString + 'Z');
+    }
+    
+    // Convert to Halifax timezone
+    return utcDate.toLocaleString('en-US', {
+      timeZone: 'America/Halifax',
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      timeZoneName: 'short'
+    });
   };
 
   return (
@@ -199,7 +226,35 @@ function TopLevelMessageCard({ message, onViewDetails }) {
   console.log('Rendering TopLevelMessageCard with message:', message);
   
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleString();
+    if (!dateString) return 'N/A';
+    
+    // Backend sends UTC timestamps without timezone info
+    // Assume UTC and convert to Halifax timezone
+    let utcDate;
+    
+    if (dateString.includes('T')) {
+      // ISO format: "2025-10-15T12:34:00" or "2025-10-15T12:34:00Z"
+      if (dateString.endsWith('Z')) {
+        utcDate = new Date(dateString);
+      } else {
+        // Assume UTC if no timezone specified
+        utcDate = new Date(dateString + 'Z');
+      }
+    } else {
+      // Simple format, assume UTC
+      utcDate = new Date(dateString + 'Z');
+    }
+    
+    // Convert to Halifax timezone
+    return utcDate.toLocaleString('en-US', {
+      timeZone: 'America/Halifax',
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      timeZoneName: 'short'
+    });
   };
 
   const truncateMessage = (text, maxLength = 100) => {
