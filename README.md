@@ -277,6 +277,8 @@ This project is licensed under the MIT License. See [LICENSE](LICENSE) for detai
 - [x] **Fix race conditions** - ✅ COMPLETED: Eliminated setTimeout hack in CheckIn.jsx and implemented proper synchronous API response handling
 
 ### High Priority ⚠️
+- [ ] **Add spinner/loading indicators** - Implement loading spinners for API calls and form submissions to improve user experience
+- [ ] **Fix webhook implementation** - Debug and fix webhook functionality for proper SMS status updates and delivery confirmations
 - [ ] **Add input validation** - Implement client-side and server-side validation for required fields, phone number format, email format
 - [ ] **Implement proper error handling in API routes** - Add try-catch blocks and proper HTTP status codes in FastAPI routes
 - [ ] **Add authentication middleware** - Implement JWT token validation middleware for protected API endpoints

@@ -534,30 +534,35 @@ export default function EventList() {
   };
 
   const isEventEnded = (event) => {
-    // Parse event date and time to get the exact event end time
-    const [year, month, day] = event.date.split('-').map(Number);
-    const eventDate = new Date(year, month - 1, day);
-    
-    // Parse end time and set it on the event date
-    const [hours, minutes] = event.end_time.split(':').map(Number);
-    const eventEndTime = new Date(eventDate);
-    eventEndTime.setHours(hours, minutes, 0, 0);
-    
+    // Get current time in Halifax timezone
     const now = new Date();
-    return now > eventEndTime;
+    const nowHalifaxString = now.toLocaleString("sv-SE", {timeZone: "America/Halifax"});
+    const nowHalifax = new Date(nowHalifaxString);
+    
+    // Parse event date and time, treating them as Halifax timezone
+    const [year, month, day] = event.date.split('-').map(Number);
+    const [hours, minutes] = event.end_time.split(':').map(Number);
+    
+    // Create event end time in Halifax timezone
+    const eventEndString = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')} ${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:00`;
+    const eventEndHalifax = new Date(eventEndString);
+    
+    return nowHalifax > eventEndHalifax;
   };
 
   const canManageAttendance = (event) => {
-    // Parse event date to check if it's accessible (from event day onward)
-    const [year, month, day] = event.date.split('-').map(Number);
-    const eventDate = new Date(year, month - 1, day);
-    const eventStartOfDay = new Date(eventDate);
-    eventStartOfDay.setHours(0, 0, 0, 0);
-    
+    // Get current time in Halifax timezone  
     const now = new Date();
+    const nowHalifaxString = now.toLocaleString("sv-SE", {timeZone: "America/Halifax"});
+    const nowHalifax = new Date(nowHalifaxString);
     
-    // Must be on or after event day
-    if (now < eventStartOfDay) return false;
+    // Parse event date treating it as Halifax timezone
+    const [year, month, day] = event.date.split('-').map(Number);
+    const eventStartString = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')} 00:00:00`;
+    const eventStartOfDayHalifax = new Date(eventStartString);
+    
+    // Must be on or after event day (in Halifax timezone)
+    if (nowHalifax < eventStartOfDayHalifax) return false;
     
     // If event hasn't ended yet, always allow management
     if (!isEventEnded(event)) return true;
@@ -567,16 +572,18 @@ export default function EventList() {
   };
 
   const canViewAttendance = (event) => {
-    // Parse event date to check if it's accessible (from event day onward)  
-    const [year, month, day] = event.date.split('-').map(Number);
-    const eventDate = new Date(year, month - 1, day);
-    const eventStartOfDay = new Date(eventDate);
-    eventStartOfDay.setHours(0, 0, 0, 0);
-    
+    // Get current time in Halifax timezone
     const now = new Date();
+    const nowHalifaxString = now.toLocaleString("sv-SE", {timeZone: "America/Halifax"});
+    const nowHalifax = new Date(nowHalifaxString);
     
-    // Must be on or after event day
-    if (now < eventStartOfDay) return false;
+    // Parse event date treating it as Halifax timezone  
+    const [year, month, day] = event.date.split('-').map(Number);
+    const eventStartString = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')} 00:00:00`;
+    const eventStartOfDayHalifax = new Date(eventStartString);
+    
+    // Must be on or after event day (in Halifax timezone)
+    if (nowHalifax < eventStartOfDayHalifax) return false;
     
     // If event has ended and everyone is checked out, show view-only
     return isEventEnded(event) && hasEveryoneCheckedOut(event.id);

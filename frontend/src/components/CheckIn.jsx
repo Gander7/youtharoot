@@ -403,17 +403,19 @@ export default function CheckIn({ eventId, viewOnly = false }) {
   const isEventEnded = () => {
     if (!event) return false;
     
-    const now = new Date();
+    // Get current time and convert to Halifax timezone for comparison
+    const now = new Date(now.toLocaleString("en-CA", {timeZone: "America/Halifax"}));
     
-    // Parse the event date properly to avoid timezone issues
-    // event.date comes as "YYYY-MM-DD" format from the server
+    // Parse the event date and time, treating them as Halifax timezone
     const [year, month, day] = event.date.split('-').map(Number);
     const [hours, minutes] = event.end_time.split(':').map(Number);
     
-    // Create the end time in local timezone (not UTC)
-    const eventEndTime = new Date(year, month - 1, day, hours, minutes, 0, 0);
+    // Create event end time in Halifax timezone
+    // Format: YYYY-MM-DD HH:mm:ss in Halifax timezone
+    const eventEndString = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')} ${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:00`;
+    const eventEndHalifax = new Date(eventEndString);
     
-    return now > eventEndTime;
+    return nowHalifax > eventEndHalifax;
   };
 
   const handleCheckOutAll = async () => {
