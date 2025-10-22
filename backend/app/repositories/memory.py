@@ -1,7 +1,7 @@
 from typing import List, Optional, Union
 from app.repositories.base import PersonRepository, EventRepository, UserRepository, MessageGroupRepository
-from app.models import Youth, Leader, Event, EventCreate, EventUpdate, User, PersonCreate, PersonUpdate, ParentYouthRelationshipCreate
-from app.messaging_models import MessageGroup, MessageGroupCreate, MessageGroupUpdate, MessageGroupMembership, MessageGroupMembershipCreate, MessageGroupMembershipWithPerson, BulkGroupMembershipResponse, YouthWithType, LeaderWithType
+from app.models import Youth, Leader, Parent, Event, EventCreate, EventUpdate, User, PersonCreate, PersonUpdate, ParentYouthRelationshipCreate
+from app.messaging_models import MessageGroup, MessageGroupCreate, MessageGroupUpdate, MessageGroupMembership, MessageGroupMembershipCreate, MessageGroupMembershipWithPerson, BulkGroupMembershipResponse, YouthWithType, LeaderWithType, ParentWithType
 import datetime
 
 class InMemoryPersonRepository(PersonRepository):
@@ -13,7 +13,7 @@ class InMemoryPersonRepository(PersonRepository):
         self.next_person_id = 1
         self.next_relationship_id = 1
     
-    async def create_person(self, person: Union[Youth, Leader]) -> Union[Youth, Leader]:
+    async def create_person(self, person: Union[Youth, Leader, Parent]) -> Union[Youth, Leader, Parent]:
         if person.archived_on is not None:
             raise ValueError("Cannot create archived person")
         
@@ -25,13 +25,13 @@ class InMemoryPersonRepository(PersonRepository):
         self.store[person.id] = person
         return person
     
-    async def get_person(self, person_id: int) -> Optional[Union[Youth, Leader]]:
+    async def get_person(self, person_id: int) -> Optional[Union[Youth, Leader, Parent]]:
         person = self.store.get(person_id)
         if person and person.archived_on is None:
             return person
         return None
     
-    async def update_person(self, person_id: int, person: Union[Youth, Leader]) -> Union[Youth, Leader]:
+    async def update_person(self, person_id: int, person: Union[Youth, Leader, Parent]) -> Union[Youth, Leader, Parent]:
         if person.archived_on is not None:
             raise ValueError("Cannot update person with archived_on field")
         if person_id not in self.store:
@@ -597,8 +597,13 @@ class InMemoryMessageGroupRepository(MessageGroupRepository):
                 # Create appropriate typed person object with person_type field
                 if isinstance(person, Youth):
                     person_with_type = YouthWithType(**person.model_dump(), person_type="youth")
-                else:  # Leader
+                elif isinstance(person, Leader):
                     person_with_type = LeaderWithType(**person.model_dump(), person_type="leader")
+                elif isinstance(person, Parent):
+                    person_with_type = ParentWithType(**person.model_dump())
+                else:
+                    # Skip unknown person types
+                    continue
                 
                 membership_with_person = MessageGroupMembershipWithPerson(
                     **membership.model_dump(),

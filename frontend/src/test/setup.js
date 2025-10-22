@@ -63,25 +63,41 @@ vi.mock('@mui/material', () => ({
   CardActions: createMockComponent('CardActions'),
   CardContent: createMockComponent('CardContent'),
   CardHeader: createMockComponent('CardHeader'),
-  Checkbox: createMockComponent('Checkbox'),
+  Checkbox: ({ checked, onChange, name, ...props }) => 
+    React.createElement('input', { 
+      type: 'checkbox',
+      role: 'checkbox',
+      checked: checked || false,
+      onChange: onChange || (() => {}),
+      'data-testid': 'checkbox',
+      name,
+      'aria-label': name,
+      ...props 
+    }),
   Chip: ({ label, color, icon, variant, size, ...props }) => React.createElement('div', 
     { 'data-testid': 'chip', color, icon, variant, size, ...props },
     label
   ),
   CircularProgress: createMockComponent('CircularProgress'),
+  Collapse: createMockComponent('Collapse'),
   Container: ({ children, maxWidth, ...props }) => {
     // Filter out Material-UI specific props to avoid DOM warnings
     const { gutterBottom, ...domProps } = props;
     return React.createElement('div', { 'data-testid': 'container', maxwidth: maxWidth, ...domProps }, children);
   },
-  Dialog: createMockComponent('Dialog'),
+  Dialog: ({ open, children, ...props }) => 
+    open ? React.createElement('div', { 'data-testid': 'dialog', role: 'dialog', ...props }, children) : null,
   DialogActions: createMockComponent('DialogActions'),
   DialogContent: createMockComponent('DialogContent'),
   DialogTitle: createMockComponent('DialogTitle'),
   Divider: createMockComponent('Divider'),
   Fab: createMockComponent('Fab'),
   FormControl: createMockComponent('FormControl'),
-  FormControlLabel: createMockComponent('FormControlLabel'),
+  FormControlLabel: ({ label, control, ...props }) => 
+    React.createElement('div', { 'data-testid': 'formcontrollabel', ...props }, 
+      control, 
+      React.createElement('span', {}, label)
+    ),
   FormLabel: createMockComponent('FormLabel'),
   Grid: createMockComponent('Grid'),
   IconButton: createMockComponent('IconButton'),
@@ -156,7 +172,15 @@ vi.mock('@mui/material', () => ({
   ),
   Snackbar: createMockComponent('Snackbar'),
   Stack: createMockComponent('Stack'),
-  Switch: createMockComponent('Switch'),
+  Switch: ({ checked, onChange, color, ...props }) => 
+    React.createElement('input', { 
+      'data-testid': 'switch', 
+      type: 'checkbox',
+      checked: checked || false,
+      onChange: (e) => onChange && onChange({ target: { checked: e.target.checked } }),
+      color,
+      ...props 
+    }),
   Tabs: ({ children, value, onChange, ...props }) => {
     const handleClick = (e) => {
       // Find which button was clicked and call onChange with its index
@@ -196,7 +220,7 @@ vi.mock('@mui/material', () => ({
   TableContainer: createMockComponent('TableContainer'),
   TableHead: createMockComponent('TableHead'),
   TableRow: createMockComponent('TableRow'),
-    TextField: ({ label, value, onChange, name, multiline, rows, helperText, ...props }) => {
+    TextField: ({ label, value, onChange, name, multiline, rows, helperText, placeholder, ...props }) => {
     const Element = multiline ? 'textarea' : 'input';
     const inputElement = React.createElement(Element, {
       'data-testid': 'textfield',
@@ -204,6 +228,7 @@ vi.mock('@mui/material', () => ({
       value: value || '',
       onChange: onChange || (() => {}),
       name,
+      placeholder,
       type: multiline ? 'text' : 'text',
       rows: multiline ? rows : undefined,
       ...props
@@ -229,25 +254,6 @@ vi.mock('@mui/material', () => ({
     // Filter out Material-UI specific props to avoid DOM warnings
     return React.createElement('div', { 'data-variant': variant, component: props.component, ...props }, children);
   },
-  Checkbox: createMockComponent('Checkbox'),
-  FormControlLabel: ({ control, label, ...props }) => 
-    React.createElement('div', 
-      { 'data-testid': 'formcontrollabel', ...props },
-      control,
-      React.createElement('span', null, label)
-    ),
-  FormControl: createMockComponent('FormControl'),
-  InputLabel: createMockComponent('InputLabel'),
-  Select: ({ value, onChange, children, ...props }) => React.createElement('select',
-    {
-      value: value || '',
-      onChange: (e) => onChange && onChange({ target: { value: e.target.value } }),
-      'data-testid': 'select',
-      ...props
-    },
-    children
-  ),
-  MenuItem: ({ value, children }) => React.createElement('option', { value }, children),
 }))
 
 // Mock @mui/icons-material components
@@ -261,6 +267,7 @@ vi.mock('@mui/icons-material', () => ({
   Edit: createMockComponent('Edit'),
   Email: createMockComponent('Email'),
   Error: createMockComponent('Error'),
+  FamilyRestroom: createMockComponent('FamilyRestroom'),
   FilterList: createMockComponent('FilterList'),
   Group: createMockComponent('Group'),
   Home: createMockComponent('Home'),
@@ -284,6 +291,20 @@ vi.mock('@mui/material/styles', () => ({
   createTheme: vi.fn(() => ({})),
   useTheme: vi.fn(() => ({})),
 }))
+
+// Mock SimplePhoneInput component
+vi.mock('../components/SimplePhoneInput', () => ({
+  default: ({ value, onChange, label, ...props }) => {
+    return React.createElement('input', {
+      'data-testid': 'simple-phone-input',
+      'aria-label': label,
+      value: value || '',
+      onChange: onChange || (() => {}),
+      type: 'tel',
+      ...props
+    });
+  }
+}));
 
 // Reset mocks before each test
 beforeEach(() => {

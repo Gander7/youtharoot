@@ -2,7 +2,7 @@ from typing import List, Optional, Union
 from sqlalchemy.orm import Session
 from app.repositories.base import PersonRepository, EventRepository, UserRepository, MessageGroupRepository
 from app.models import Youth, Leader, Parent, Event, EventCreate, EventUpdate, EventPerson, User, PersonCreate, PersonUpdate, ParentYouthRelationshipCreate
-from app.messaging_models import MessageGroup, MessageGroupCreate, MessageGroupUpdate, MessageGroupMembership, MessageGroupMembershipWithPerson, BulkGroupMembershipResponse, YouthWithType, LeaderWithType
+from app.messaging_models import MessageGroup, MessageGroupCreate, MessageGroupUpdate, MessageGroupMembership, MessageGroupMembershipWithPerson, BulkGroupMembershipResponse, YouthWithType, LeaderWithType, ParentWithType
 from app.db_models import PersonDB, EventDB, UserDB, MessageGroupDB, MessageGroupMembershipDB, ParentYouthRelationshipDB
 from datetime import datetime, timezone
 import datetime as dt
@@ -13,7 +13,7 @@ class PostgreSQLPersonRepository(PersonRepository):
     def __init__(self, db: Session):
         self.db = db
     
-    def _db_to_pydantic(self, db_person: PersonDB) -> Union[Youth, Leader]:
+    def _db_to_pydantic(self, db_person: PersonDB) -> Union[Youth, Leader, Parent]:
         """Convert database model to Pydantic model"""
         base_data = {
             "id": db_person.id,
@@ -39,6 +39,12 @@ class PostgreSQLPersonRepository(PersonRepository):
                 allergies=db_person.allergies or "",
                 other_considerations=db_person.other_considerations or ""
             )
+        elif db_person.person_type == "parent":
+            return Parent(
+                **base_data,
+                email=db_person.email or "",
+                address=db_person.address or ""
+            )
         else:
             return Leader(
                 **base_data,
@@ -46,15 +52,17 @@ class PostgreSQLPersonRepository(PersonRepository):
                 birth_date=db_person.birth_date
             )
     
-    def _pydantic_to_db(self, person: Union[Youth, Leader]) -> PersonDB:
+    def _pydantic_to_db(self, person: Union[Youth, Leader, Parent]) -> PersonDB:
         """Convert Pydantic model to database model"""
+        person_type = "youth" if isinstance(person, Youth) else ("parent" if isinstance(person, Parent) else "leader")
+        
         db_person = PersonDB(
             # Don't set ID, let PostgreSQL auto-generate it
             first_name=person.first_name,
             last_name=person.last_name,
             phone_number=person.phone_number,
             archived_on=person.archived_on,
-            person_type="youth" if isinstance(person, Youth) else "leader"
+            person_type=person_type
         )
         
         if isinstance(person, Youth):
@@ -70,13 +78,16 @@ class PostgreSQLPersonRepository(PersonRepository):
             db_person.emergency_contact_2_relationship = person.emergency_contact_2_relationship
             db_person.allergies = person.allergies
             db_person.other_considerations = person.other_considerations
+        elif isinstance(person, Parent):
+            db_person.email = person.email
+            db_person.address = person.address
         else:
             db_person.role = person.role
             db_person.birth_date = person.birth_date
         
         return db_person
     
-    async def create_person(self, person: Union[Youth, Leader]) -> Union[Youth, Leader]:
+    async def create_person(self, person: Union[Youth, Leader, Parent]) -> Union[Youth, Leader, Parent]:
         if person.archived_on is not None:
             raise ValueError("Cannot create archived person")
         
@@ -87,7 +98,7 @@ class PostgreSQLPersonRepository(PersonRepository):
         
         return self._db_to_pydantic(db_person)
     
-    async def get_person(self, person_id: int) -> Optional[Union[Youth, Leader]]:
+    async def get_person(self, person_id: int) -> Optional[Union[Youth, Leader, Parent]]:
         db_person = self.db.query(PersonDB).filter(
             PersonDB.id == person_id,
             PersonDB.archived_on.is_(None)
@@ -97,7 +108,7 @@ class PostgreSQLPersonRepository(PersonRepository):
             return self._db_to_pydantic(db_person)
         return None
     
-    async def update_person(self, person_id: int, person: Union[Youth, Leader]) -> Union[Youth, Leader]:
+    async def update_person(self, person_id: int, person: Union[Youth, Leader, Parent]) -> Union[Youth, Leader, Parent]:
         if person.archived_on is not None:
             raise ValueError("Cannot update person with archived_on field")
         
@@ -891,8 +902,13 @@ class PostgreSQLMessageGroupRepository(MessageGroupRepository):
                 # Create appropriate typed person object with person_type field
                 if isinstance(person, Youth):
                     person_with_type = YouthWithType(**person.model_dump(), person_type="youth")
-                else:  # Leader
+                elif isinstance(person, Leader):
                     person_with_type = LeaderWithType(**person.model_dump(), person_type="leader")
+                elif isinstance(person, Parent):
+                    person_with_type = ParentWithType(**person.model_dump())
+                else:
+                    # Skip unknown person types
+                    continue
                 
                 # Create the combined model
                 membership_with_person = MessageGroupMembershipWithPerson(

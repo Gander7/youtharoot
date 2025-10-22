@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import List, Optional, Union
-from app.models import Youth, Leader, Event, EventCreate, EventUpdate, User, PersonCreate, PersonUpdate, ParentYouthRelationshipCreate
+from app.models import Youth, Leader, Parent, Event, EventCreate, EventUpdate, User, PersonCreate, PersonUpdate, ParentYouthRelationshipCreate
 from app.messaging_models import MessageGroup, MessageGroupCreate, MessageGroupUpdate, MessageGroupMembership, MessageGroupMembershipCreate, MessageGroupMembershipWithPerson, BulkGroupMembershipResponse
 from datetime import datetime
 
@@ -8,7 +8,7 @@ class PersonRepository(ABC):
     """Abstract interface for person storage"""
     
     @abstractmethod
-    async def create_person(self, person: Union[Youth, Leader]) -> Union[Youth, Leader]:
+    async def create_person(self, person: Union[Youth, Leader, Parent]) -> Union[Youth, Leader, Parent]:
         pass
     
     # New unified person management methods
@@ -60,11 +60,11 @@ class PersonRepository(ABC):
     
     # Legacy methods (maintained for backward compatibility)
     @abstractmethod
-    async def get_person(self, person_id: int) -> Optional[Union[Youth, Leader]]:
+    async def get_person(self, person_id: int) -> Optional[Union[Youth, Leader, Parent]]:
         pass
     
     @abstractmethod
-    async def update_person(self, person_id: int, person: Union[Youth, Leader]) -> Union[Youth, Leader]:
+    async def update_person(self, person_id: int, person: Union[Youth, Leader, Parent]) -> Union[Youth, Leader, Parent]:
         pass
     
     @abstractmethod

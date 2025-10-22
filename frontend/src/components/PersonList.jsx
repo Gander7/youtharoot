@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
+  Alert,
   Box,
   Card,
   CardContent,
@@ -387,17 +388,19 @@ const PersonForm = ({ open, onClose, person, onSave, personType }) => {
                         InputLabelProps={{ shrink: true }}
                       />
                     </Grid>
-                    <Grid item xs={6} sm={6}>
-                    <FormControlLabel
-                      control={
-                        <Checkbox
-                          checked={formData.sms_opt_out}
-                          onChange={(e) => setFormData({ ...formData, sms_opt_out: e.target.checked })}
+                    {formData.phone_number && (
+                      <Grid item xs={6} sm={6}>
+                        <FormControlLabel
+                          control={
+                            <Checkbox
+                              checked={formData.sms_opt_out}
+                              onChange={(e) => setFormData({ ...formData, sms_opt_out: e.target.checked })}
+                            />
+                          }
+                          label="SMS Opt out"
                         />
-                      }
-                      label="SMS Opt out"
-                    />
-                    </Grid>
+                      </Grid>
+                    )}
                   </Grid>
                   
                   <TextField
@@ -443,7 +446,7 @@ const PersonForm = ({ open, onClose, person, onSave, personType }) => {
 
               {tabValue === 2 && (
                 <Stack spacing={3} sx={{ mt: 1 }}>
-                  <Paper sx={{ p: 3, bgcolor: 'grey.50', border: '1px solid', borderColor: 'grey.300' }}>
+                  <Paper sx={{ p: 3, bgcolor: 'background.default', border: '1px solid', borderColor: 'divider' }}>
                     <Typography variant="h6" color="warning.main" sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
                       🔒 Legacy Emergency Contacts (Read-Only)
                     </Typography>
@@ -463,7 +466,7 @@ const PersonForm = ({ open, onClose, person, onSave, personType }) => {
                         fullWidth
                         sx={{ 
                           '& .MuiInputBase-root': { 
-                            bgcolor: 'grey.100',
+                            bgcolor: 'action.hover',
                             '& input': { color: 'text.secondary' }
                           }
                         }}
@@ -477,7 +480,7 @@ const PersonForm = ({ open, onClose, person, onSave, personType }) => {
                         fullWidth
                         sx={{ 
                           '& .MuiInputBase-root': { 
-                            bgcolor: 'grey.100',
+                            bgcolor: 'action.hover',
                             '& input': { color: 'text.secondary' }
                           }
                         }}
@@ -499,7 +502,7 @@ const PersonForm = ({ open, onClose, person, onSave, personType }) => {
                     fullWidth
                     sx={{ 
                       '& .MuiInputBase-root': { 
-                        bgcolor: 'grey.100',
+                        bgcolor: 'action.hover',
                         '& input': { color: 'text.secondary' }
                       }
                     }}
@@ -517,7 +520,7 @@ const PersonForm = ({ open, onClose, person, onSave, personType }) => {
                         fullWidth
                         sx={{ 
                           '& .MuiInputBase-root': { 
-                            bgcolor: 'grey.100',
+                            bgcolor: 'action.hover',
                             '& input': { color: 'text.secondary' }
                           }
                         }}
@@ -531,7 +534,7 @@ const PersonForm = ({ open, onClose, person, onSave, personType }) => {
                         fullWidth
                         sx={{ 
                           '& .MuiInputBase-root': { 
-                            bgcolor: 'grey.100',
+                            bgcolor: 'action.hover',
                             '& input': { color: 'text.secondary' }
                           }
                         }}
@@ -553,7 +556,7 @@ const PersonForm = ({ open, onClose, person, onSave, personType }) => {
                     fullWidth
                     sx={{ 
                       '& .MuiInputBase-root': { 
-                        bgcolor: 'grey.100',
+                        bgcolor: 'action.hover',
                         '& input': { color: 'text.secondary' }
                       }
                     }}
@@ -646,15 +649,17 @@ const PersonForm = ({ open, onClose, person, onSave, personType }) => {
               fullWidth
             />
 
-            <FormControlLabel
-              control={
-                <Checkbox
-                  checked={formData.sms_opt_out}
-                  onChange={(e) => setFormData({ ...formData, sms_opt_out: e.target.checked })}
-                />
-              }
-              label="Opt out of SMS messages"
-            />
+            {formData.phone_number && (
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={formData.sms_opt_out}
+                    onChange={(e) => setFormData({ ...formData, sms_opt_out: e.target.checked })}
+                  />
+                }
+                label="Opt out of SMS messages"
+              />
+            )}
 
             <TextField
               label="Role"
@@ -735,15 +740,17 @@ const PersonForm = ({ open, onClose, person, onSave, personType }) => {
                 placeholder="Street address, city, province, postal code"
               />
 
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    checked={formData.sms_opt_out}
-                    onChange={(e) => setFormData({ ...formData, sms_opt_out: e.target.checked })}
-                  />
-                }
-                label="Opt out of SMS messages"
-              />
+              {formData.phone_number && (
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={formData.sms_opt_out}
+                      onChange={(e) => setFormData({ ...formData, sms_opt_out: e.target.checked })}
+                    />
+                  }
+                  label="Opt out of SMS messages"
+                />
+              )}
 
               <TextField
                 label="Birth Date"

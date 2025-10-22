@@ -55,7 +55,13 @@ describe('PersonList Component - SMS Opt-Out Features', () => {
           ])
         });
       }
-      return Promise.resolve({ ok: true, json: () => Promise.resolve({}) });
+      if (url === '/parents') {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve([]) // Empty array for parents
+        });
+      }
+      return Promise.resolve({ ok: true, json: () => Promise.resolve([]) });
     });
   });
 

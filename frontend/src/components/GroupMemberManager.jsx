@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -216,13 +216,9 @@ function GroupMemberManager({ open, onClose, group, onMembershipChange }) {
   const [error, setError] = useState(null);
   const [addDialogOpen, setAddDialogOpen] = useState(false);
 
-  useEffect(() => {
-    if (open && group) {
-      loadMembers();
-    }
-  }, [open, group]);
-
-  const loadMembers = async () => {
+  const loadMembers = useCallback(async () => {
+    if (!group) return;
+    
     try {
       setLoading(true);
       setError(null);
@@ -240,7 +236,13 @@ function GroupMemberManager({ open, onClose, group, onMembershipChange }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [group]);
+
+  useEffect(() => {
+    if (open && group) {
+      loadMembers();
+    }
+  }, [open, loadMembers]);
 
   const loadAvailablePeople = async () => {
     try {

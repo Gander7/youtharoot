@@ -189,6 +189,80 @@ class SMSService:
             for person in persons
         ]
     
+    def get_sms_recipients_with_parents(self, person_ids: Optional[List[int]] = None) -> Dict[str, List[Dict[str, Any]]]:
+        """
+        Get list of youth who will receive SMS and their parents.
+        
+        Args:
+            person_ids: Optional list of specific person IDs to check. If None, checks all persons.
+            
+        Returns:
+            Dict with 'youth_recipients' and 'parent_recipients' lists
+        """
+        if not self.db:
+            return {"youth_recipients": [], "parent_recipients": []}
+        
+        # Import here to avoid circular imports
+        from app.db_models import ParentYouthRelationshipDB
+        
+        # Get youth recipients (same as regular get_sms_recipients)
+        youth_query = self.db.query(PersonDB).filter(
+            PersonDB.sms_opt_out == False,
+            PersonDB.phone_number.isnot(None),
+            PersonDB.phone_number != "",
+            PersonDB.archived_on.is_(None),
+            PersonDB.person_type == "youth"  # Only youth for group messages
+        )
+        
+        if person_ids:
+            youth_query = youth_query.filter(PersonDB.id.in_(person_ids))
+        
+        youth_persons = youth_query.all()
+        
+        youth_recipients = [
+            {
+                "id": person.id,
+                "first_name": person.first_name,
+                "last_name": person.last_name,
+                "phone_number": person.phone_number,
+                "person_type": "youth"
+            }
+            for person in youth_persons
+        ]
+        
+        # Get parents for these youth
+        youth_ids = [person.id for person in youth_persons]
+        parent_recipients = []
+        
+        if youth_ids:
+            # Query parent-youth relationships
+            parent_relationships = self.db.query(ParentYouthRelationshipDB).join(
+                PersonDB, ParentYouthRelationshipDB.parent_id == PersonDB.id
+            ).filter(
+                ParentYouthRelationshipDB.youth_id.in_(youth_ids),
+                PersonDB.sms_opt_out == False,  # Parent hasn't opted out
+                PersonDB.phone_number.isnot(None),
+                PersonDB.phone_number != "",
+                PersonDB.archived_on.is_(None)
+            ).all()
+            
+            for relationship in parent_relationships:
+                parent = relationship.parent
+                parent_recipients.append({
+                    "id": parent.id,
+                    "first_name": parent.first_name,
+                    "last_name": parent.last_name,
+                    "phone_number": parent.phone_number,
+                    "person_type": "parent",
+                    "relationship_to_youth": relationship.youth_id,
+                    "relationship_type": relationship.relationship_type
+                })
+        
+        return {
+            "youth_recipients": youth_recipients,
+            "parent_recipients": parent_recipients
+        }
+    
     def validate_phone_number(self, phone_number: str, default_region: str = "CA") -> Dict[str, Any]:
         """
         Validate phone number format with Canadian default.
