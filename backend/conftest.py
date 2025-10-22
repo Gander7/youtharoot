@@ -109,11 +109,19 @@ def test_db(setup_test_database):
     Create a clean database session for each test.
     
     This fixture:
-    1. Creates all tables fresh for each test
+    1. Creates all tables fresh for each test (PostgreSQL only)
     2. Provides a database session
     3. Rolls back all changes after the test
     4. Ensures test isolation
+    
+    Skips when using memory database type.
     """
+    from app.config import settings
+    
+    # Skip if not using PostgreSQL
+    if settings.DATABASE_TYPE != "postgresql":
+        pytest.skip(f"Database model tests require PostgreSQL, but DATABASE_TYPE={settings.DATABASE_TYPE}")
+    
     engine = create_engine(get_test_database_url())
     
     # Create all tables

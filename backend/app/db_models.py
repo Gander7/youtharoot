@@ -12,8 +12,9 @@ class PersonDB(Base):
     first_name = Column(String(100), nullable=False)
     last_name = Column(String(100), nullable=False)
     phone_number = Column(String(20), nullable=True)
+    address = Column(String(500), nullable=True)  # Address field for parents
     archived_on = Column(DateTime, nullable=True)
-    person_type = Column(String(20), nullable=False)  # "youth" or "leader"
+    person_type = Column(String(20), nullable=False)  # "youth", "leader", or "parent"
     
     sms_consent = Column(Boolean, default=True, nullable=False)
     sms_opt_out = Column(Boolean, default=False, nullable=False)
@@ -189,3 +190,29 @@ class MessageTemplateDB(Base):
     
     # Relationships
     creator = relationship("UserDB", backref="message_templates")
+
+
+class ParentYouthRelationshipDB(Base):
+    """
+    Many-to-many relationship between parents and youth.
+    Allows tracking relationship types and primary contact designation.
+    """
+    __tablename__ = "parent_youth_relationships"
+    
+    id = Column(BigInteger, primary_key=True, autoincrement=True, index=True)
+    parent_id = Column(BigInteger, ForeignKey("persons.id"), nullable=False, index=True)
+    youth_id = Column(BigInteger, ForeignKey("persons.id"), nullable=False, index=True)
+    relationship_type = Column(String(50), nullable=False, default="parent")  # mother, father, guardian, etc.
+    is_primary_contact = Column(Boolean, default=False, nullable=False)
+    
+    created_at = Column(DateTime, default=func.now())
+    updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
+    
+    # Unique constraint: prevent duplicate parent-youth pairs
+    __table_args__ = (
+        UniqueConstraint('parent_id', 'youth_id', name='uq_parent_youth_relationship'),
+    )
+    
+    # Relationships
+    parent = relationship("PersonDB", foreign_keys=[parent_id], backref="youth_relationships")
+    youth = relationship("PersonDB", foreign_keys=[youth_id], backref="parent_relationships")

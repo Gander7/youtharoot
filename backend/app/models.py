@@ -37,6 +37,11 @@ class Leader(Person):
 	role: str
 	birth_date: Optional[datetime.date] = None
 
+class Parent(Person):
+	email: Optional[str] = None
+	address: Optional[str] = None
+	person_type: str = "parent"
+
 class EventPerson(BaseModel):
 	person_id: int
 	check_in: datetime.datetime
@@ -130,6 +135,93 @@ class EventUpdate(BaseModel):
 			)
 			self.start_datetime = temp_create.start_datetime
 			self.end_datetime = temp_create.end_datetime
+
+class PersonCreate(BaseModel):
+	"""Create model for any person type (youth, leader, parent)"""
+	first_name: str
+	last_name: str
+	person_type: str  # "youth", "leader", or "parent"
+	phone: Optional[str] = None
+	email: Optional[str] = None
+	address: Optional[str] = None
+	sms_opt_out: bool = False
+	
+	# Youth-specific fields (optional for parents/leaders)
+	grade: Optional[int] = None
+	school_name: Optional[str] = None
+	birth_date: Optional[datetime.date] = None
+	emergency_contact_name: Optional[str] = None
+	emergency_contact_phone: Optional[str] = None
+	emergency_contact_relationship: Optional[str] = None
+	emergency_contact_2_name: Optional[str] = None
+	emergency_contact_2_phone: Optional[str] = None
+	emergency_contact_2_relationship: Optional[str] = None
+	allergies: Optional[str] = None
+	other_considerations: Optional[str] = None
+	
+	# Leader-specific fields (optional for parents/youth)
+	role: Optional[str] = None
+	
+	@field_validator('person_type')
+	@classmethod
+	def validate_person_type(cls, v):
+		if v not in ['youth', 'leader', 'parent']:
+			raise ValueError('person_type must be youth, leader, or parent')
+		return v
+	
+	@field_validator('first_name', 'last_name')
+	@classmethod
+	def validate_names(cls, v):
+		if not v or not v.strip():
+			raise ValueError('Name cannot be empty')
+		return v.strip()
+
+class PersonUpdate(BaseModel):
+	"""Update model for any person type"""
+	first_name: Optional[str] = None
+	last_name: Optional[str] = None
+	phone: Optional[str] = None
+	email: Optional[str] = None
+	address: Optional[str] = None
+	sms_opt_out: Optional[bool] = None
+	
+	# Youth-specific fields
+	grade: Optional[int] = None
+	school_name: Optional[str] = None
+	birth_date: Optional[datetime.date] = None
+	emergency_contact_name: Optional[str] = None
+	emergency_contact_phone: Optional[str] = None
+	emergency_contact_relationship: Optional[str] = None
+	emergency_contact_2_name: Optional[str] = None
+	emergency_contact_2_phone: Optional[str] = None
+	emergency_contact_2_relationship: Optional[str] = None
+	allergies: Optional[str] = None
+	other_considerations: Optional[str] = None
+	
+	# Leader-specific fields
+	role: Optional[str] = None
+	
+	@field_validator('first_name', 'last_name')
+	@classmethod
+	def validate_names(cls, v):
+		if v is not None and (not v or not v.strip()):
+			raise ValueError('Name cannot be empty')
+		return v.strip() if v else v
+
+class ParentYouthRelationshipCreate(BaseModel):
+	"""Create model for parent-youth relationships"""
+	parent_id: int
+	youth_id: int
+	relationship_type: str = "parent"  # mother, father, guardian, step-parent, grandparent, other
+	is_primary_contact: bool = False
+	
+	@field_validator('relationship_type')
+	@classmethod
+	def validate_relationship_type(cls, v):
+		valid_types = ['mother', 'father', 'parent', 'guardian', 'step-parent', 'grandparent', 'other']
+		if v not in valid_types:
+			raise ValueError(f'relationship_type must be one of: {", ".join(valid_types)}')
+		return v
 
 class User(BaseModel):
 	id: Optional[int] = None  # Optional for creation, will be set by database

@@ -151,6 +151,54 @@ def evolve_schema(engine):
             # Migrate existing event data to datetime fields
             migrate_existing_events_to_datetime(conn)
             
+            # Evolution for persons table - add address field for parents
+            print("🔄 Checking persons table for parent support...")
+            
+            persons_fields_to_check = [
+                ('address', 'VARCHAR(500)'),
+            ]
+            
+            for field_name, field_type in persons_fields_to_check:
+                result = conn.execute(text(f"""
+                    SELECT column_name 
+                    FROM information_schema.columns 
+                    WHERE table_name='persons' AND column_name='{field_name}'
+                      AND table_schema = current_schema()
+                """))
+                
+                if not result.fetchone():
+                    print(f"🔄 Adding {field_name} column to persons table...")
+                    conn.execute(text(f"ALTER TABLE persons ADD COLUMN {field_name} {field_type}"))
+                    print(f"✅ Added {field_name} column to persons table")
+                else:
+                    print(f"✅ {field_name} column already exists in persons table")
+            
+            # Create parent-youth relationship table if it doesn't exist
+            print("🔄 Checking parent-youth relationship table...")
+            
+            table_check = conn.execute(text("""
+                SELECT table_name FROM information_schema.tables 
+                WHERE table_name = 'parent_youth_relationships' AND table_schema = current_schema()
+            """))
+            
+            if not table_check.fetchone():
+                print("🔄 Creating parent_youth_relationships table...")
+                conn.execute(text("""
+                    CREATE TABLE parent_youth_relationships (
+                        id BIGSERIAL PRIMARY KEY,
+                        parent_id BIGINT NOT NULL REFERENCES persons(id),
+                        youth_id BIGINT NOT NULL REFERENCES persons(id),
+                        relationship_type VARCHAR(50) NOT NULL DEFAULT 'parent',
+                        is_primary_contact BOOLEAN NOT NULL DEFAULT FALSE,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        UNIQUE(parent_id, youth_id)
+                    )
+                """))
+                print("✅ Created parent_youth_relationships table")
+            else:
+                print("✅ parent_youth_relationships table already exists")
+            
             conn.commit()
             print("🎉 Schema evolution completed successfully!")
                 

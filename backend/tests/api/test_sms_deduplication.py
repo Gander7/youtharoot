@@ -6,7 +6,7 @@ Ensures that duplicate phone numbers in a group don't result in duplicate SMS se
 
 import pytest
 from unittest.mock import patch, AsyncMock
-from app.routers.sms import router
+from app.routers.sms import router, send_group_sms
 from app.models import User
 from app.messaging_models import MessageGroupMembership
 
@@ -61,8 +61,9 @@ async def test_group_sms_deduplicates_phone_numbers():
         mock_group_repo.get_group_members.return_value = mock_members
         mock_repo.return_value = mock_group_repo
         
-        mock_sms = AsyncMock()
-        mock_sms.get_sms_recipients.return_value = mock_recipients
+        from unittest.mock import Mock
+        mock_sms = Mock()
+        mock_sms.get_sms_recipients = AsyncMock(return_value=mock_recipients)
         
         # Track how many times send_message is called
         send_calls = []
@@ -75,11 +76,14 @@ async def test_group_sms_deduplicates_phone_numbers():
                 "error": None
             }
         
-        mock_sms.send_message.side_effect = mock_send_message
+        mock_sms.send_message = Mock(side_effect=mock_send_message)
         mock_sms_service.return_value = mock_sms
         
         # Mock database
-        mock_session = AsyncMock()
+        from unittest.mock import Mock
+        mock_session = Mock()
+        mock_session.commit = Mock()
+        mock_session.close = Mock()
         mock_db.return_value = mock_session
         
         from app.routers.sms import GroupSMSSendRequest
@@ -92,7 +96,7 @@ async def test_group_sms_deduplicates_phone_numbers():
         
         # This should only send 2 SMS messages (not 3) due to deduplication
         with patch('app.routers.sms.get_current_user', return_value=mock_user):
-            response = await router.send_group_sms(
+            response = await send_group_sms(
                 request=request,
                 current_user=mock_user,
                 sms_service=mock_sms,

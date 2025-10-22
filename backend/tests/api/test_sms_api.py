@@ -32,6 +32,9 @@ async def get_test_user():
 @pytest.fixture(autouse=True)
 def setup_test_environment():
     """Setup test environment including auth and dependency mocks."""
+    # Save original dependency overrides to restore later
+    original_overrides = app.dependency_overrides.copy()
+    
     # Setup authentication override
     app.dependency_overrides[get_current_user] = get_test_user
     
@@ -98,8 +101,9 @@ def setup_test_environment():
     
     yield
     
-    # Cleanup all overrides
+    # Restore original dependency overrides instead of clearing all
     app.dependency_overrides.clear()
+    app.dependency_overrides.update(original_overrides)
 
 
 @pytest.fixture
@@ -189,7 +193,36 @@ class TestSMSAPI:
     
     def test_send_group_sms_success(self, client, auth_headers):
         """Test sending SMS to group with opt-out filtering."""
-        # Use patch to mock the group repository function
+        # Mock both group repository and SMS service
+        def get_mock_sms_service():
+            service = Mock(spec=SMSService)
+            # Mock get_sms_recipients to return eligible recipients
+            service.get_sms_recipients = AsyncMock(return_value=[
+                {
+                    "id": 1,
+                    "first_name": "John",
+                    "last_name": "Doe", 
+                    "phone_number": "+12345678901"
+                },
+                {
+                    "id": 3,
+                    "first_name": "Jane",
+                    "last_name": "Smith",
+                    "phone_number": "+12345678903"
+                }
+            ])
+            # Mock send_message to succeed
+            service.send_message = Mock(return_value={
+                "success": True,
+                "message_sid": "SM123456789",
+                "status": "sent"
+            })
+            return service
+        
+        from app.routers.sms import get_sms_service
+        app.dependency_overrides[get_sms_service] = get_mock_sms_service
+        
+        # Use patch to mock the group repository function  
         with patch('app.routers.sms.get_group_repository') as mock_get_group_repo:
             # Setup group repository mock
             mock_group_repo = Mock()
@@ -224,7 +257,7 @@ class TestSMSAPI:
         # Override SMS service to return no recipients
         def get_no_recipients_sms_service():
             service = Mock(spec=SMSService)
-            service.get_sms_recipients.return_value = []
+            service.get_sms_recipients = AsyncMock(return_value=[])
             return service
         
         from app.routers.sms import get_sms_service

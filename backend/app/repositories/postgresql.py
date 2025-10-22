@@ -1,9 +1,10 @@
 from typing import List, Optional, Union
 from sqlalchemy.orm import Session
+from sqlalchemy import or_
 from app.repositories.base import PersonRepository, EventRepository, UserRepository, MessageGroupRepository
-from app.models import Youth, Leader, Event, EventCreate, EventUpdate, EventPerson, User
+from app.models import Youth, Leader, Parent, Event, EventCreate, EventUpdate, EventPerson, User, PersonCreate, PersonUpdate, ParentYouthRelationshipCreate
 from app.messaging_models import MessageGroup, MessageGroupCreate, MessageGroupUpdate, MessageGroupMembership, MessageGroupMembershipWithPerson, BulkGroupMembershipResponse, YouthWithType, LeaderWithType
-from app.db_models import PersonDB, EventDB, UserDB, MessageGroupDB, MessageGroupMembershipDB
+from app.db_models import PersonDB, EventDB, UserDB, MessageGroupDB, MessageGroupMembershipDB, ParentYouthRelationshipDB
 from datetime import datetime, timezone
 import datetime as dt
 
@@ -159,6 +160,338 @@ class PostgreSQLPersonRepository(PersonRepository):
         ).all()
         
         return [self._db_to_pydantic(db_person) for db_person in db_persons]
+
+    # Parent management methods
+    async def create_person_unified(self, person: PersonCreate) -> dict:
+        """Create a new person using unified model"""
+        db_person = PersonDB(
+            first_name=person.first_name,
+            last_name=person.last_name,
+            phone_number=person.phone,
+            email=person.email,
+            address=person.address,
+            person_type=person.person_type,
+            sms_opt_out=person.sms_opt_out,
+            grade=person.grade,
+            school_name=person.school_name,
+            birth_date=person.birth_date,
+            emergency_contact_name=person.emergency_contact_name,
+            emergency_contact_phone=person.emergency_contact_phone,
+            emergency_contact_relationship=person.emergency_contact_relationship,
+            emergency_contact_2_name=person.emergency_contact_2_name,
+            emergency_contact_2_phone=person.emergency_contact_2_phone,
+            emergency_contact_2_relationship=person.emergency_contact_2_relationship,
+            allergies=person.allergies,
+            other_considerations=person.other_considerations,
+            role=person.role
+        )
+        
+        self.db.add(db_person)
+        self.db.commit()
+        self.db.refresh(db_person)
+        
+        # Convert to dict
+        result = {
+            "id": db_person.id,
+            "first_name": db_person.first_name,
+            "last_name": db_person.last_name,
+            "phone": db_person.phone_number,
+            "email": db_person.email,
+            "address": db_person.address,
+            "person_type": db_person.person_type,
+            "sms_opt_out": db_person.sms_opt_out,
+            "archived_on": db_person.archived_on
+        }
+        
+        # Add type-specific fields
+        if person.person_type == "youth":
+            result.update({
+                "grade": db_person.grade,
+                "school_name": db_person.school_name,
+                "birth_date": db_person.birth_date,
+                "emergency_contact_name": db_person.emergency_contact_name,
+                "emergency_contact_phone": db_person.emergency_contact_phone,
+                "emergency_contact_relationship": db_person.emergency_contact_relationship,
+                "emergency_contact_2_name": db_person.emergency_contact_2_name,
+                "emergency_contact_2_phone": db_person.emergency_contact_2_phone,
+                "emergency_contact_2_relationship": db_person.emergency_contact_2_relationship,
+                "allergies": db_person.allergies,
+                "other_considerations": db_person.other_considerations
+            })
+        elif person.person_type == "leader":
+            result.update({"role": db_person.role})
+        
+        return result
+
+    async def get_all_parents(self) -> List[dict]:
+        """Get all non-archived parents"""
+        db_persons = self.db.query(PersonDB).filter(
+            PersonDB.person_type == "parent",
+            PersonDB.archived_on.is_(None)
+        ).all()
+        
+        parents = []
+        for db_person in db_persons:
+            parent_data = {
+                "id": db_person.id,
+                "first_name": db_person.first_name,
+                "last_name": db_person.last_name,
+                "phone": db_person.phone_number,
+                "email": db_person.email,
+                "address": db_person.address,
+                "person_type": db_person.person_type,
+                "sms_opt_out": db_person.sms_opt_out
+            }
+            parents.append(parent_data)
+        
+        return parents
+
+    async def search_persons(self, person_type: str, query: Optional[str] = None) -> List[dict]:
+        """Search persons by type with optional filter"""
+        db_query = self.db.query(PersonDB).filter(
+            PersonDB.person_type == person_type,
+            PersonDB.archived_on.is_(None)
+        )
+        
+        if query:
+            query_filter = f"%{query.lower()}%"
+            db_query = db_query.filter(
+                or_(
+                    PersonDB.first_name.ilike(query_filter),
+                    PersonDB.last_name.ilike(query_filter),
+                    PersonDB.phone_number.ilike(query_filter),
+                    PersonDB.email.ilike(query_filter)
+                )
+            )
+        
+        db_persons = db_query.all()
+        
+        results = []
+        for db_person in db_persons:
+            person_data = {
+                "id": db_person.id,
+                "first_name": db_person.first_name,
+                "last_name": db_person.last_name,
+                "phone": db_person.phone_number,
+                "email": db_person.email,
+                "address": db_person.address,
+                "person_type": db_person.person_type,
+                "sms_opt_out": db_person.sms_opt_out
+            }
+            results.append(person_data)
+        
+        return results
+
+    async def link_parent_to_youth(self, relationship: ParentYouthRelationshipCreate) -> dict:
+        """Create parent-youth relationship"""
+        from sqlalchemy import and_
+        
+        # Check if both persons exist
+        parent = self.db.query(PersonDB).filter(PersonDB.id == relationship.parent_id, PersonDB.archived_on.is_(None)).first()
+        youth = self.db.query(PersonDB).filter(PersonDB.id == relationship.youth_id, PersonDB.archived_on.is_(None)).first()
+        
+        if not parent:
+            raise ValueError("Parent not found")
+        if not youth:
+            raise ValueError("Youth not found")
+        if parent.person_type != "parent":
+            raise ValueError("Person is not a parent")
+        if youth.person_type not in ["youth"] and not youth.grade:  # Handle both new and old youth
+            raise ValueError("Person is not a youth")
+        
+        # Check for existing relationship
+        existing = self.db.query(ParentYouthRelationshipDB).filter(
+            and_(
+                ParentYouthRelationshipDB.parent_id == relationship.parent_id,
+                ParentYouthRelationshipDB.youth_id == relationship.youth_id
+            )
+        ).first()
+        
+        if existing:
+            raise ValueError("Relationship already exists")
+        
+        # Create relationship
+        db_relationship = ParentYouthRelationshipDB(
+            parent_id=relationship.parent_id,
+            youth_id=relationship.youth_id,
+            relationship_type=relationship.relationship_type,
+            is_primary_contact=relationship.is_primary_contact
+        )
+        
+        self.db.add(db_relationship)
+        self.db.commit()
+        self.db.refresh(db_relationship)
+        
+        return {
+            "parent_id": db_relationship.parent_id,
+            "youth_id": db_relationship.youth_id,
+            "relationship_type": db_relationship.relationship_type,
+            "is_primary_contact": db_relationship.is_primary_contact,
+            "created_at": db_relationship.created_at
+        }
+
+    async def unlink_parent_from_youth(self, parent_id: int, youth_id: int) -> bool:
+        """Remove parent-youth relationship"""
+        from sqlalchemy import and_
+        
+        relationship = self.db.query(ParentYouthRelationshipDB).filter(
+            and_(
+                ParentYouthRelationshipDB.parent_id == parent_id,
+                ParentYouthRelationshipDB.youth_id == youth_id
+            )
+        ).first()
+        
+        if relationship:
+            self.db.delete(relationship)
+            self.db.commit()
+            return True
+        
+        return False
+
+    async def get_parents_for_youth(self, youth_id: int) -> List[dict]:
+        """Get all parents for a specific youth"""
+        from sqlalchemy import and_
+        
+        relationships = self.db.query(ParentYouthRelationshipDB, PersonDB).join(
+            PersonDB, ParentYouthRelationshipDB.parent_id == PersonDB.id
+        ).filter(
+            and_(
+                ParentYouthRelationshipDB.youth_id == youth_id,
+                PersonDB.archived_on.is_(None)
+            )
+        ).all()
+        
+        parents = []
+        for relationship, parent_db in relationships:
+            parent_data = {
+                "id": parent_db.id,
+                "first_name": parent_db.first_name,
+                "last_name": parent_db.last_name,
+                "phone": parent_db.phone_number,
+                "email": parent_db.email,
+                "address": parent_db.address,
+                "person_type": parent_db.person_type,
+                "relationship_type": relationship.relationship_type,
+                "is_primary_contact": relationship.is_primary_contact
+            }
+            parents.append(parent_data)
+        
+        return parents
+
+    async def get_youth_for_parent(self, parent_id: int) -> List[dict]:
+        """Get all youth for a specific parent"""
+        from sqlalchemy import and_
+        
+        relationships = self.db.query(ParentYouthRelationshipDB, PersonDB).join(
+            PersonDB, ParentYouthRelationshipDB.youth_id == PersonDB.id
+        ).filter(
+            and_(
+                ParentYouthRelationshipDB.parent_id == parent_id,
+                PersonDB.archived_on.is_(None)
+            )
+        ).all()
+        
+        youth_list = []
+        for relationship, youth_db in relationships:
+            youth_data = {
+                "id": youth_db.id,
+                "first_name": youth_db.first_name,
+                "last_name": youth_db.last_name,
+                "phone": youth_db.phone_number,
+                "email": youth_db.email,
+                "person_type": youth_db.person_type or "youth",  # Handle old youth without person_type
+                "relationship_type": relationship.relationship_type,
+                "is_primary_contact": relationship.is_primary_contact
+            }
+            
+            # Add youth-specific fields if available
+            if youth_db.grade:
+                youth_data["grade"] = youth_db.grade
+            if youth_db.school_name:
+                youth_data["school_name"] = youth_db.school_name
+            
+            youth_list.append(youth_data)
+        
+        return youth_list
+
+    async def get_person_unified(self, person_id: int) -> Optional[dict]:
+        """Get any type of person as dictionary"""
+        db_person = self.db.query(PersonDB).filter(
+            PersonDB.id == person_id,
+            PersonDB.archived_on.is_(None)
+        ).first()
+        
+        if not db_person:
+            return None
+        
+        return {
+            "id": db_person.id,
+            "first_name": db_person.first_name,
+            "last_name": db_person.last_name,
+            "person_type": db_person.person_type,
+            "birth_date": db_person.birth_date,
+            "grade": db_person.grade,
+            "school_name": db_person.school_name,
+            "role": db_person.role,
+            "phone": db_person.phone_number,
+            "phone_number": db_person.phone_number,
+            "email": db_person.email,
+            "address": db_person.address,
+            "emergency_contact_name": db_person.emergency_contact_name,
+            "emergency_contact_phone": db_person.emergency_contact_phone,
+            "emergency_contact_relationship": db_person.emergency_contact_relationship,
+            "emergency_contact_2_name": db_person.emergency_contact_2_name,
+            "emergency_contact_2_phone": db_person.emergency_contact_2_phone,
+            "emergency_contact_2_relationship": db_person.emergency_contact_2_relationship,
+            "allergies": db_person.allergies,
+            "other_considerations": db_person.other_considerations,
+            "sms_opt_out": db_person.sms_opt_out,
+            "archived_on": db_person.archived_on
+        }
+
+    async def update_person_unified(self, person_id: int, person_update: PersonUpdate) -> dict:
+        """Update a person and return as dictionary"""
+        db_person = self.db.query(PersonDB).filter(PersonDB.id == person_id).first()
+        if not db_person:
+            raise ValueError("Person not found")
+        
+        # Update only provided fields
+        update_dict = person_update.model_dump(exclude_unset=True)
+        for field, value in update_dict.items():
+            if hasattr(db_person, field):
+                setattr(db_person, field, value)
+            elif field == "phone" and hasattr(db_person, "phone_number"):
+                # Handle phone field mapping
+                setattr(db_person, "phone_number", value)
+        
+        self.db.commit()
+        self.db.refresh(db_person)
+        
+        # Return as dictionary
+        return {
+            "id": db_person.id,
+            "first_name": db_person.first_name,
+            "last_name": db_person.last_name,
+            "person_type": db_person.person_type,
+            "birth_date": db_person.birth_date,
+            "grade": db_person.grade,
+            "school_name": db_person.school_name,
+            "role": db_person.role,
+            "phone": db_person.phone_number,
+            "phone_number": db_person.phone_number,
+            "email": db_person.email,
+            "address": db_person.address,
+            "emergency_contact_name": db_person.emergency_contact_name,
+            "emergency_contact_phone": db_person.emergency_contact_phone,
+            "emergency_contact_relationship": db_person.emergency_contact_relationship,
+            "emergency_contact_2_name": db_person.emergency_contact_2_name,
+            "emergency_contact_2_phone": db_person.emergency_contact_2_phone,
+            "emergency_contact_2_relationship": db_person.emergency_contact_2_relationship,
+            "allergies": db_person.allergies,
+            "other_considerations": db_person.other_considerations,
+            "sms_opt_out": db_person.sms_opt_out,
+            "archived_on": db_person.archived_on
+        }
 
 class PostgreSQLEventRepository(EventRepository):
     """PostgreSQL implementation for production"""
@@ -672,3 +1005,4 @@ class PostgreSQLMessageGroupRepository(MessageGroupRepository):
             failed_count=failed_count,
             failed_person_ids=failed_person_ids
         )
+        # Create PersonDB instance

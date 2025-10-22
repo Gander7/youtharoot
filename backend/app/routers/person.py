@@ -1,6 +1,6 @@
-from fastapi import APIRouter, Request, HTTPException, Depends
-from typing import Union, List
-from app.models import Youth, Leader, Person, User
+from fastapi import APIRouter, Request, HTTPException, Depends, Query
+from typing import Union, List, Optional
+from app.models import Youth, Leader, Parent, Person, User, PersonCreate, ParentYouthRelationshipCreate
 from sqlalchemy.orm import Session
 import datetime
 
@@ -128,3 +128,122 @@ async def archive_person(
 	repos = get_repositories(db)
 	await repos["person"].archive_person(person_id)
 	return {}
+
+# Parent-specific endpoints
+@router.post("/parent", response_model=Parent)
+async def create_parent(
+	parent: PersonCreate,
+	db: Session = Depends(connect_to_db()),
+	current_user: User = Depends(get_current_user_lazy())
+):
+	"""Create a new parent using the unified person system."""
+	repos = get_repositories(db)
+	try:
+		# Ensure person_type is set to parent
+		parent.person_type = "parent"
+		created_parent = await repos["person"].create_person_unified(parent)
+		data = created_parent
+		data.pop("archived_on", None)
+		return data
+	except ValueError as e:
+		raise HTTPException(status_code=422, detail=str(e))
+
+@router.get("/parents", response_model=List[Parent])
+async def get_all_parents(
+	db: Session = Depends(connect_to_db()),
+	current_user: User = Depends(get_current_user_lazy())
+):
+	"""Get all non-archived parents."""
+	try:
+		repos = get_repositories(db)
+		parents_list = await repos["person"].get_all_parents()
+		
+		# Return parents without archived_on field
+		result = []
+		for parent in parents_list:
+			data = parent.copy() if isinstance(parent, dict) else parent
+			if isinstance(data, dict):
+				data.pop("archived_on", None)
+			result.append(data)
+		return result
+	except Exception as e:
+		print(f"Error in get_all_parents: {e}")
+		raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
+@router.get("/parents/search", response_model=List[Parent])
+async def search_parents(
+	query: str = Query(..., description="Search query for parent name, phone, or email"),
+	db: Session = Depends(connect_to_db()),
+	current_user: User = Depends(get_current_user_lazy())
+):
+	"""Search parents by name, phone, or email."""
+	try:
+		repos = get_repositories(db)
+		parents_list = await repos["person"].search_persons("parent", query)
+		
+		# Return parents without archived_on field
+		result = []
+		for parent in parents_list:
+			data = parent.copy() if isinstance(parent, dict) else parent
+			if isinstance(data, dict):
+				data.pop("archived_on", None)
+			result.append(data)
+		return result
+	except Exception as e:
+		print(f"Error in search_parents: {e}")
+		raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
+# Parent-Youth relationship endpoints
+@router.post("/youth/{youth_id}/parents")
+async def link_parent_to_youth(
+	youth_id: int,
+	relationship: ParentYouthRelationshipCreate,
+	db: Session = Depends(connect_to_db()),
+	current_user: User = Depends(get_current_user_lazy())
+):
+	"""Create a parent-youth relationship."""
+	try:
+		repos = get_repositories(db)
+		# Ensure the youth_id in the URL matches the relationship data
+		relationship.youth_id = youth_id
+		result = await repos["person"].link_parent_to_youth(relationship)
+		return result
+	except Exception as e:
+		print(f"Error in link_parent_to_youth: {e}")
+		raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
+@router.get("/youth/{youth_id}/parents")
+async def get_parents_for_youth(
+	youth_id: int,
+	db: Session = Depends(connect_to_db()),
+	current_user: User = Depends(get_current_user_lazy())
+):
+	"""Get all parents for a specific youth with relationship details."""
+	try:
+		repos = get_repositories(db)
+		parents = await repos["person"].get_parents_for_youth(youth_id)
+		return parents
+	except Exception as e:
+		print(f"Error in get_parents_for_youth: {e}")
+		raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
+@router.delete("/youth/{youth_id}/parents/{parent_id}")
+async def unlink_parent_from_youth(
+	youth_id: int,
+	parent_id: int,
+	db: Session = Depends(connect_to_db()),
+	current_user: User = Depends(get_current_user_lazy())
+):
+	"""Remove a parent-youth relationship."""
+	try:
+		repos = get_repositories(db)
+		result = await repos["person"].unlink_parent_from_youth(parent_id, youth_id)
+		if result:
+			return {"success": True}
+		else:
+			raise HTTPException(status_code=404, detail="Relationship not found")
+	except HTTPException:
+		raise
+	except Exception as e:
+		print(f"Error in unlink_parent_from_youth: {e}")
+		raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")

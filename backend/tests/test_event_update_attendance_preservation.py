@@ -101,28 +101,22 @@ class TestEventUpdatePreservesAttendance:
         
         from app.config import settings
         
-        if settings.DATABASE_TYPE == "postgresql":
-            # For PostgreSQL, we need to create a person first
-            person_data = {
-                "first_name": "John",
-                "last_name": "Doe",
-                "phone_number": "555-0123",
-                "birth_date": "2005-01-01",
-                "grade": 10,
-                "emergency_contact_name": "Jane Doe",
-                "emergency_contact_phone": "555-0124",
-                "emergency_contact_relationship": "Parent"
-            }
-            
-            person_response = client.post("/person", json=person_data)
-            assert person_response.status_code in (200, 201)
-            person = person_response.json()
-            person_id = person["id"]
-        else:
-            # Memory mode can reference non-existent people
-            person_id = 1
-        
-        # 1. Create an event
+        # Create a person regardless of database type
+        person_data = {
+            "first_name": "John",
+            "last_name": "Doe",
+            "phone_number": "555-0123",
+            "birth_date": "2005-01-01",
+            "grade": 10,
+            "emergency_contact_name": "Jane Doe",
+            "emergency_contact_phone": "555-0124",
+            "emergency_contact_relationship": "Parent"
+        }
+
+        person_response = client.post("/person", json=person_data)
+        assert person_response.status_code in (200, 201)
+        person = person_response.json()
+        person_id = person["id"]        # 1. Create an event
         event_data = {
             "date": "2025-10-14",
             "name": "Youth Group Meeting",
@@ -213,29 +207,23 @@ class TestEventUpdatePreservesAttendance:
         # 2. Create and check in multiple people
         people = []
         
-        if settings.DATABASE_TYPE == "postgresql":
-            # Create people first for PostgreSQL
-            for i, name in enumerate([("Alice", "Smith"), ("Bob", "Johnson")]):
-                person_data = {
-                    "first_name": name[0],
-                    "last_name": name[1],
-                    "phone_number": f"555-100{i}",
-                    "birth_date": "2005-01-01",
-                    "grade": 10 + i,
-                    "emergency_contact_name": "Parent",
-                    "emergency_contact_phone": f"555-200{i}",
-                    "emergency_contact_relationship": "Parent"
-                }
-                
-                person_response = client.post("/person", json=person_data)
-                assert person_response.status_code in (200, 201)
-                person = person_response.json()
-                people.append(person["id"])
-        else:
-            # Memory mode can reference non-existent people
-            people = [2, 3]
+        # Create people regardless of database type
+        for i, name in enumerate([("Alice", "Smith"), ("Bob", "Johnson")]):
+            person_data = {
+                "first_name": name[0],
+                "last_name": name[1],
+                "phone_number": f"555-100{i}",
+                "birth_date": "2005-01-01",
+                "grade": 10 + i,
+                "emergency_contact_name": "Parent",
+                "emergency_contact_phone": f"555-200{i}",
+                "emergency_contact_relationship": "Parent"
+            }
 
-        # Check people in
+            person_response = client.post("/person", json=person_data)
+            assert person_response.status_code in (200, 201)
+            person = person_response.json()
+            people.append(person["id"])        # Check people in
         for person_id in people:
             checkin_data = {"person_id": person_id}
             response = client.post(f"/event/{event_id}/checkin", json=checkin_data)

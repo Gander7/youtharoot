@@ -15,25 +15,29 @@ async def test_update_event_preserves_attendance_memory():
     # Create repository and test event with attendance
     repo = InMemoryEventRepository()
     
-    # Create an event with some checked-in attendees
-    original_event = Event(
+    # Create an event first
+    from app.models import EventCreate
+    original_event_create = EventCreate(
         date="2025-10-13",
         name="Youth Group",
-        desc="Weekly meeting", 
+        desc="Weekly meeting",
         start_time="19:00",
         end_time="21:00",
-        location="BLT",
-        youth=[
-            EventPerson(person_id=1, check_in=datetime.datetime.now())
-        ],
-        leaders=[
-            EventPerson(person_id=2, check_in=datetime.datetime.now())
-        ]
+        location="BLT"
     )
     
     # Create the event in the repository
-    created_event = await repo.create_event(original_event)
+    created_event = await repo.create_event(original_event_create)
     event_id = created_event.id
+    
+    # Manually add attendees to simulate checked-in people
+    from app.models import EventPerson
+    now = datetime.datetime.now()
+    created_event.youth = [EventPerson(person_id=1, check_in=now)]
+    created_event.leaders = [EventPerson(person_id=2, check_in=now)]
+    
+    # Save the updated event back to the repository
+    repo.store[event_id] = created_event
     
     # Verify the event has attendees
     assert len(created_event.youth) == 1
@@ -42,15 +46,15 @@ async def test_update_event_preserves_attendance_memory():
     assert created_event.leaders[0].person_id == 2
     
     # Update the event with only basic details (simulating EventForm submission)
-    update_event = Event(
+    from app.models import EventUpdate
+    update_event = EventUpdate(
         date="2025-10-13",
         name="Youth Group",
         desc="Weekly meeting - Updated",  # Changed description
         start_time="19:00", 
         end_time="21:30",  # Changed end time
-        location="Main Hall",  # Changed location
-        youth=[],  # EventForm doesn't send attendance data
-        leaders=[]  # EventForm doesn't send attendance data
+        location="Main Hall"  # Changed location
+        # EventUpdate doesn't have youth/leaders fields - attendance should be preserved
     )
     
     # Update the event

@@ -242,7 +242,7 @@ async def send_group_sms(
             )
         
         # Get SMS recipients (filters opted-out users)
-        eligible_recipients = sms_service.get_sms_recipients([m.person_id for m in members])
+        eligible_recipients = await sms_service.get_sms_recipients([m.person_id for m in members])
         
         if not eligible_recipients:
             raise HTTPException(

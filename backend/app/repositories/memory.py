@@ -1,6 +1,6 @@
 from typing import List, Optional, Union
 from app.repositories.base import PersonRepository, EventRepository, UserRepository, MessageGroupRepository
-from app.models import Youth, Leader, Event, EventCreate, EventUpdate, User
+from app.models import Youth, Leader, Event, EventCreate, EventUpdate, User, PersonCreate, PersonUpdate, ParentYouthRelationshipCreate
 from app.messaging_models import MessageGroup, MessageGroupCreate, MessageGroupUpdate, MessageGroupMembership, MessageGroupMembershipCreate, MessageGroupMembershipWithPerson, BulkGroupMembershipResponse, YouthWithType, LeaderWithType
 import datetime
 
@@ -8,8 +8,10 @@ class InMemoryPersonRepository(PersonRepository):
     """In-memory implementation for development"""
     
     def __init__(self):
-        self.store = {}
+        self.store = {}  # persons storage
+        self.relationships = {}  # parent-youth relationships storage  
         self.next_person_id = 1
+        self.next_relationship_id = 1
     
     async def create_person(self, person: Union[Youth, Leader]) -> Union[Youth, Leader]:
         if person.archived_on is not None:
@@ -61,6 +63,190 @@ class InMemoryPersonRepository(PersonRepository):
         for person in self.store.values():
             if isinstance(person, Leader) and person.archived_on is None:
                 result.append(person)
+        return result
+    
+    # New unified person management methods
+    async def create_person_unified(self, person: PersonCreate) -> dict:
+        """Create any type of person using unified model"""
+        # Generate ID
+        person_id = self.next_person_id
+        self.next_person_id += 1
+        
+        # Store as dictionary with all fields
+        person_data = {
+            "id": person_id,
+            "first_name": person.first_name,
+            "last_name": person.last_name,
+            "person_type": person.person_type,
+            "phone": person.phone,
+            "email": person.email,
+            "address": person.address,
+            "sms_opt_out": person.sms_opt_out,
+            "archived_on": None,
+            "created_at": datetime.datetime.now(datetime.timezone.utc),
+            "updated_at": datetime.datetime.now(datetime.timezone.utc),
+            # Youth-specific fields
+            "grade": person.grade,
+            "school_name": person.school_name,
+            "birth_date": person.birth_date,
+            "emergency_contact_name": person.emergency_contact_name,
+            "emergency_contact_phone": person.emergency_contact_phone,
+            "emergency_contact_relationship": person.emergency_contact_relationship,
+            "emergency_contact_2_name": person.emergency_contact_2_name,
+            "emergency_contact_2_phone": person.emergency_contact_2_phone,
+            "emergency_contact_2_relationship": person.emergency_contact_2_relationship,
+            "allergies": person.allergies,
+            "other_considerations": person.other_considerations,
+            # Leader-specific fields
+            "role": person.role,
+        }
+        
+        # Store using a separate unified storage (key with "unified_" prefix to avoid conflicts)
+        unified_key = f"unified_{person_id}"
+        self.store[unified_key] = person_data
+        
+        return person_data
+    
+    async def update_person_unified(self, person_id: int, person_update: PersonUpdate) -> dict:
+        """Update any type of person using unified model"""
+        unified_key = f"unified_{person_id}"
+        if unified_key not in self.store:
+            raise ValueError("Person not found")
+        
+        person_data = self.store[unified_key]
+        if person_data.get("archived_on"):
+            raise ValueError("Person not found")
+        
+        # Update only provided fields
+        update_dict = person_update.model_dump(exclude_unset=True)
+        for field, value in update_dict.items():
+            if value is not None:
+                person_data[field] = value
+        
+        person_data["updated_at"] = datetime.datetime.now(datetime.timezone.utc)
+        return person_data
+    
+    async def get_person_unified(self, person_id: int) -> Optional[dict]:
+        """Get any type of person as dictionary"""
+        unified_key = f"unified_{person_id}"
+        person_data = self.store.get(unified_key)
+        if person_data and not person_data.get("archived_on"):
+            return person_data
+        return None
+    
+    async def search_persons(self, person_type: str, query: Optional[str] = None) -> List[dict]:
+        """Search persons by type with optional name/phone/email filter"""
+        result = []
+        for key, person in self.store.items():
+            # Only look at unified person records
+            if not str(key).startswith("unified_"):
+                continue
+            
+            # Check type and not archived
+            if person.get("person_type") != person_type or person.get("archived_on"):
+                continue
+            
+            # Apply search filter if provided
+            if query:
+                query_lower = query.lower()
+                searchable_text = f"{person.get('first_name', '')} {person.get('last_name', '')} {person.get('phone', '')} {person.get('email', '')}".lower()
+                if query_lower not in searchable_text:
+                    continue
+            
+            result.append(person)
+        
+        return result
+    
+    async def get_all_parents(self) -> List[dict]:
+        """Get all parents"""
+        return await self.search_persons("parent")
+    
+    async def link_parent_to_youth(self, relationship: ParentYouthRelationshipCreate) -> dict:
+        """Create parent-youth relationship"""
+        # Check if both persons exist (check both unified and old systems)
+        parent = await self.get_person_unified(relationship.parent_id)
+        youth = await self.get_person_unified(relationship.youth_id) or await self.get_person(relationship.youth_id)
+        
+        if not parent:
+            raise ValueError("Parent not found")
+        if not youth:
+            raise ValueError("Youth not found")
+        
+        # Convert youth to dict if it's a model object (from old system)
+        if hasattr(youth, 'model_dump'):
+            youth_dict = youth.model_dump()
+        else:
+            youth_dict = youth
+            
+        # For old system youth, determine if it's actually a youth (has grade/birth_date)
+        is_youth = youth_dict.get("person_type") == "youth" or youth_dict.get("grade") is not None or youth_dict.get("birth_date") is not None
+        
+        if parent.get("person_type") != "parent":
+            raise ValueError("Person is not a parent")
+        if not is_youth:
+            raise ValueError("Person is not a youth")
+        
+        # Check for existing relationship
+        relationship_key = f"{relationship.parent_id}-{relationship.youth_id}"
+        if relationship_key in self.relationships:
+            raise ValueError("Relationship already exists")
+        
+        # Create relationship
+        relationship_data = {
+            "id": self.next_relationship_id,
+            "parent_id": relationship.parent_id,
+            "youth_id": relationship.youth_id,
+            "relationship_type": relationship.relationship_type,
+            "is_primary_contact": relationship.is_primary_contact,
+            "created_at": datetime.datetime.now(datetime.timezone.utc),
+            "updated_at": datetime.datetime.now(datetime.timezone.utc),
+        }
+        
+        self.relationships[relationship_key] = relationship_data
+        self.next_relationship_id += 1
+        
+        return relationship_data
+    
+    async def unlink_parent_from_youth(self, parent_id: int, youth_id: int) -> bool:
+        """Remove parent-youth relationship"""
+        relationship_key = f"{parent_id}-{youth_id}"
+        if relationship_key in self.relationships:
+            del self.relationships[relationship_key]
+            return True
+        return False
+    
+    async def get_parents_for_youth(self, youth_id: int) -> List[dict]:
+        """Get all parents linked to a youth with relationship details"""
+        result = []
+        for relationship in self.relationships.values():
+            if relationship["youth_id"] == youth_id:
+                # Get parent details
+                parent = await self.get_person_unified(relationship["parent_id"])
+                if parent:
+                    parent_with_relationship = {
+                        **parent,
+                        "relationship_type": relationship["relationship_type"],
+                        "is_primary_contact": relationship["is_primary_contact"],
+                        "relationship_created_at": relationship["created_at"]
+                    }
+                    result.append(parent_with_relationship)
+        return result
+    
+    async def get_youth_for_parent(self, parent_id: int) -> List[dict]:
+        """Get all youth linked to a parent with relationship details"""
+        result = []
+        for relationship in self.relationships.values():
+            if relationship["parent_id"] == parent_id:
+                # Get youth details
+                youth = await self.get_person_unified(relationship["youth_id"])
+                if youth:
+                    youth_with_relationship = {
+                        **youth,
+                        "relationship_type": relationship["relationship_type"],
+                        "is_primary_contact": relationship["is_primary_contact"],
+                        "relationship_created_at": relationship["created_at"]
+                    }
+                    result.append(youth_with_relationship)
         return result
 
 class InMemoryEventRepository(EventRepository):
