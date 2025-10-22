@@ -211,7 +211,7 @@ class PersonUpdate(BaseModel):
 class ParentYouthRelationshipCreate(BaseModel):
 	"""Create model for parent-youth relationships"""
 	parent_id: int
-	youth_id: int
+	youth_id: Optional[int] = None  # Will be set from URL path in endpoint
 	relationship_type: str = "parent"  # mother, father, guardian, step-parent, grandparent, other
 	is_primary_contact: bool = False
 	

@@ -25,7 +25,8 @@ from app.messaging_models import (
     MessageGroup, MessageGroupCreate, MessageGroupUpdate,
     MessageGroupMembership, MessageGroupMembershipCreate,
     MessageGroupMembershipWithPerson,
-    BulkGroupMembershipCreate, BulkGroupMembershipResponse
+    BulkGroupMembershipCreate, BulkGroupMembershipResponse,
+    AvailableGroupMembers, YouthWithType, LeaderWithType, ParentWithType
 )
 
 
@@ -251,3 +252,54 @@ async def add_multiple_members_to_group(
     # Add multiple members
     result = await repos["group"].add_multiple_members(group_id, bulk_membership.person_ids, current_user.id)
     return result
+
+
+@router.get("/{group_id}/available-members", response_model=AvailableGroupMembers)
+async def get_available_members(
+    group_id: int,
+    db: Session = Depends(connect_to_db()),
+    current_user: User = Depends(get_current_user_lazy())
+):
+    """Get all persons available for group membership, categorized by type."""
+    repos = get_repositories(db)
+    
+    # Verify group exists and belongs to current user
+    group = await repos["group"].get_group(group_id, current_user.id)
+    if not group:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Group not found"
+        )
+    
+    # Get all persons and categorize them by type
+    from app.models import Youth, Leader, Parent
+    
+    # Get all youth
+    all_youth = await repos["person"].get_all_youth()
+    youth_with_type = [YouthWithType(**youth.model_dump(), person_type="youth") for youth in all_youth if not youth.archived_on]
+    
+    # Get all leaders 
+    all_leaders = await repos["person"].get_all_leaders()
+    leader_with_type = [LeaderWithType(**leader.model_dump(), person_type="leader") for leader in all_leaders if not leader.archived_on]
+    
+    # Get all parents
+    all_parents = await repos["person"].get_all_parents()
+    # Parents are returned as dicts from repository, convert to Parent objects first
+    parent_with_type = []
+    for parent_dict in all_parents:
+        if not parent_dict.get('archived_on'):  # Only include non-archived parents
+            parent_obj = Parent(
+                id=parent_dict['id'],
+                first_name=parent_dict['first_name'],
+                last_name=parent_dict['last_name'],
+                phone=parent_dict.get('phone_number', ''),
+                address=parent_dict.get('address', ''),
+                person_type='parent'
+            )
+            parent_with_type.append(ParentWithType(**parent_obj.model_dump()))
+    
+    return AvailableGroupMembers(
+        youth=youth_with_type,
+        leaders=leader_with_type,
+        parents=parent_with_type
+    )

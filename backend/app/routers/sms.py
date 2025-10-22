@@ -242,7 +242,7 @@ async def send_group_sms(
             )
         
         # Get SMS recipients (filters opted-out users)
-        eligible_recipients = await sms_service.get_sms_recipients([m.person_id for m in members])
+        eligible_recipients = sms_service.get_sms_recipients([m.person_id for m in members])
         
         if not eligible_recipients:
             raise HTTPException(
@@ -420,6 +420,7 @@ async def get_message_history(
                 "status": msg.status,
                 "group_id": msg.group_id,
                 "recipient_phone": msg.recipient_phone,  # Include recipient phone for individual messages
+                "recipient_person_id": msg.recipient_person_id,  # Include recipient person ID for parent tracking
                 "sent_by": msg.sent_by,
                 "twilio_sid": msg.twilio_sid,
                 "sent_at": msg.sent_at.isoformat() if msg.sent_at else None,

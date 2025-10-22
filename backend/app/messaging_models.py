@@ -70,6 +70,24 @@ class LeaderWithType(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class ParentWithType(BaseModel):
+    """Parent model with person_type field for frontend group member display."""
+    # All Parent fields
+    id: Optional[int] = None
+    first_name: str
+    last_name: str
+    phone_number: Optional[str] = None
+    phone: Optional[str] = None  # Parent model uses 'phone' field
+    archived_on: Optional[datetime] = None
+    sms_consent: bool = True
+    sms_opt_out: bool = False
+    address: Optional[str] = ""
+    # Additional field for frontend
+    person_type: Literal["parent"] = "parent"
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 # Enums for type safety
 class MessageChannel(str, Enum):
     """Supported message channels."""
@@ -154,7 +172,7 @@ class MessageGroupMembership(MessageGroupMembershipBase):
 
 class MessageGroupMembershipWithPerson(MessageGroupMembership):
     """Group membership model with full person details for frontend display."""
-    person: Union[YouthWithType, LeaderWithType]  # Use types with person_type field
+    person: Union[YouthWithType, LeaderWithType, ParentWithType]  # Use types with person_type field
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -301,6 +319,16 @@ class BulkGroupMembershipResponse(BaseModel):
     skipped_count: int  # Already members
     failed_count: int
     failed_person_ids: List[int] = []
+
+
+# Available Members Models
+class AvailableGroupMembers(BaseModel):
+    """Response model for available group members categorized by type."""
+    youth: List[YouthWithType] = []
+    leaders: List[LeaderWithType] = []
+    parents: List[ParentWithType] = []
+
+    model_config = ConfigDict(from_attributes=True)
 
 
 # Analytics Models

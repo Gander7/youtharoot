@@ -171,9 +171,11 @@ function PersonSelectionDialog({ open, onClose, onConfirm, availablePeople, load
                             {person.phone_number}
                           </Typography>
                           <Chip 
-                            label={person.person_type === 'youth' ? 'Youth' : 'Leader'} 
+                            label={person.person_type === 'youth' ? 'Youth' : 
+                                   person.person_type === 'leader' ? 'Leader' : 'Parent'} 
                             size="small" 
-                            color={person.person_type === 'youth' ? 'primary' : 'secondary'}
+                            color={person.person_type === 'youth' ? 'primary' : 
+                                   person.person_type === 'leader' ? 'secondary' : 'success'}
                           />
                         </Box>
                       }
@@ -244,20 +246,23 @@ function GroupMemberManager({ open, onClose, group, onMembershipChange }) {
     try {
       setLoadingPeople(true);
       
-      // Fetch both youth and leaders
-      const [youthResponse, leadersResponse] = await Promise.all([
+      // Fetch youth, leaders, and parents
+      const [youthResponse, leadersResponse, parentsResponse] = await Promise.all([
         apiRequest('/person/youth'),
-        apiRequest('/person/leaders')
+        apiRequest('/person/leaders'),
+        apiRequest('/parents')
       ]);
       
-      if (youthResponse.ok && leadersResponse.ok) {
+      if (youthResponse.ok && leadersResponse.ok && parentsResponse.ok) {
         const youth = await youthResponse.json();
         const leaders = await leadersResponse.json();
+        const parents = await parentsResponse.json();
         
         // Add person_type to each person to ensure correct display
         const youthWithType = youth.map(person => ({ ...person, person_type: 'youth' }));
         const leadersWithType = leaders.map(person => ({ ...person, person_type: 'leader' }));
-        const allPeople = [...youthWithType, ...leadersWithType];
+        const parentsWithType = parents.map(person => ({ ...person, person_type: 'parent' }));
+        const allPeople = [...youthWithType, ...leadersWithType, ...parentsWithType];
         
         // Filter out people who are already members
         const memberPersonIds = members.map(m => m.person_id);
@@ -407,9 +412,11 @@ function GroupMemberManager({ open, onClose, group, onMembershipChange }) {
                             {member.person.first_name} {member.person.last_name}
                           </Typography>
                           <Chip 
-                            label={member.person.person_type === 'youth' ? 'Youth' : 'Leader'} 
+                            label={member.person.person_type === 'youth' ? 'Youth' : 
+                                   member.person.person_type === 'leader' ? 'Leader' : 'Parent'} 
                             size="small" 
-                            color={member.person.person_type === 'youth' ? 'primary' : 'secondary'}
+                            color={member.person.person_type === 'youth' ? 'primary' : 
+                                   member.person.person_type === 'leader' ? 'secondary' : 'success'}
                           />
                         </Box>
                       }

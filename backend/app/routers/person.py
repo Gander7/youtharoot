@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Request, HTTPException, Depends, Query
+from fastapi import APIRouter, Request, HTTPException, Depends, Query, status
 from typing import Union, List, Optional
 from app.models import Youth, Leader, Parent, Person, User, PersonCreate, ParentYouthRelationshipCreate
 from sqlalchemy.orm import Session
@@ -170,6 +170,41 @@ async def get_all_parents(
 		print(f"Error in get_all_parents: {e}")
 		raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
+
+@router.get("/parent/{parent_id}", response_model=Parent)
+async def get_parent_by_id(
+	parent_id: int,
+	db: Session = Depends(connect_to_db()),
+	current_user: User = Depends(get_current_user_lazy())
+):
+	"""Get a specific parent by ID."""
+	try:
+		repos = get_repositories(db)
+		
+		# Get the person by ID
+		person = await repos["person"].get_person(parent_id)
+		if not person:
+			raise HTTPException(
+				status_code=status.HTTP_404_NOT_FOUND,
+				detail="Parent not found"
+			)
+		
+		# Verify it's actually a parent
+		if not isinstance(person, Parent):
+			raise HTTPException(
+				status_code=status.HTTP_404_NOT_FOUND,
+				detail="Person is not a parent"
+			)
+		
+		return person
+		
+	except HTTPException:
+		raise
+	except Exception as e:
+		print(f"Error in get_parent_by_id: {e}")
+		raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
+
 @router.get("/parents/search", response_model=List[Parent])
 async def search_parents(
 	query: str = Query(..., description="Search query for parent name, phone, or email"),
@@ -208,6 +243,16 @@ async def link_parent_to_youth(
 		relationship.youth_id = youth_id
 		result = await repos["person"].link_parent_to_youth(relationship)
 		return result
+	except ValueError as e:
+		error_msg = str(e).lower()
+		if "already linked" in error_msg:
+			raise HTTPException(status_code=400, detail=str(e))
+		elif "not found" in error_msg:
+			raise HTTPException(status_code=404, detail=str(e))  # Person doesn't exist
+		elif "not a parent type" in error_msg:
+			raise HTTPException(status_code=400, detail=str(e))  # Person exists but wrong type
+		else:
+			raise HTTPException(status_code=400, detail=str(e))
 	except Exception as e:
 		print(f"Error in link_parent_to_youth: {e}")
 		raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
@@ -223,6 +268,8 @@ async def get_parents_for_youth(
 		repos = get_repositories(db)
 		parents = await repos["person"].get_parents_for_youth(youth_id)
 		return parents
+	except ValueError as e:
+		raise HTTPException(status_code=404, detail=str(e))
 	except Exception as e:
 		print(f"Error in get_parents_for_youth: {e}")
 		raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
@@ -246,4 +293,21 @@ async def unlink_parent_from_youth(
 		raise
 	except Exception as e:
 		print(f"Error in unlink_parent_from_youth: {e}")
+		raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
+@router.get("/parents/{parent_id}/youth")
+async def get_youth_for_parent(
+	parent_id: int,
+	db: Session = Depends(connect_to_db()),
+	current_user: User = Depends(get_current_user_lazy())
+):
+	"""Get all youth for a specific parent with relationship details."""
+	try:
+		repos = get_repositories(db)
+		youth = await repos["person"].get_youth_for_parent(parent_id)
+		return youth
+	except ValueError as e:
+		raise HTTPException(status_code=404, detail=str(e))
+	except Exception as e:
+		print(f"Error in get_youth_for_parent: {e}")
 		raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
