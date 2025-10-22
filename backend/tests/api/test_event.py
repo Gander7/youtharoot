@@ -54,27 +54,27 @@ def make_event_payload(event_id, event_date, youth_info, leader_info):
         "leaders": leader_info
     }
     return payload
-def test_create_event_missing_checkin_returns_422():
+def test_create_event_with_valid_data():
+    """Test creating an event with valid EventCreate data"""
     payload = {
-        "id": 3,
+        "name": "Test Event",
         "date": "2025-09-03",
-        "youth": [
-            {
-                "person_id": 1,
-                # Missing check_in
-                "check_out": "2025-09-03T21:05:00+00:00"
-            }
-        ],
-        "leaders": [
-            {
-                "person_id": 2,
-                # Missing check_in
-                "check_out": "2025-09-03T21:15:00+00:00"
-            }
-        ]
+        "start_time": "19:00",
+        "end_time": "21:00",
+        "location": "Test Location"
     }
     response = client.post(EVENT_ENDPOINT, json=payload)
-    assert response.status_code == 422
+    assert response.status_code == 200
+    
+    data = response.json()
+    assert data["name"] == "Test Event"
+    assert data["date"] == "2025-09-03"
+    assert data["start_time"] == "19:00"
+    assert data["end_time"] == "21:00"
+    assert data["location"] == "Test Location"
+    # Should have auto-generated datetime fields
+    assert "start_datetime" in data
+    assert "end_datetime" in data
 
 def test_create_event_with_checkin_checkout():
     import datetime
@@ -145,28 +145,33 @@ def test_create_event_with_checkin_checkout():
         assert data["name"] == "Test Event"
         
     else:
-        # Original memory mode test
+        # Memory mode test - event creation doesn't include attendance data anymore
         event_date = datetime.date.today()
-        youth_checkin, youth_checkout = make_checkin_checkout(event_date, datetime.time(18, 55), datetime.time(21, 5))
-        leader_checkin, leader_checkout = make_checkin_checkout(event_date, datetime.time(18, 45), datetime.time(21, 15))
-        youth_info = [{"person_id": 1, "check_in": youth_checkin, "check_out": youth_checkout}]
-        leader_info = [{"person_id": 2, "check_in": leader_checkin, "check_out": leader_checkout}]
-        payload = make_event_payload(2, event_date, youth_info, leader_info)
+        payload = {
+            "date": event_date.isoformat(),
+            "name": "Test Event",
+            "desc": "Test event with checkin/checkout",
+            "start_time": "18:30",
+            "end_time": "21:30",
+            "location": "Test Location"
+        }
         response = client.post(EVENT_ENDPOINT, json=payload)
         assert response.status_code in (200, 201)
         data = response.json()
-        assert len(data["youth"]) == 1
-        assert data["youth"][0]["person_id"] == 1
-        assert data["youth"][0]["check_in"] == youth_checkin
-        assert data["youth"][0]["check_out"] == youth_checkout
-        assert len(data["leaders"]) == 1
-        assert data["leaders"][0]["person_id"] == 2
-        assert data["leaders"][0]["check_in"] == leader_checkin
-        assert data["leaders"][0]["check_out"] == leader_checkout
+        
+        # Verify event was created successfully with datetime fields
+        assert data["name"] == "Test Event"
+        assert data["date"] == event_date.isoformat()
+        assert data["start_time"] == "18:30"
+        assert data["end_time"] == "21:30"
+        assert "start_datetime" in data
+        assert "end_datetime" in data
+        # Attendance is managed separately, so youth/leaders arrays should be empty initially
+        assert len(data["youth"]) == 0
+        assert len(data["leaders"]) == 0
 
 def valid_event_payload():
     return {
-        "id": 1,
         "date": "2025-09-01",
         # No name, start_time, end_time, location: should default/optional
     }
@@ -204,10 +209,17 @@ def test_create_event_with_custom_times_and_location():
 
 def test_get_event():
     payload = valid_event_payload()
-    client.post(EVENT_ENDPOINT, json=payload)
-    event_id = payload["id"]
+    response = client.post(EVENT_ENDPOINT, json=payload)
+    assert response.status_code in (200, 201)
+    created_event = response.json()
+    event_id = created_event["id"]  # Get the auto-generated ID
+    
     response = client.get(f"{EVENT_ENDPOINT}/{event_id}")
     assert response.status_code == 200
+    
+    data = response.json()
+    assert data["id"] == event_id
+    assert data["date"] == "2025-09-01"
     data = response.json()
     assert data["id"] == event_id
     assert data["name"] == "Youth Group"

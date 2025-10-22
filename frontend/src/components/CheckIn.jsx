@@ -380,12 +380,6 @@ export default function CheckIn({ eventId, viewOnly = false }) {
     return parseEventDate(dateStr).toLocaleDateString();
   };
 
-  const getEventDisplayDateLong = (dateStr) => {
-    return parseEventDate(dateStr).toLocaleDateString('en-US', { 
-      weekday: 'long', month: 'long', day: 'numeric' 
-    });
-  };
-
   const getAvailableCount = () => {
     const checkedInIds = attendees.map(a => a.person_id);
     return allPeople.filter(person => !checkedInIds.includes(person.id)).length;
@@ -403,19 +397,28 @@ export default function CheckIn({ eventId, viewOnly = false }) {
   const isEventEnded = () => {
     if (!event) return false;
     
-    // Get current time and convert to Halifax timezone for comparison
-    const now = new Date(now.toLocaleString("en-CA", {timeZone: "America/Halifax"}));
-    
-    // Parse the event date and time, treating them as Halifax timezone
-    const [year, month, day] = event.date.split('-').map(Number);
-    const [hours, minutes] = event.end_time.split(':').map(Number);
-    
-    // Create event end time in Halifax timezone
-    // Format: YYYY-MM-DD HH:mm:ss in Halifax timezone
-    const eventEndString = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')} ${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:00`;
-    const eventEndHalifax = new Date(eventEndString);
-    
-    return nowHalifax > eventEndHalifax;
+    // Use new UTC datetime field if available, otherwise fall back to legacy date/time
+    if (event.end_datetime) {
+      // Compare UTC datetimes directly
+      const now = new Date();
+      const eventEndUtc = new Date(event.end_datetime);
+      return now > eventEndUtc;
+    } else {
+      // Legacy fallback - treat date/time as Halifax timezone
+      const now = new Date();
+      const nowHalifaxString = now.toLocaleString("sv-SE", {timeZone: "America/Halifax"});
+      const nowHalifax = new Date(nowHalifaxString);
+      
+      // Parse the event date and time, treating them as Halifax timezone
+      const [year, month, day] = event.date.split('-').map(Number);
+      const [hours, minutes] = event.end_time.split(':').map(Number);
+      
+      // Create event end time in Halifax timezone
+      const eventEndString = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')} ${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:00`;
+      const eventEndHalifax = new Date(eventEndString);
+      
+      return nowHalifax > eventEndHalifax;
+    }
   };
 
   const handleCheckOutAll = async () => {
@@ -494,6 +497,56 @@ export default function CheckIn({ eventId, viewOnly = false }) {
     return attendees.filter(attendee => attendee.check_out).length;
   };
 
+  // Helper function to format datetime in Halifax timezone
+  const formatEventDateTime = (utcDatetime) => {
+    if (!utcDatetime) return '';
+    
+    const utcDate = new Date(utcDatetime);
+    
+    // Convert to Halifax timezone for display
+    const halifaxDateTime = utcDate.toLocaleString('en-US', {
+      timeZone: 'America/Halifax',
+      weekday: 'long',
+      year: 'numeric', 
+      month: 'long',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit'
+    });
+    
+    return halifaxDateTime;
+  };
+
+  const formatEventTime = (utcDatetime) => {
+    if (!utcDatetime) return '';
+    
+    const utcDate = new Date(utcDatetime);
+    
+    // Convert to Halifax timezone for display
+    const halifaxTime = utcDate.toLocaleString('en-US', {
+      timeZone: 'America/Halifax',
+      hour: 'numeric',
+      minute: '2-digit'
+    });
+    
+    return halifaxTime;
+  };
+
+  // Update the event display to use new datetime fields
+  const getEventDisplayDateLong = () => {
+    if (!event) return '';
+    
+    if (event.start_datetime) {
+      // Use new UTC datetime field
+      return formatEventDateTime(event.start_datetime);
+    } else {
+      // Legacy fallback
+      return parseEventDate(event.date).toLocaleDateString('en-US', { 
+        weekday: 'long', month: 'long', day: 'numeric' 
+      });
+    }
+  };
+
   if (loading) {
     return (
       <ThemeProvider theme={darkTheme}>
@@ -545,10 +598,12 @@ export default function CheckIn({ eventId, viewOnly = false }) {
                 <Box>
                   <Typography variant="h6">{event.name}</Typography>
                   <Typography variant="body2" color="text.secondary">
-                    📅 {getEventDisplayDateLong(event.date)}
+                    📅 {getEventDisplayDateLong()}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    ⏰ {event.start_time} - {event.end_time}
+                    ⏰ {event.start_datetime ? 
+                         `${formatEventTime(event.start_datetime)} - ${formatEventTime(event.end_datetime)}` :
+                         `${event.start_time} - ${event.end_time}`}
                     {event.location && ` • 📍 ${event.location}`}
                   </Typography>
                 </Box>

@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import List, Optional, Union
-from app.models import Youth, Leader, Event, User
+from app.models import Youth, Leader, Event, EventCreate, EventUpdate, User
 from app.messaging_models import MessageGroup, MessageGroupCreate, MessageGroupUpdate, MessageGroupMembership, MessageGroupMembershipCreate, MessageGroupMembershipWithPerson, BulkGroupMembershipResponse
 from datetime import datetime
 
@@ -35,7 +35,7 @@ class EventRepository(ABC):
     """Abstract interface for event storage"""
     
     @abstractmethod
-    async def create_event(self, event: Event) -> Event:
+    async def create_event(self, event: EventCreate) -> Event:
         pass
     
     @abstractmethod
@@ -47,7 +47,7 @@ class EventRepository(ABC):
         pass
     
     @abstractmethod
-    async def update_event(self, event_id: int, event: Event) -> Event:
+    async def update_event(self, event_id: int, event_update: EventUpdate) -> Event:
         pass
     
     @abstractmethod

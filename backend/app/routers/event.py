@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Query, Depends
 from typing import Optional
-from app.models import Event, User
+from app.models import Event, EventCreate, EventUpdate, User
 from sqlalchemy.orm import Session
 import datetime
 
@@ -26,7 +26,7 @@ router = APIRouter()
 
 @router.post("/event", response_model=Event)
 async def create_event(
-    event: Event, 
+    event: EventCreate, 
     db: Session = Depends(connect_to_db()),
     current_user: User = Depends(get_current_user_dependency())
 ):
@@ -67,13 +67,13 @@ async def get_events(
 @router.put("/event/{event_id}", response_model=Event)
 async def update_event(
     event_id: int, 
-    event: Event, 
+    event_update: EventUpdate, 
     db: Session = Depends(connect_to_db()),
     current_user: User = Depends(get_current_user_dependency())
 ):
     repos = get_repositories(db)
     try:
-        return await repos["event"].update_event(event_id, event)
+        return await repos["event"].update_event(event_id, event_update)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
 

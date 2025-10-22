@@ -1,6 +1,6 @@
 from typing import List, Optional, Union
 from app.repositories.base import PersonRepository, EventRepository, UserRepository, MessageGroupRepository
-from app.models import Youth, Leader, Event, User
+from app.models import Youth, Leader, Event, EventCreate, EventUpdate, User
 from app.messaging_models import MessageGroup, MessageGroupCreate, MessageGroupUpdate, MessageGroupMembership, MessageGroupMembershipCreate, MessageGroupMembershipWithPerson, BulkGroupMembershipResponse, YouthWithType, LeaderWithType
 import datetime
 
@@ -70,14 +70,28 @@ class InMemoryEventRepository(EventRepository):
         self.store = {}
         self.next_id = 1
     
-    async def create_event(self, event: Event) -> Event:
-        # Generate ID if not provided
-        if event.id is None:
-            event.id = self.next_id
-            self.next_id += 1
+    async def create_event(self, event: EventCreate) -> Event:
+        # Generate ID
+        event_id = self.next_id
+        self.next_id += 1
         
-        self.store[event.id] = event
-        return event
+        # Create Event from EventCreate data (includes auto-generated datetime fields)
+        event_data = Event(
+            id=event_id,
+            name=event.name,
+            date=event.date,
+            desc=event.desc,
+            start_time=event.start_time,
+            end_time=event.end_time,
+            location=event.location,
+            start_datetime=event.start_datetime,  # Already converted by EventCreate
+            end_datetime=event.end_datetime,      # Already converted by EventCreate
+            youth=[],
+            leaders=[]
+        )
+        
+        self.store[event_id] = event_data
+        return event_data
     
     async def get_event(self, event_id: int) -> Optional[Event]:
         return self.store.get(event_id)
@@ -103,25 +117,23 @@ class InMemoryEventRepository(EventRepository):
         
         return events
     
-    async def update_event(self, event_id: int, event: Event) -> Event:
+    async def update_event(self, event_id: int, event_update: EventUpdate) -> Event:
         if event_id not in self.store:
             raise ValueError(f"Event with ID {event_id} not found")
         
         # Get the existing event to preserve attendance data
         existing_event = self.store[event_id]
         
-        # Update only the editable fields, preserve attendance data
-        updated_event = Event(
-            id=event_id,
-            date=event.date,
-            name=event.name,
-            desc=event.desc,
-            start_time=event.start_time,
-            end_time=event.end_time,
-            location=event.location,
-            youth=existing_event.youth,  # Preserve existing attendance
-            leaders=existing_event.leaders  # Preserve existing attendance
-        )
+        # Apply updates
+        updated_data = existing_event.model_dump()
+        update_data = event_update.model_dump(exclude_unset=True)
+        
+        for field, value in update_data.items():
+            if value is not None:
+                updated_data[field] = value
+        
+        # Create updated event
+        updated_event = Event(**updated_data)
         
         self.store[event_id] = updated_event
         return updated_event

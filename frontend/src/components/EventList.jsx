@@ -493,12 +493,42 @@ export default function EventList() {
     });
   };
 
-  const formatEventTime = (startTime, endTime) => {
+  const formatEventTime = (event) => {
+    // If the event has UTC datetime fields, use them for display
+    if (event.start_datetime && event.end_datetime) {
+      return formatEventDateTime(event.start_datetime, event.end_datetime);
+    }
+    
+    // Fallback to legacy time fields
     const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
     const shortTz = new Date().toLocaleTimeString('en-US', {
       timeZoneName: 'short'
     }).split(' ').pop();
-    return `${startTime} - ${endTime} ${shortTz}`;
+    return `${event.start_time} - ${event.end_time} ${shortTz}`;
+  };
+
+  const formatEventDateTime = (startDatetimeUtc, endDatetimeUtc) => {
+    // Convert UTC datetime to Halifax time for display
+    const startUtc = new Date(startDatetimeUtc);
+    const endUtc = new Date(endDatetimeUtc);
+    
+    const halifaxOptions = {
+      timeZone: 'America/Halifax',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    };
+    
+    const startTimeHalifax = startUtc.toLocaleTimeString('en-US', halifaxOptions);
+    const endTimeHalifax = endUtc.toLocaleTimeString('en-US', halifaxOptions);
+    
+    // Get timezone abbreviation
+    const shortTz = startUtc.toLocaleString('en-US', {
+      timeZone: 'America/Halifax',
+      timeZoneName: 'short'
+    }).split(' ').pop();
+    
+    return `${startTimeHalifax} - ${endTimeHalifax} ${shortTz}`;
   };
 
   const getAttendeeCount = (event) => {
@@ -534,6 +564,14 @@ export default function EventList() {
   };
 
   const isEventEnded = (event) => {
+    // If we have UTC datetime fields, use them for more accurate comparison
+    if (event.end_datetime) {
+      const now = new Date();
+      const eventEndUtc = new Date(event.end_datetime);
+      return now > eventEndUtc;
+    }
+    
+    // Fallback to legacy date/time fields
     // Get current time in Halifax timezone
     const now = new Date();
     const nowHalifaxString = now.toLocaleString("sv-SE", {timeZone: "America/Halifax"});
@@ -679,10 +717,10 @@ export default function EventList() {
                       </Box>
                     }
                     secondary={
-                      <>
+                        <>
                         📅 {formatDate(event.date)}
                         <br />
-                        ⏰ {formatEventTime(event.start_time, event.end_time)}
+                        ⏰ {formatEventTime(event)}
                         {event.location && (
                           <>
                             <br />

@@ -42,12 +42,15 @@ class EventDB(Base):
     __tablename__ = "events"
     
     id = Column(BigInteger, primary_key=True, autoincrement=True, index=True)
-    date = Column(String(10), nullable=False)  # ISO date string
+    date = Column(String(10), nullable=False)  # ISO date string - keep for backward compatibility
     name = Column(String(200), nullable=False, default="Youth Group")
     desc = Column(Text, default="")
-    start_time = Column(String(5), default="19:00")  # HH:MM format
-    end_time = Column(String(5), default="21:00")    # HH:MM format
+    start_time = Column(String(5), default="19:00")  # HH:MM format - keep for backward compatibility
+    end_time = Column(String(5), default="21:00")    # HH:MM format - keep for backward compatibility
     location = Column(String(200), nullable=True)
+    # New UTC datetime fields
+    start_datetime = Column(DateTime(timezone=True), nullable=True)
+    end_datetime = Column(DateTime(timezone=True), nullable=True)
     
     created_at = Column(DateTime, default=func.now())
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
