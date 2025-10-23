@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { animate } from 'animejs';
 import {
   Box,
   Card,
@@ -79,6 +80,91 @@ const darkTheme = createTheme({
 });
 
 export default function CheckIn({ eventId, viewOnly = false }) {
+  // --- Card Flip Random Selector ---
+  const [randomSelectorOpen, setRandomSelectorOpen] = useState(false);
+  const [isSpinning, setIsSpinning] = useState(false);
+  const [winner, setWinner] = useState(null);
+  const [cardFrontName, setCardFrontName] = useState('');
+  const [cardBackName, setCardBackName] = useState('');
+  const [isCardFront, setIsCardFront] = useState(true);
+  const cardRef = React.useRef(null);
+
+  // Get checked-in youth
+  const getCheckedInYouth = () => {
+    return attendees
+      .filter(attendee => !attendee.check_out)
+      .map(attendee => {
+        const person = allPeople.find(p => p.id === attendee.person_id);
+        const isYouth = (person && (person.type === 'youth' || person.person_type === 'youth'));
+        return isYouth ? person : null;
+      })
+      .filter(Boolean);
+  };
+
+  // Generate 36 random names from checked-in youth
+  const getRandomNames = (checkedInYouth, count = 36) => {
+    const names = [];
+    for (let i = 0; i < count; i++) {
+      const person = checkedInYouth[Math.floor(Math.random() * checkedInYouth.length)];
+      names.push(`${person.first_name} ${person.last_name}`);
+    }
+    return names;
+  };
+
+  // Card flip animation logic
+  const spinForRandomYouth = async () => {
+    if (isSpinning || getCheckedInYouth().length === 0) return;
+    setIsSpinning(true);
+    setWinner(null);
+    const checkedInYouth = getCheckedInYouth();
+    const names = getRandomNames(checkedInYouth, 36);
+    setCardFrontName(names[0]);
+    setCardBackName(names[1]);
+    setIsCardFront(true);
+    for (let i = 1; i < names.length; i++) {
+      await new Promise(resolve => {
+        if (isCardFront) setCardBackName(names[i]);
+        else setCardFrontName(names[i]);
+        setIsCardFront(prev => !prev);
+        animate(cardRef.current, {
+          scale: [1, 1.4, 1],
+          rotateY: '+=180',
+          easing: 'easeInOutSine',
+          duration: 400,
+          complete: () => setTimeout(resolve, 300)
+        });
+      });
+    }
+    setWinner(names[names.length - 1]);
+    setCardFrontName(names[names.length - 1]);
+    setIsCardFront(true);
+    animate(cardRef.current, {
+      scale: [1, 1.4, 1],
+      rotateY: '+=180',
+      backgroundColor: '#FFD700',
+      easing: 'easeInOutSine',
+      duration: 600,
+      complete: () => setIsSpinning(false)
+    });
+  };
+
+  const openRandomSelector = () => {
+    if (getCheckedInYouth().length === 0) {
+      setSnackbar({ open: true, message: 'No youth are currently checked in!', severity: 'warning' });
+      return;
+    }
+    setRandomSelectorOpen(true);
+    setWinner(null);
+    setCardFrontName('');
+    setCardBackName('');
+    setIsCardFront(true);
+  };
+
+  const closeRandomSelector = () => {
+    setRandomSelectorOpen(false);
+    setIsSpinning(false);
+    setWinner(null);
+  };
   const [event, setEvent] = useState(null);
   const [allPeople, setAllPeople] = useState([]); // Changed from allYouth to allPeople
   const [attendees, setAttendees] = useState([]);
@@ -695,6 +781,125 @@ export default function CheckIn({ eventId, viewOnly = false }) {
         </Paper>
 
         {/* People List */}
+        {/* --- Random Youth Selector --- */}
+        {event && !viewOnly && getCheckedInYouth().length >= 1 && (
+          <>
+            <Card sx={{ mb: 3, mx: { xs: 2, sm: 0 }, bgcolor: 'success.dark', borderRadius: 3, boxShadow: '0 4px 12px rgba(0,0,0,0.15)' }}>
+              <CardContent sx={{ px: { xs: 2, sm: 3 }, py: { xs: 2, sm: 2.5 } }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexDirection: { xs: 'column', sm: 'row' }, gap: { xs: 2, sm: 0 } }}>
+                  <Box sx={{ textAlign: { xs: 'center', sm: 'left' } }}>
+                    <Typography variant="h6" color="success.contrastText">
+                      🎲 Random Selector
+                    </Typography>
+                    <Typography variant="body2" color="success.contrastText" sx={{ opacity: 0.8 }}>
+                      Randomly choose from {getCheckedInYouth().length} checked-in youth
+                    </Typography>
+                  </Box>
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    onClick={openRandomSelector}
+                    disabled={isSpinning}
+                    sx={{ minWidth: 120, width: { xs: '100%', sm: 'auto' } }}
+                  >
+                    🎯 Pick Random Youth
+                  </Button>
+                </Box>
+              </CardContent>
+            </Card>
+            {/* Card Flip Dialog */}
+            {randomSelectorOpen && (
+              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', py: 4 }}>
+                <div className="card-container" style={{ width: 400, height: 250, margin: '0 auto', perspective: '1400px' }}>
+                  <div
+                    className="card"
+                    ref={cardRef}
+                    style={{
+                      position: 'relative',
+                      height: '100%',
+                      borderRadius: 10,
+                      width: '100%',
+                      transformStyle: 'preserve-3d',
+                      transition: 'background 0.3s',
+                      background: winner ? '#FFD700' : isCardFront ? '#2196f3' : '#fff',
+                    }}
+                  >
+                    <div
+                      className="front"
+                      style={{
+                        display: 'flex',
+                        width: '100%',
+                        height: '100%',
+                        borderRadius: 10,
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        backfaceVisibility: 'hidden',
+                        color: '#fff',
+                        background: '#2196f3',
+                        fontSize: 120,
+                        fontWeight: 'bold',
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        opacity: isCardFront ? 1 : 0,
+                        transition: 'opacity 0.2s',
+                      }}
+                    >
+                      {cardFrontName}
+                    </div>
+                    <div
+                      className="back"
+                      style={{
+                        display: 'flex',
+                        width: '100%',
+                        height: '100%',
+                        borderRadius: 10,
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        backfaceVisibility: 'hidden',
+                        color: '#2196f3',
+                        background: '#fff',
+                        fontSize: 120,
+                        fontWeight: 'bold',
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        transform: 'rotateY(180deg)',
+                        opacity: isCardFront ? 0 : 1,
+                        transition: 'opacity 0.2s',
+                      }}
+                    >
+                      {cardBackName}
+                    </div>
+                  </div>
+                </div>
+                <Box sx={{ mt: 3, display: 'flex', gap: 2 }}>
+                  <Button
+                    onClick={spinForRandomYouth}
+                    disabled={isSpinning}
+                    variant="contained"
+                    size="large"
+                  >
+                    {isSpinning ? '🌪️ Spinning...' : '🎯 SPIN!'}
+                  </Button>
+                  <Button
+                    onClick={closeRandomSelector}
+                    disabled={isSpinning}
+                    variant="outlined"
+                    size="large"
+                  >
+                    Close
+                  </Button>
+                </Box>
+                {winner && (
+                  <Typography variant="h4" sx={{ mt: 3, color: '#FFD700', fontWeight: 'bold' }}>
+                    🎉 Winner: {winner} 🎉
+                  </Typography>
+                )}
+              </Box>
+            )}
+          </>
+        )}
         {filteredPeople.length === 0 ? (
           <Paper sx={{ p: 4, textAlign: 'center' }}>
             <PersonIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }} />
