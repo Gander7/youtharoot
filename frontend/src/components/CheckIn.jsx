@@ -104,7 +104,8 @@ export default function CheckIn({ eventId, viewOnly = false }) {
   };
 
   // Generate 36 random names from checked-in youth
-  const getRandomNames = (checkedInYouth, count = 36) => {
+  const getRandomNames = (checkedInYouth) => {
+    const count = Math.floor(Math.random() * 11) + 50; // random between 30 and 40
     const names = [];
     for (let i = 0; i < count; i++) {
       const person = checkedInYouth[Math.floor(Math.random() * checkedInYouth.length)];
@@ -119,22 +120,29 @@ export default function CheckIn({ eventId, viewOnly = false }) {
     setIsSpinning(true);
     setWinner(null);
     const checkedInYouth = getCheckedInYouth();
-    const names = getRandomNames(checkedInYouth, 36);
+    const names = getRandomNames(checkedInYouth);
     setCardFrontName(names[0]);
     setCardBackName(names[1]);
     setIsCardFront(true);
-    for (let i = 1; i < names.length; i++) {
+    const minMs = 100;
+    const maxMs = 1000;
+    const total = names.length;
+    for (let i = 1; i < total; i++) {
+      // Reverse exponential: fast at start, slow at end
+      // Use an exponential curve: t = minMs + (maxMs - minMs) * (i / total) ** 2.5
+      const progress = i / total;
+      const ms = Math.round(minMs + (maxMs - minMs) * Math.pow(progress, 2.5));
       await new Promise(resolve => {
         animate(cardRef.current, {
           scale: [1, 1.4, 1],
           rotateY: '+=180',
           easing: 'easeInOutSine',
-          duration: 250,
+          duration: ms,
           complete: () => {
             setIsCardFront(prev => !prev);
             if (isCardFront) setCardBackName(names[i]);
             else setCardFrontName(names[i]);
-            setTimeout(resolve, 300);
+            setTimeout(resolve, ms);
           }
         });
       });
@@ -912,7 +920,7 @@ export default function CheckIn({ eventId, viewOnly = false }) {
                 </Box>
                 {winner && (
                   <Typography variant="h4" sx={{ mt: 3, color: '#FFD700', fontWeight: 'bold' }}>
-                    🎉 Winner: {winner} 🎉
+                    🎉 {winner}! 🎉
                   </Typography>
                 )}
               </DialogContent>
