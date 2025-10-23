@@ -1,3 +1,5 @@
+import Dialog from '@mui/material/Dialog';
+import DialogContent from '@mui/material/DialogContent';
 import React, { useState, useEffect } from 'react';
 import { animate } from 'animejs';
 import {
@@ -808,8 +810,8 @@ export default function CheckIn({ eventId, viewOnly = false }) {
               </CardContent>
             </Card>
             {/* Card Flip Dialog */}
-            {randomSelectorOpen && (
-              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', py: 4 }}>
+            <Dialog open={randomSelectorOpen} onClose={closeRandomSelector} maxWidth="sm" fullWidth>
+              <DialogContent style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 32 }}>
                 <div className="card-container" style={{ width: 400, height: 250, margin: '0 auto', perspective: '1400px' }}>
                   <div
                     className="card"
@@ -896,8 +898,8 @@ export default function CheckIn({ eventId, viewOnly = false }) {
                     🎉 Winner: {winner} 🎉
                   </Typography>
                 )}
-              </Box>
-            )}
+              </DialogContent>
+            </Dialog>
           </>
         )}
         {filteredPeople.length === 0 ? (
