@@ -696,22 +696,36 @@ export default function CheckIn({ eventId, viewOnly = false }) {
         {event && (
           <Card sx={{ mb: 3 }}>
             <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                <Avatar sx={{ bgcolor: 'primary.main' }}>
-                  <EventIcon />
-                </Avatar>
-                <Box>
-                  <Typography variant="h6">{event.name}</Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    📅 {getEventDisplayDateLong()}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    ⏰ {event.start_datetime ? 
-                         `${formatEventTime(event.start_datetime)} - ${formatEventTime(event.end_datetime)}` :
-                         `${event.start_time} - ${event.end_time}`}
-                    {event.location && ` • 📍 ${event.location}`}
-                  </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                  <Avatar sx={{ bgcolor: 'primary.main' }}>
+                    <EventIcon />
+                  </Avatar>
+                  <Box>
+                    <Typography variant="h6">{event.name}</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      📅 {getEventDisplayDateLong()}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      ⏰ {event.start_datetime ? 
+                           `${formatEventTime(event.start_datetime)} - ${formatEventTime(event.end_datetime)}` :
+                           `${event.start_time} - ${event.end_time}`}
+                      {event.location && ` • 📍 ${event.location}`}
+                    </Typography>
+                  </Box>
                 </Box>
+                {/* Move Pick Random Youth button here */}
+                {!viewOnly && getCheckedInYouth().length >= 1 && (
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    onClick={openRandomSelector}
+                    disabled={isSpinning}
+                    sx={{ minWidth: 120, ml: 2 }}
+                  >
+                    🎯 Random
+                  </Button>
+                )}
               </Box>
             </CardContent>
           </Card>
@@ -801,132 +815,105 @@ export default function CheckIn({ eventId, viewOnly = false }) {
 
         {/* People List */}
         {/* --- Random Youth Selector --- */}
-        {event && !viewOnly && getCheckedInYouth().length >= 1 && (
-          <>
-            <Card sx={{ mb: 3, mx: { xs: 2, sm: 0 }, bgcolor: 'success.dark', borderRadius: 3, boxShadow: '0 4px 12px rgba(0,0,0,0.15)' }}>
-              <CardContent sx={{ px: { xs: 2, sm: 3 }, py: { xs: 2, sm: 2.5 } }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexDirection: { xs: 'column', sm: 'row' }, gap: { xs: 2, sm: 0 } }}>
-                  <Box sx={{ textAlign: { xs: 'center', sm: 'left' } }}>
-                    <Typography variant="h6" color="success.contrastText">
-                      🎲 Random Selector
-                    </Typography>
-                    <Typography variant="body2" color="success.contrastText" sx={{ opacity: 0.8 }}>
-                      Randomly choose from {getCheckedInYouth().length} checked-in youth
-                    </Typography>
-                  </Box>
-                  <Button
-                    variant="contained"
-                    color="primary"
-                    onClick={openRandomSelector}
-                    disabled={isSpinning}
-                    sx={{ minWidth: 120, width: { xs: '100%', sm: 'auto' } }}
-                  >
-                    🎯 Pick Random Youth
-                  </Button>
-                </Box>
-              </CardContent>
-            </Card>
-            {/* Card Flip Dialog */}
-            <Dialog open={randomSelectorOpen} onClose={closeRandomSelector} maxWidth="sm" fullWidth>
-              <DialogContent style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 32 }}>
-                <div className="card-container" style={{ width: 390, height: 120, margin: '32px auto', perspective: '1400px' }}>
-                  <div
-                    className="card"
-                    ref={cardRef}
-                    style={{
-                      position: 'relative',
-                      height: '100%',
-                      borderRadius: 10,
-                      width: '100%',
-                      transformStyle: 'preserve-3d',
-                      transition: 'background 0.3s',
-                      background: winner ? '#FFD700' : isCardFront ? '#0d1b2a' : '#23272f',
-                      boxSizing: 'border-box',
-                      padding: '12px 18px',
-                    }}
-                  >
-                    <div
-                      className="front"
-                      style={{
-                        display: 'flex',
-                        width: '100%',
-                        height: '100%',
-                        borderRadius: 10,
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                        backfaceVisibility: 'hidden',
-                        color: '#e0eafc',
-                        background: '#0d1b2a',
-                        fontSize: 32,
-                        fontWeight: 'bold',
-                        position: 'absolute',
-                        top: 0,
-                        left: 0,
-                        opacity: isCardFront ? 1 : 0,
-                        transition: 'opacity 0.2s',
-                        padding: '2px 6px',
-                        wordBreak: 'break-word',
-                        overflowWrap: 'break-word',
-                      }}
-                    >
-                      {cardFrontName}
-                    </div>
-                    <div
-                      className="back"
-                      style={{
-                        display: 'flex',
-                        width: '100%',
-                        height: '100%',
-                        borderRadius: 10,
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                        backfaceVisibility: 'hidden',
-                        color: '#b0b8c1',
-                        background: '#23272f',
-                        fontSize: 32,
-                        fontWeight: 'bold',
-                        position: 'absolute',
-                        top: 0,
-                        left: 0,
-                        transform: 'rotateY(180deg)',
-                        opacity: isCardFront ? 0 : 1,
-                        transition: 'opacity 0.2s',
-                        padding: '2px 6px',
-                        wordBreak: 'break-word',
-                        overflowWrap: 'break-word',
-                      }}
-                    >
-                      {cardBackName}
-                    </div>
-                  </div>
+        {/* Card Flip Dialog (remains outside) */}
+        <Dialog open={randomSelectorOpen} onClose={closeRandomSelector} maxWidth="sm" fullWidth>
+          <DialogContent style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 32 }}>
+            <div className="card-container" style={{ width: 390, height: 120, margin: '32px auto', perspective: '1400px' }}>
+              <div
+                className="card"
+                ref={cardRef}
+                style={{
+                  position: 'relative',
+                  height: '100%',
+                  borderRadius: 10,
+                  width: '100%',
+                  transformStyle: 'preserve-3d',
+                  transition: 'background 0.3s',
+                  background: winner ? '#FFD700' : isCardFront ? '#0d1b2a' : '#23272f',
+                  boxSizing: 'border-box',
+                  padding: '12px 18px',
+                }}
+              >
+                <div
+                  className="front"
+                  style={{
+                    display: 'flex',
+                    width: '100%',
+                    height: '100%',
+                    borderRadius: 10,
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    backfaceVisibility: 'hidden',
+                    color: '#e0eafc',
+                    background: '#0d1b2a',
+                    fontSize: 32,
+                    fontWeight: 'bold',
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    opacity: isCardFront ? 1 : 0,
+                    transition: 'opacity 0.2s',
+                    padding: '2px 6px',
+                    wordBreak: 'break-word',
+                    overflowWrap: 'break-word',
+                  }}
+                >
+                  {cardFrontName}
                 </div>
-                <Box sx={{ mt: 3, display: 'flex', gap: 2 }}>
-                  <Button
-                    onClick={spinForRandomYouth}
-                    disabled={isSpinning}
-                    variant="contained"
-                    size="large"
-                  >
-                    {isSpinning ? '🌪️ Spinning...' : '🎯 SPIN!'}
-                  </Button>
-                  <Button
-                    onClick={closeRandomSelector}
-                    disabled={isSpinning}
-                    variant="outlined"
-                    size="large"
-                  >
-                    Close
-                  </Button>
-                </Box>
-                {winner && (
-                  <Typography variant="h4" sx={{ mt: 3, color: '#FFD700', fontWeight: 'bold' }}>
-                    🎉 {winner}! 🎉
-                  </Typography>
-                )}
-              </DialogContent>
-            </Dialog>
-          </>
-        )}
+                <div
+                  className="back"
+                  style={{
+                    display: 'flex',
+                    width: '100%',
+                    height: '100%',
+                    borderRadius: 10,
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    backfaceVisibility: 'hidden',
+                    color: '#b0b8c1',
+                    background: '#23272f',
+                    fontSize: 32,
+                    fontWeight: 'bold',
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    transform: 'rotateY(180deg)',
+                    opacity: isCardFront ? 0 : 1,
+                    transition: 'opacity 0.2s',
+                    padding: '2px 6px',
+                    wordBreak: 'break-word',
+                    overflowWrap: 'break-word',
+                  }}
+                >
+                  {cardBackName}
+                </div>
+              </div>
+            </div>
+            <Box sx={{ mt: 3, display: 'flex', gap: 2 }}>
+              <Button
+                onClick={spinForRandomYouth}
+                disabled={isSpinning}
+                variant="contained"
+                size="large"
+              >
+                {isSpinning ? '🌪️ Spinning...' : '🎯 SPIN!'}
+              </Button>
+              <Button
+                onClick={closeRandomSelector}
+                disabled={isSpinning}
+                variant="outlined"
+                size="large"
+              >
+                Close
+              </Button>
+            </Box>
+            {winner && (
+              <Typography variant="h4" sx={{ mt: 3, color: '#FFD700', fontWeight: 'bold' }}>
+                🎉 Winner: {winner} 🎉
+              </Typography>
+            )}
+          </DialogContent>
+        </Dialog>
         {filteredPeople.length === 0 ? (
           <Paper sx={{ p: 4, textAlign: 'center' }}>
             <PersonIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }} />
