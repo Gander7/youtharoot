@@ -1,5 +1,3 @@
-import Dialog from '@mui/material/Dialog';
-import DialogContent from '@mui/material/DialogContent';
 import React, { useState, useEffect } from 'react';
 import { animate } from 'animejs';
 import {
@@ -23,7 +21,9 @@ import {
   Paper,
   Stack,
   Alert,
-  Snackbar
+  Snackbar,
+  Dialog,
+  DialogContent
 } from '@mui/material';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import {
@@ -125,28 +125,37 @@ export default function CheckIn({ eventId, viewOnly = false }) {
     setIsCardFront(true);
     for (let i = 1; i < names.length; i++) {
       await new Promise(resolve => {
-        if (isCardFront) setCardBackName(names[i]);
-        else setCardFrontName(names[i]);
-        setIsCardFront(prev => !prev);
         animate(cardRef.current, {
           scale: [1, 1.4, 1],
           rotateY: '+=180',
           easing: 'easeInOutSine',
-          duration: 400,
-          complete: () => setTimeout(resolve, 300)
+          duration: 250,
+          complete: () => {
+            setIsCardFront(prev => !prev);
+            if (isCardFront) setCardBackName(names[i]);
+            else setCardFrontName(names[i]);
+            setTimeout(resolve, 300);
+          }
         });
       });
     }
     setWinner(names[names.length - 1]);
     setCardFrontName(names[names.length - 1]);
     setIsCardFront(true);
+    // Final winner flip: gold background
     animate(cardRef.current, {
       scale: [1, 1.4, 1],
-      rotateY: '+=180',
+      rotateY: 360,
       backgroundColor: '#FFD700',
       easing: 'easeInOutSine',
       duration: 600,
-      complete: () => setIsSpinning(false)
+      complete: () => {
+        // Force gold background on both sides
+        if (cardRef.current) {
+          cardRef.current.style.background = '#FFD700';
+        }
+        setIsSpinning(false);
+      }
     });
   };
 
@@ -812,7 +821,7 @@ export default function CheckIn({ eventId, viewOnly = false }) {
             {/* Card Flip Dialog */}
             <Dialog open={randomSelectorOpen} onClose={closeRandomSelector} maxWidth="sm" fullWidth>
               <DialogContent style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 32 }}>
-                <div className="card-container" style={{ width: 400, height: 250, margin: '0 auto', perspective: '1400px' }}>
+                <div className="card-container" style={{ width: 390, height: 120, margin: '32px auto', perspective: '1400px' }}>
                   <div
                     className="card"
                     ref={cardRef}
@@ -823,7 +832,9 @@ export default function CheckIn({ eventId, viewOnly = false }) {
                       width: '100%',
                       transformStyle: 'preserve-3d',
                       transition: 'background 0.3s',
-                      background: winner ? '#FFD700' : isCardFront ? '#2196f3' : '#fff',
+                      background: winner ? '#FFD700' : isCardFront ? '#0d1b2a' : '#23272f',
+                      boxSizing: 'border-box',
+                      padding: '12px 18px',
                     }}
                   >
                     <div
@@ -836,15 +847,18 @@ export default function CheckIn({ eventId, viewOnly = false }) {
                         justifyContent: 'center',
                         alignItems: 'center',
                         backfaceVisibility: 'hidden',
-                        color: '#fff',
-                        background: '#2196f3',
-                        fontSize: 120,
+                        color: '#e0eafc',
+                        background: '#0d1b2a',
+                        fontSize: 32,
                         fontWeight: 'bold',
                         position: 'absolute',
                         top: 0,
                         left: 0,
                         opacity: isCardFront ? 1 : 0,
                         transition: 'opacity 0.2s',
+                        padding: '2px 6px',
+                        wordBreak: 'break-word',
+                        overflowWrap: 'break-word',
                       }}
                     >
                       {cardFrontName}
@@ -859,9 +873,9 @@ export default function CheckIn({ eventId, viewOnly = false }) {
                         justifyContent: 'center',
                         alignItems: 'center',
                         backfaceVisibility: 'hidden',
-                        color: '#2196f3',
-                        background: '#fff',
-                        fontSize: 120,
+                        color: '#b0b8c1',
+                        background: '#23272f',
+                        fontSize: 32,
                         fontWeight: 'bold',
                         position: 'absolute',
                         top: 0,
@@ -869,6 +883,9 @@ export default function CheckIn({ eventId, viewOnly = false }) {
                         transform: 'rotateY(180deg)',
                         opacity: isCardFront ? 0 : 1,
                         transition: 'opacity 0.2s',
+                        padding: '2px 6px',
+                        wordBreak: 'break-word',
+                        overflowWrap: 'break-word',
                       }}
                     >
                       {cardBackName}
