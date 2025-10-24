@@ -141,7 +141,7 @@ class PersonCreate(BaseModel):
 	first_name: str
 	last_name: str
 	person_type: str  # "youth", "leader", or "parent"
-	phone: Optional[str] = None
+	phone_number: Optional[str] = None
 	email: Optional[str] = None
 	address: Optional[str] = None
 	sms_opt_out: bool = False
@@ -180,7 +180,7 @@ class PersonUpdate(BaseModel):
 	"""Update model for any person type"""
 	first_name: Optional[str] = None
 	last_name: Optional[str] = None
-	phone: Optional[str] = None
+	phone_number: Optional[str] = None
 	email: Optional[str] = None
 	address: Optional[str] = None
 	sms_opt_out: Optional[bool] = None

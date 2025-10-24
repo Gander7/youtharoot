@@ -378,7 +378,7 @@ class TestParentSMSBackendIntegration:
             first_name="Jane",
             last_name="Smith", 
             person_type="parent",
-            phone="555-1234"
+            phone_number="555-1234"
         )
         parent_result = await person_repo.create_person_unified(parent)
         parent_id = parent_result["id"]
@@ -392,7 +392,7 @@ class TestParentSMSBackendIntegration:
         await group_repo.add_member(group_id, parent_id, added_by=1)
         
         # Get group members with person details
-        members = await group_repo.get_group_members_with_person(group_id)
+        members = await group_repo.get_group_members_with_person(group_id, person_repo)
         
         assert len(members) == 1
         member = members[0]
@@ -417,7 +417,7 @@ class TestParentSMSBackendIntegration:
             first_name="Jane",
             last_name="Smith",
             person_type="parent", 
-            phone="555-1234"
+            phone_number="555-1234"
         )
         parent_result = await person_repo.create_person_unified(parent)
         
@@ -427,7 +427,7 @@ class TestParentSMSBackendIntegration:
         await group_repo.add_member(group_result.id, parent_result["id"], added_by=1)
         
         # Get members for SMS sending
-        members = await group_repo.get_group_members_with_person(group_result.id)
+        members = await group_repo.get_group_members_with_person(group_result.id, person_repo)
         
         # Should have parent member with correct phone
         assert len(members) == 1

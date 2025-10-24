@@ -177,7 +177,7 @@ class PostgreSQLPersonRepository(PersonRepository):
         db_person = PersonDB(
             first_name=person.first_name,
             last_name=person.last_name,
-            phone_number=person.phone_number if hasattr(person, 'phone_number') else person.phone,
+            phone_number=person.phone_number,
             address=person.address if hasattr(person, 'address') else None,
             person_type=person.person_type,
             sms_consent=person.sms_consent if hasattr(person, 'sms_consent') else True,

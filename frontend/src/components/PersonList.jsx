@@ -143,6 +143,18 @@ const PersonForm = ({ open, onClose, person, onSave, personType }) => {
       address: '', // For parents
       ...(person || {}),
     };
+    // Convert null/undefined values to appropriate defaults
+    Object.keys(baseData).forEach(key => {
+      if (baseData[key] === null || baseData[key] === undefined) {
+        if (key === 'sms_opt_out') {
+          baseData[key] = false;
+        } else if (key === 'grade') {
+          baseData[key] = '';
+        } else {
+          baseData[key] = '';
+        }
+      }
+    });
     baseData.grade = person?.grade ? String(person.grade) : '';
     setFormData(baseData);
   }, [person]);
@@ -166,6 +178,18 @@ const PersonForm = ({ open, onClose, person, onSave, personType }) => {
         address: '', // For parents
         ...(person || {}),
       };
+      // Convert null/undefined values to appropriate defaults
+      Object.keys(baseData).forEach(key => {
+        if (baseData[key] === null || baseData[key] === undefined) {
+          if (key === 'sms_opt_out') {
+            baseData[key] = false;
+          } else if (key === 'grade') {
+            baseData[key] = '';
+          } else {
+            baseData[key] = '';
+          }
+        }
+      });
       baseData.grade = person?.grade ? String(person.grade) : '';
       setFormData(baseData);
     }
@@ -190,7 +214,7 @@ const PersonForm = ({ open, onClose, person, onSave, personType }) => {
       // Don't include ID for new persons, let backend auto-generate
       first_name: formData.first_name,
       last_name: formData.last_name,
-      phone: formData.phone_number || null,
+      phone_number: formData.phone_number || null,
       sms_opt_out: formData.sms_opt_out || false,
       person_type: personType, // Explicitly set the person type
     };
@@ -1074,7 +1098,7 @@ function ParentManagementTab({ youthId, onParentAdded }) {
   const [newParentData, setNewParentData] = useState({
     first_name: '',
     last_name: '',
-    phone: '',
+    phone_number: '',
     address: '',
     relationship_type: 'parent',
     is_primary_contact: false
@@ -1155,7 +1179,7 @@ function ParentManagementTab({ youthId, onParentAdded }) {
         body: JSON.stringify({
           first_name: newParentData.first_name,
           last_name: newParentData.last_name,
-          phone: newParentData.phone,
+          phone_number: newParentData.phone_number,
           address: newParentData.address,
           person_type: 'parent'
         })
@@ -1181,7 +1205,7 @@ function ParentManagementTab({ youthId, onParentAdded }) {
           setNewParentData({
             first_name: '',
             last_name: '',
-            phone: '',
+            phone_number: '',
             address: '',
             relationship_type: 'parent',
             is_primary_contact: false
@@ -1281,10 +1305,10 @@ function ParentManagementTab({ youthId, onParentAdded }) {
                           color="success" 
                         />
                       )}
-                      {relationship.parent.phone && (
+                      {relationship.parent.phone_number && (
                         <Chip 
                           icon={<PhoneIcon />}
-                          label={relationship.parent.phone} 
+                          label={relationship.parent.phone_number} 
                           size="small" 
                           variant="outlined"
                         />
@@ -1348,8 +1372,8 @@ function ParentManagementTab({ youthId, onParentAdded }) {
                 <Grid item xs={6}>
                   <TextField
                     label="Phone"
-                    value={newParentData.phone}
-                    onChange={(e) => setNewParentData({...newParentData, phone: e.target.value})}
+                    value={newParentData.phone_number}
+                    onChange={(e) => setNewParentData({...newParentData, phone_number: e.target.value})}
                     fullWidth
                     InputProps={{
                       startAdornment: (
@@ -1448,7 +1472,7 @@ function ParentManagementTab({ youthId, onParentAdded }) {
                     </ListItemAvatar>
                     <ListItemText
                       primary={`${parent.first_name} ${parent.last_name}`}
-                      secondary={parent.phone}
+                      secondary={parent.phone_number}
                     />
                     <ListItemSecondaryAction>
                       <IconButton edge="end" disabled>

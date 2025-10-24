@@ -78,7 +78,7 @@ class InMemoryPersonRepository(PersonRepository):
             "first_name": person.first_name,
             "last_name": person.last_name,
             "person_type": person.person_type,
-            "phone": person.phone,
+            "phone_number": person.phone_number,
             "email": person.email,
             "address": person.address,
             "sms_opt_out": person.sms_opt_out,
@@ -583,24 +583,26 @@ class InMemoryMessageGroupRepository(MessageGroupRepository):
             if membership.group_id == group_id
         ]
     
-    async def get_group_members_with_person(self, group_id: int) -> List[MessageGroupMembershipWithPerson]:
+    async def get_group_members_with_person(self, group_id: int, person_repo: Optional['PersonRepository'] = None) -> List[MessageGroupMembershipWithPerson]:
         """Get all members of a message group with full person details"""
-        from app.repositories import get_person_repository
-        person_repo = get_person_repository(None)  # Memory mode doesn't need db session
+        if person_repo is None:
+            from app.repositories import get_person_repository
+            person_repo = get_person_repository(None)  # Memory mode doesn't need db session
         
         memberships = await self.get_group_members(group_id)
         result = []
         
         for membership in memberships:
-            person = await person_repo.get_person(membership.person_id)
+            person = await person_repo.get_person_unified(membership.person_id)
             if person:
                 # Create appropriate typed person object with person_type field
-                if isinstance(person, Youth):
-                    person_with_type = YouthWithType(**person.model_dump(), person_type="youth")
-                elif isinstance(person, Leader):
-                    person_with_type = LeaderWithType(**person.model_dump(), person_type="leader")
-                elif isinstance(person, Parent):
-                    person_with_type = ParentWithType(**person.model_dump())
+                person_type = person.get("person_type")
+                if person_type == "youth":
+                    person_with_type = YouthWithType(**person, person_type="youth")
+                elif person_type == "leader":
+                    person_with_type = LeaderWithType(**person, person_type="leader")
+                elif person_type == "parent":
+                    person_with_type = ParentWithType(**person)
                 else:
                     # Skip unknown person types
                     continue

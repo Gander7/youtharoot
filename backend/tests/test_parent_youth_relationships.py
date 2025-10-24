@@ -21,7 +21,7 @@ class TestParentModel:
             first_name="Jane",
             last_name="Smith", 
             person_type="parent",
-            phone="555-123-4567",
+            phone_number="555-123-4567",
             email="jane.smith@email.com",
             address="123 Main St, Halifax, NS"
         )
@@ -29,7 +29,7 @@ class TestParentModel:
         assert parent_data.person_type == "parent"
         assert parent_data.first_name == "Jane"
         assert parent_data.last_name == "Smith"
-        assert parent_data.phone == "555-123-4567"
+        assert parent_data.phone_number == "555-123-4567"
         assert parent_data.email == "jane.smith@email.com"
         assert parent_data.address == "123 Main St, Halifax, NS"
 
@@ -97,7 +97,7 @@ class TestParentModel:
             person_type="parent", 
             sms_opt_out=True
         )
-        assert parent_no_phone.phone is None
+        assert parent_no_phone.phone_number is None
         assert parent_no_phone.sms_opt_out == True
 
 
@@ -147,7 +147,7 @@ class TestParentRepository:
             first_name="Jane",
             last_name="Smith",
             person_type="parent",
-            phone="555-123-4567",
+            phone_number="555-123-4567",
             email="jane@email.com"
         )
         
@@ -162,9 +162,9 @@ class TestParentRepository:
         repo = InMemoryPersonRepository()
         
         # Create some test data
-        parent1 = PersonCreate(first_name="Jane", last_name="Smith", person_type="parent", phone="555-1234")
-        parent2 = PersonCreate(first_name="John", last_name="Doe", person_type="parent", phone="555-5678") 
-        youth1 = PersonCreate(first_name="Alice", last_name="Smith", person_type="youth", phone="555-9999")
+        parent1 = PersonCreate(first_name="Jane", last_name="Smith", person_type="parent", phone_number="555-1234")
+        parent2 = PersonCreate(first_name="John", last_name="Doe", person_type="parent", phone_number="555-5678") 
+        youth1 = PersonCreate(first_name="Alice", last_name="Smith", person_type="youth", phone_number="555-9999")
         
         await repo.create_person_unified(parent1)
         await repo.create_person_unified(parent2)
@@ -183,8 +183,8 @@ class TestParentRepository:
         repo = InMemoryPersonRepository()
         
         # Create test parents
-        parent1 = PersonCreate(first_name="Jane", last_name="Smith", person_type="parent", phone="555-1234", email="jane@email.com")
-        parent2 = PersonCreate(first_name="John", last_name="Doe", person_type="parent", phone="555-5678", email="john@email.com")
+        parent1 = PersonCreate(first_name="Jane", last_name="Smith", person_type="parent", phone_number="555-1234", email="jane@email.com")
+        parent2 = PersonCreate(first_name="John", last_name="Doe", person_type="parent", phone_number="555-5678", email="john@email.com")
         
         await repo.create_person_unified(parent1)
         await repo.create_person_unified(parent2)
@@ -207,8 +207,8 @@ class TestParentRepository:
         repo = InMemoryPersonRepository()
         
         # Create parent and youth
-        parent_data = await repo.create_person_unified(PersonCreate(first_name="Jane", last_name="Smith", person_type="parent", phone="555-1234"))
-        youth_data = await repo.create_person_unified(PersonCreate(first_name="Alice", last_name="Smith", person_type="youth", phone="555-5678"))
+        parent_data = await repo.create_person_unified(PersonCreate(first_name="Jane", last_name="Smith", person_type="parent", phone_number="555-1234"))
+        youth_data = await repo.create_person_unified(PersonCreate(first_name="Alice", last_name="Smith", person_type="youth", phone_number="555-5678"))
         
         # Create relationship
         relationship = ParentYouthRelationshipCreate(
@@ -232,8 +232,8 @@ class TestParentRepository:
         repo = InMemoryPersonRepository()
         
         # Create and link parent and youth
-        parent_data = await repo.create_person_unified(PersonCreate(first_name="Jane", last_name="Smith", person_type="parent", phone="555-1234"))
-        youth_data = await repo.create_person_unified(PersonCreate(first_name="Alice", last_name="Smith", person_type="youth", phone="555-5678"))
+        parent_data = await repo.create_person_unified(PersonCreate(first_name="Jane", last_name="Smith", person_type="parent", phone_number="555-1234"))
+        youth_data = await repo.create_person_unified(PersonCreate(first_name="Alice", last_name="Smith", person_type="youth", phone_number="555-5678"))
         
         relationship = ParentYouthRelationshipCreate(parent_id=parent_data["id"], youth_id=youth_data["id"], relationship_type="mother")
         await repo.link_parent_to_youth(relationship)
@@ -254,9 +254,9 @@ class TestParentRepository:
         repo = InMemoryPersonRepository()
         
         # Create youth and parents
-        youth_data = await repo.create_person_unified(PersonCreate(first_name="Alice", last_name="Smith", person_type="youth", phone="555-1111"))
-        mother_data = await repo.create_person_unified(PersonCreate(first_name="Jane", last_name="Smith", person_type="parent", phone="555-2222"))
-        father_data = await repo.create_person_unified(PersonCreate(first_name="John", last_name="Smith", person_type="parent", phone="555-3333"))
+        youth_data = await repo.create_person_unified(PersonCreate(first_name="Alice", last_name="Smith", person_type="youth", phone_number="555-1111"))
+        mother_data = await repo.create_person_unified(PersonCreate(first_name="Jane", last_name="Smith", person_type="parent", phone_number="555-2222"))
+        father_data = await repo.create_person_unified(PersonCreate(first_name="John", last_name="Smith", person_type="parent", phone_number="555-3333"))
         
         # Link parents to youth
         await repo.link_parent_to_youth(ParentYouthRelationshipCreate(parent_id=mother_data["id"], youth_id=youth_data["id"], relationship_type="mother"))
@@ -279,9 +279,9 @@ class TestParentRepository:
         repo = InMemoryPersonRepository()
         
         # Create parent and multiple youth
-        parent_data = await repo.create_person_unified(PersonCreate(first_name="Jane", last_name="Smith", person_type="parent", phone="555-1111"))
-        youth1_data = await repo.create_person_unified(PersonCreate(first_name="Alice", last_name="Smith", person_type="youth", phone="555-2222"))
-        youth2_data = await repo.create_person_unified(PersonCreate(first_name="Bob", last_name="Smith", person_type="youth", phone="555-3333"))
+        parent_data = await repo.create_person_unified(PersonCreate(first_name="Jane", last_name="Smith", person_type="parent", phone_number="555-1111"))
+        youth1_data = await repo.create_person_unified(PersonCreate(first_name="Alice", last_name="Smith", person_type="youth", phone_number="555-2222"))
+        youth2_data = await repo.create_person_unified(PersonCreate(first_name="Bob", last_name="Smith", person_type="youth", phone_number="555-3333"))
         
         # Link youth to parent
         await repo.link_parent_to_youth(ParentYouthRelationshipCreate(parent_id=parent_data["id"], youth_id=youth1_data["id"], relationship_type="mother"))
@@ -310,9 +310,9 @@ class TestParentValidation:
                 first_name="Jane",
                 last_name="Smith",
                 person_type="parent",
-                phone=phone
+                phone_number=phone
             )
-            assert parent_data.phone == phone
+            assert parent_data.phone_number == phone
         
         # Invalid phones should either be rejected or normalized
         # Implementation will determine exact behavior
