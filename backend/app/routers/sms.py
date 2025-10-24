@@ -306,20 +306,20 @@ async def send_group_sms(
                 logger.info(f"[{i}/{len(eligible_recipients)}] Sending SMS to {recipient['phone_number']} (person_id: {recipient['id']})")
                 
                 # Determine message content based on recipient type
-                if recipient.get("person_type") == "parent" and request.parent_message:
-                    # Use custom parent message
-                    message_content = request.parent_message
-                elif recipient.get("person_type") == "parent":
-                    # Auto-generate parent message if no custom message provided
-                    youth_name = "your child"  # Default, try to get actual name
-                    if "relationship_to_youth" in recipient:
-                        youth = next((y for y in youth_recipients if y["id"] == recipient["relationship_to_youth"]), None)
-                        if youth:
-                            youth_name = f"{youth['first_name']} {youth['last_name']}"
-                    message_content = f"Parent notification: {youth_name} - {request.message}"
-                else:
+                # if recipient.get("person_type") == "parent" and request.parent_message:
+                #     # Use custom parent message
+                #     message_content = request.parent_message
+                # elif recipient.get("person_type") == "parent":
+                #     # # Auto-generate parent message if no custom message provided
+                #     # youth_name = "your child"  # Default, try to get actual name
+                #     # if "relationship_to_youth" in recipient:
+                #     #     youth = next((y for y in youth_recipients if y["id"] == recipient["relationship_to_youth"]), None)
+                #     #     if youth:
+                #     #         youth_name = f"{youth['first_name']} {youth['last_name']}"
+                #     message_content = f"{request.message}"
+                # else:
                     # Regular youth message
-                    message_content = request.message
+                message_content = request.message
                 
                 result = sms_service.send_message(
                     to_phone=recipient["phone_number"],
