@@ -163,6 +163,8 @@ const PersonForm = ({ open, onClose, person, onSave, personType }) => {
   useEffect(() => {
     if (open) {
       console.log('PersonForm dialog opened, person:', person);
+      // Reset to first tab
+      setTabValue(0);
         const baseData = {
         first_name: '',
         last_name: '',

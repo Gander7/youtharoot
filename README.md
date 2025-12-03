@@ -274,6 +274,7 @@ This project is licensed under the MIT License. See [LICENSE](LICENSE) for detai
 - [ ] refresh after save
 - [ ] Check out spinner feature branch
 - [ ] Warning when no parent with phone number
+- [ ] Warning with no phone number
 - [ ] Add Youth of Parents on main List
 - [ ] Remove list of parents from youth form with add and edit
 - [ ] Add edit to checkin
@@ -282,6 +283,11 @@ This project is licensed under the MIT License. See [LICENSE](LICENSE) for detai
 - [ ] Ability to check back in if needed
 - [ ] Role System with person delete
   - Check in only
+- [ ] Stats
+- [ ] Last Seen
+
+- Later
+  - [ ] Way to confirm phone numbers (Twilio? or through external form?)
 
 ## 🛠️ Technical Debt & Code Quality TODOs
 
