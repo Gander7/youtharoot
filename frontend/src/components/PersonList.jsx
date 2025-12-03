@@ -251,6 +251,9 @@ const PersonForm = ({ open, onClose, person, onSave, personType }) => {
       }
     } else if (personType === 'parent') {
       // Parent-specific fields
+      if (formData.email && formData.email.trim() !== '') {
+        personData.email = formData.email;
+      }
       if (formData.address && formData.address.trim() !== '') {
         personData.address = formData.address;
       }
@@ -745,6 +748,22 @@ const PersonForm = ({ open, onClose, person, onSave, personType }) => {
                 }}
                 placeholder="(416) 555-1234"
                 helperText="Canadian format: (416) 555-1234 or +1-416-555-1234"
+                fullWidth
+              />
+
+              <TextField
+                type="email"
+                label="Email"
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <EmailIcon />
+                    </InputAdornment>
+                  ),
+                }}
+                placeholder="parent@example.com"
                 fullWidth
               />
 

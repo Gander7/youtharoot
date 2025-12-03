@@ -143,6 +143,7 @@ class PostgreSQLPersonRepository(PersonRepository):
             db_person.role = person.role
             db_person.birth_date = getattr(person, 'birth_date', None)
         elif isinstance(person, Parent):
+            db_person.email = getattr(person, 'email', None)
             db_person.address = getattr(person, 'address', None)
             db_person.birth_date = getattr(person, 'birth_date', None)
         
@@ -208,6 +209,7 @@ class PostgreSQLPersonRepository(PersonRepository):
             db_person.email = person.email
         elif person.person_type == "parent":
             # Parent-specific fields (address already set above)
+            db_person.email = person.email if hasattr(person, 'email') else None
             db_person.birth_date = person.birth_date if hasattr(person, 'birth_date') else None
         
         self.db.add(db_person)
