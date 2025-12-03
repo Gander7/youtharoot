@@ -272,6 +272,8 @@ This project is licensed under the MIT License. See [LICENSE](LICENSE) for detai
 - [ ] Fix Primary Contact or take out. should be default on new one.
 - [ ] Saving parent on youth also saves the youth
 - [ ] refresh after save
+- [ ] How to order lists
+- [ ] Moblie First Design
 - [ ] Check out spinner feature branch
 - [ ] Warning when no parent with phone number
 - [ ] Warning with no phone number
