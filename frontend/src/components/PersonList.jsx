@@ -1103,9 +1103,10 @@ function ParentManagementTab({ youthId, onParentAdded }) {
     first_name: '',
     last_name: '',
     phone_number: '',
+    email: '',
     address: '',
     relationship_type: 'parent',
-    is_primary_contact: false
+    is_primary_contact: true
   });
 
   useEffect(() => {
@@ -1184,6 +1185,7 @@ function ParentManagementTab({ youthId, onParentAdded }) {
           first_name: newParentData.first_name,
           last_name: newParentData.last_name,
           phone_number: newParentData.phone_number,
+          email: newParentData.email,
           address: newParentData.address,
           person_type: 'parent'
         })
@@ -1210,9 +1212,10 @@ function ParentManagementTab({ youthId, onParentAdded }) {
             first_name: '',
             last_name: '',
             phone_number: '',
+            email: '',
             address: '',
             relationship_type: 'parent',
-            is_primary_contact: false
+            is_primary_contact: true
           });
           fetchLinkedParents();
           fetchAvailableParents();
@@ -1389,6 +1392,22 @@ function ParentManagementTab({ youthId, onParentAdded }) {
                   />
                 </Grid>
                 <Grid item xs={6}>
+                  <TextField
+                    label="Email"
+                    type="email"
+                    value={newParentData.email || ''}
+                    onChange={(e) => setNewParentData({...newParentData, email: e.target.value})}
+                    fullWidth
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <EmailIcon />
+                        </InputAdornment>
+                      ),
+                    }}
+                  />
+                </Grid>
+                <Grid item xs={12}>
                   <FormControl fullWidth>
                     <InputLabel>Relationship</InputLabel>
                     <Select

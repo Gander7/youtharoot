@@ -270,12 +270,18 @@ This project is licensed under the MIT License. See [LICENSE](LICENSE) for detai
 ---
 
 - [ ] Fix Primary Contact or take out. should be default on new one.
+- [ ] Saving parent on youth also saves the youth
+- [ ] refresh after save
 - [ ] Check out spinner feature branch
 - [ ] Warning when no parent with phone number
 - [ ] Add Youth of Parents on main List
 - [ ] Remove list of parents from youth form with add and edit
 - [ ] Add edit to checkin
 - [ ] List All Allergies
+- [ ] Person can be Parent AND Leader.
+- [ ] Ability to check back in if needed
+- [ ] Role System with person delete
+  - Check in only
 
 ## 🛠️ Technical Debt & Code Quality TODOs
 
