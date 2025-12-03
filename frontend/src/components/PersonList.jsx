@@ -263,19 +263,13 @@ const PersonForm = ({ open, onClose, person, onSave, personType }) => {
       let url = '/person';
       let method = 'POST';
       
-      // Use parent endpoint for parents
-      if (personType === 'parent') {
+      // Use parent endpoint for creating parents
+      if (personType === 'parent' && !(person && person.id)) {
         url = '/parent';
-        if (person && person.id) {
-          url = `/parent/${person.id}`;
-          method = 'PUT';
-        }
-      } else {
-        // If editing existing person, use PUT with person ID in URL
-        if (person && person.id) {
-          url = `/person/${person.id}`;
-          method = 'PUT';
-        }
+      } else if (person && person.id) {
+        // If editing existing person, use PUT with person ID in URL (works for all types)
+        url = `/person/${person.id}`;
+        method = 'PUT';
       }
       
       console.log('🚀 About to send request:', {
@@ -775,15 +769,6 @@ const PersonForm = ({ open, onClose, person, onSave, personType }) => {
                   label="Opt out of SMS messages"
                 />
               )}
-
-              <TextField
-                label="Birth Date"
-                type="date"
-                value={formData.birth_date}
-                onChange={(e) => setFormData({ ...formData, birth_date: e.target.value })}
-                fullWidth
-                InputLabelProps={{ shrink: true }}
-              />
             </Stack>
           )}
         </DialogContent>

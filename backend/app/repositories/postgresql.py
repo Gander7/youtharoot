@@ -124,6 +124,7 @@ class PostgreSQLPersonRepository(PersonRepository):
         db_person.first_name = person.first_name
         db_person.last_name = person.last_name
         db_person.phone_number = person.phone_number
+        db_person.sms_opt_out = getattr(person, 'sms_opt_out', False)
         
         if isinstance(person, Youth):
             db_person.grade = person.grade
@@ -138,9 +139,12 @@ class PostgreSQLPersonRepository(PersonRepository):
             db_person.emergency_contact_2_relationship = person.emergency_contact_2_relationship
             db_person.allergies = person.allergies
             db_person.other_considerations = person.other_considerations
-        else:
+        elif isinstance(person, Leader):
             db_person.role = person.role
-            db_person.birth_date = person.birth_date
+            db_person.birth_date = getattr(person, 'birth_date', None)
+        elif isinstance(person, Parent):
+            db_person.address = getattr(person, 'address', None)
+            db_person.birth_date = getattr(person, 'birth_date', None)
         
         self.db.commit()
         self.db.refresh(db_person)
@@ -202,7 +206,9 @@ class PostgreSQLPersonRepository(PersonRepository):
             db_person.role = person.role
             db_person.birth_date = person.birth_date
             db_person.email = person.email
-        # parent type doesn't need additional fields beyond base
+        elif person.person_type == "parent":
+            # Parent-specific fields (address already set above)
+            db_person.birth_date = person.birth_date if hasattr(person, 'birth_date') else None
         
         self.db.add(db_person)
         self.db.commit()

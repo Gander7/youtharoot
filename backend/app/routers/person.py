@@ -103,10 +103,10 @@ async def get_person(
 	data.pop("archived_on", None)
 	return data
 
-@router.put("/person/{person_id}", response_model=Union[Youth, Leader])
+@router.put("/person/{person_id}", response_model=Union[Youth, Leader, Parent])
 async def update_person(
 	person_id: int, 
-	person: Union[Youth, Leader], 
+	person: Union[Youth, Leader, Parent], 
 	db: Session = Depends(connect_to_db()),
 	current_user: User = Depends(get_current_user_lazy())
 ):

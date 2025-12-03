@@ -40,6 +40,7 @@ class Leader(Person):
 class Parent(Person):
 	email: Optional[str] = None
 	address: Optional[str] = None
+	birth_date: Optional[datetime.date] = None
 	person_type: str = "parent"
 
 class EventPerson(BaseModel):
