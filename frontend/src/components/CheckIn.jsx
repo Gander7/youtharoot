@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { animate } from 'animejs';
 import {
   Box,
   Card,
