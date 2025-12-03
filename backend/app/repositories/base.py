@@ -49,6 +49,17 @@ class PersonRepository(ABC):
         pass
     
     @abstractmethod
+    async def update_parent_youth_relationship(
+        self, 
+        parent_id: int, 
+        youth_id: int,
+        relationship_type: Optional[str] = None,
+        is_primary_contact: Optional[bool] = None
+    ) -> dict:
+        """Update parent-youth relationship properties"""
+        pass
+    
+    @abstractmethod
     async def get_parents_for_youth(self, youth_id: int) -> List[dict]:
         """Get all parents linked to a youth with relationship details"""
         pass

@@ -224,6 +224,20 @@ class ParentYouthRelationshipCreate(BaseModel):
 			raise ValueError(f'relationship_type must be one of: {", ".join(valid_types)}')
 		return v
 
+class ParentYouthRelationshipUpdate(BaseModel):
+	"""Update model for parent-youth relationships"""
+	relationship_type: Optional[str] = None
+	is_primary_contact: Optional[bool] = None
+	
+	@field_validator('relationship_type')
+	@classmethod
+	def validate_relationship_type(cls, v):
+		if v is not None:
+			valid_types = ['mother', 'father', 'parent', 'guardian', 'step-parent', 'grandparent', 'other']
+			if v not in valid_types:
+				raise ValueError(f'relationship_type must be one of: {", ".join(valid_types)}')
+		return v
+
 class User(BaseModel):
 	id: Optional[int] = None  # Optional for creation, will be set by database
 	username: str

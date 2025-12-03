@@ -1128,6 +1128,14 @@ function ParentManagementTab({ youthId, onParentAdded }) {
   const [success, setSuccess] = useState('');
   const [showAddNew, setShowAddNew] = useState(false);
   
+  // Edit relationship state
+  const [editingRelationship, setEditingRelationship] = useState(null);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editData, setEditData] = useState({
+    relationship_type: 'parent',
+    is_primary_contact: false
+  });
+  
   // New parent form state
   const [newParentData, setNewParentData] = useState({
     first_name: '',
@@ -1289,6 +1297,55 @@ function ParentManagementTab({ youthId, onParentAdded }) {
     }
   };
 
+  const handleEditRelationship = (relationship) => {
+    setEditingRelationship(relationship);
+    setEditData({
+      relationship_type: relationship.relationship_type,
+      is_primary_contact: relationship.is_primary_contact
+    });
+    setEditDialogOpen(true);
+  };
+
+  const handleSaveRelationshipEdit = async () => {
+    setLoading(true);
+    setError('');
+    setSuccess('');
+    
+    try {
+      const response = await apiRequest(
+        `/youth/${youthId}/parents/${editingRelationship.parent.id}`,
+        {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(editData)
+        }
+      );
+
+      if (response.ok) {
+        setSuccess('Relationship updated successfully!');
+        setEditDialogOpen(false);
+        setEditingRelationship(null);
+        fetchLinkedParents();
+      } else {
+        const error = await response.json();
+        setError(error.detail || 'Failed to update relationship');
+      }
+    } catch (err) {
+      setError('Network error updating relationship');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditDialogOpen(false);
+    setEditingRelationship(null);
+    setEditData({
+      relationship_type: 'parent',
+      is_primary_contact: false
+    });
+  };
+
   if (!youthId) {
     return (
       <Stack spacing={3} sx={{ mt: 1 }}>
@@ -1354,20 +1411,85 @@ function ParentManagementTab({ youthId, onParentAdded }) {
                   }
                 />
                 <ListItemSecondaryAction>
-                  <IconButton
-                    edge="end"
-                    color="error"
-                    onClick={() => handleUnlinkParent(relationship.parent.id)}
-                    disabled={loading}
-                  >
-                    <DeleteIcon />
-                  </IconButton>
+                  <Stack direction="row" spacing={1}>
+                    <IconButton
+                      edge="end"
+                      color="primary"
+                      onClick={() => handleEditRelationship(relationship)}
+                      disabled={loading}
+                      title="Edit relationship"
+                    >
+                      <EditIcon />
+                    </IconButton>
+                    <IconButton
+                      edge="end"
+                      color="error"
+                      onClick={() => handleUnlinkParent(relationship.parent.id)}
+                      disabled={loading}
+                      title="Unlink parent"
+                    >
+                      <DeleteIcon />
+                    </IconButton>
+                  </Stack>
                 </ListItemSecondaryAction>
               </ListItem>
             ))}
           </List>
         )}
       </Paper>
+
+      {/* Edit Relationship Dialog */}
+      <Dialog open={editDialogOpen} onClose={handleCancelEdit} maxWidth="sm" fullWidth>
+        <DialogTitle>Edit Parent Relationship</DialogTitle>
+        <DialogContent>
+          {editingRelationship && (
+            <Stack spacing={3} sx={{ mt: 1 }}>
+              <Typography variant="body2" color="text.secondary">
+                Editing relationship for: {editingRelationship.parent.first_name} {editingRelationship.parent.last_name}
+              </Typography>
+              
+              <FormControl fullWidth>
+                <InputLabel>Relationship Type</InputLabel>
+                <Select
+                  value={editData.relationship_type}
+                  onChange={(e) => setEditData({...editData, relationship_type: e.target.value})}
+                  label="Relationship Type"
+                >
+                  <MenuItem value="mother">Mother</MenuItem>
+                  <MenuItem value="father">Father</MenuItem>
+                  <MenuItem value="parent">Parent</MenuItem>
+                  <MenuItem value="guardian">Guardian</MenuItem>
+                  <MenuItem value="step-parent">Step-parent</MenuItem>
+                  <MenuItem value="grandparent">Grandparent</MenuItem>
+                  <MenuItem value="other">Other</MenuItem>
+                </Select>
+              </FormControl>
+
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={editData.is_primary_contact}
+                    onChange={(e) => setEditData({...editData, is_primary_contact: e.target.checked})}
+                  />
+                }
+                label="Primary Contact"
+              />
+            </Stack>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCancelEdit} disabled={loading}>
+            Cancel
+          </Button>
+          <Button 
+            onClick={handleSaveRelationshipEdit} 
+            variant="contained" 
+            disabled={loading}
+          >
+            Save Changes
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       {/* Add Parent Options */}
       <Paper sx={{ p: 3, bgcolor: 'background.default' }}>

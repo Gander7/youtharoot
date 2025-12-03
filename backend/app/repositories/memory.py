@@ -215,6 +215,48 @@ class InMemoryPersonRepository(PersonRepository):
             return True
         return False
     
+    async def update_parent_youth_relationship(
+        self, 
+        parent_id: int, 
+        youth_id: int,
+        relationship_type: Optional[str] = None,
+        is_primary_contact: Optional[bool] = None
+    ) -> dict:
+        """Update parent-youth relationship properties"""
+        # Verify youth exists
+        youth = await self.get_person_unified(youth_id)
+        if not youth or youth.get("person_type") != "youth":
+            raise ValueError("Youth not found")
+        
+        # Verify parent exists
+        parent = await self.get_person_unified(parent_id)
+        if not parent or parent.get("person_type") != "parent":
+            raise ValueError("Parent not found")
+        
+        # Get existing relationship
+        relationship_key = f"{parent_id}-{youth_id}"
+        if relationship_key not in self.relationships:
+            raise ValueError("Relationship not found")
+        
+        relationship = self.relationships[relationship_key]
+        
+        # Update fields if provided
+        if relationship_type is not None:
+            relationship["relationship_type"] = relationship_type
+        if is_primary_contact is not None:
+            relationship["is_primary_contact"] = is_primary_contact
+        
+        # Return updated relationship with parent details
+        return {
+            "id": relationship["id"],
+            "parent_id": relationship["parent_id"],
+            "youth_id": relationship["youth_id"],
+            "relationship_type": relationship["relationship_type"],
+            "is_primary_contact": relationship["is_primary_contact"],
+            "created_at": relationship["created_at"],
+            "parent": parent
+        }
+    
     async def get_parents_for_youth(self, youth_id: int) -> List[dict]:
         """Get all parents linked to a youth with relationship details"""
         result = []

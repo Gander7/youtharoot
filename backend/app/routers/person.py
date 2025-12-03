@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Request, HTTPException, Depends, Query, status
 from typing import Union, List, Optional
-from app.models import Youth, Leader, Parent, Person, User, PersonCreate, ParentYouthRelationshipCreate
+from app.models import Youth, Leader, Parent, Person, User, PersonCreate, ParentYouthRelationshipCreate, ParentYouthRelationshipUpdate
 from sqlalchemy.orm import Session
 import datetime
 
@@ -293,6 +293,30 @@ async def unlink_parent_from_youth(
 		raise
 	except Exception as e:
 		print(f"Error in unlink_parent_from_youth: {e}")
+		raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
+@router.put("/youth/{youth_id}/parents/{parent_id}")
+async def update_parent_youth_relationship(
+	youth_id: int,
+	parent_id: int,
+	update_data: ParentYouthRelationshipUpdate,
+	db: Session = Depends(connect_to_db()),
+	current_user: User = Depends(get_current_user_lazy())
+):
+	"""Update a parent-youth relationship."""
+	try:
+		repos = get_repositories(db)
+		result = await repos["person"].update_parent_youth_relationship(
+			parent_id=parent_id,
+			youth_id=youth_id,
+			relationship_type=update_data.relationship_type,
+			is_primary_contact=update_data.is_primary_contact
+		)
+		return result
+	except ValueError as e:
+		raise HTTPException(status_code=404, detail=str(e))
+	except Exception as e:
+		print(f"Error in update_parent_youth_relationship: {e}")
 		raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 @router.get("/parents/{parent_id}/youth")
