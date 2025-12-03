@@ -258,13 +258,9 @@ const PersonForm = ({ open, onClose, person, onSave, personType }) => {
         personData.birth_date = formData.birth_date;
       }
     } else if (personType === 'parent') {
-      // Parent-specific fields
-      if (formData.email && formData.email.trim() !== '') {
-        personData.email = formData.email;
-      }
-      if (formData.address && formData.address.trim() !== '') {
-        personData.address = formData.address;
-      }
+      // Parent-specific fields - always include even if empty
+      personData.email = formData.email || '';
+      personData.address = formData.address || '';
       if (formData.birth_date) {
         personData.birth_date = formData.birth_date;
       }
@@ -335,8 +331,7 @@ const PersonForm = ({ open, onClose, person, onSave, personType }) => {
             <Box>
               <Tabs value={tabValue} onChange={(e, newValue) => setTabValue(newValue)} sx={{ mb: 2 }}>
                 <Tab label="Personal Info" />
-                <Tab label="Parents" />
-                <Tab label="Emergency Contacts (Old)" />
+                <Tab label="Contacts" />
                 <Tab label="Health and Allergy" />
               </Tabs>
               
@@ -474,126 +469,6 @@ const PersonForm = ({ open, onClose, person, onSave, personType }) => {
               )}
 
               {tabValue === 2 && (
-                <Stack spacing={3} sx={{ mt: 1 }}>
-                  <Paper sx={{ p: 3, bgcolor: 'background.default', border: '1px solid', borderColor: 'divider' }}>
-                    <Typography variant="h6" color="warning.main" sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
-                      🔒 Legacy Emergency Contacts (Read-Only)
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-                      This data is preserved for historical reference only. Please use the "Parents" tab above to manage current emergency contacts.
-                    </Typography>
-                  </Paper>
-                  
-                  <Typography variant="h6" color="primary">Primary Emergency Contact</Typography>
-                  
-                  <Grid container spacing={2}>
-                    <Grid item xs={12} sm={6}>
-                      <TextField
-                        label="Contact Name"
-                        value={formData.emergency_contact_name || 'Not specified'}
-                        InputProps={{ readOnly: true }}
-                        fullWidth
-                        sx={{ 
-                          '& .MuiInputBase-root': { 
-                            bgcolor: 'action.hover',
-                            '& input': { color: 'text.secondary' }
-                          }
-                        }}
-                      />
-                    </Grid>
-                    <Grid item xs={12} sm={6}>
-                      <TextField
-                        label="Relationship"
-                        value={formData.emergency_contact_relationship || 'Not specified'}
-                        InputProps={{ readOnly: true }}
-                        fullWidth
-                        sx={{ 
-                          '& .MuiInputBase-root': { 
-                            bgcolor: 'action.hover',
-                            '& input': { color: 'text.secondary' }
-                          }
-                        }}
-                      />
-                    </Grid>
-                  </Grid>
-                  
-                  <TextField
-                    label="Emergency Contact Phone"
-                    value={formData.emergency_contact_phone || 'Not specified'}
-                    InputProps={{
-                      readOnly: true,
-                      startAdornment: (
-                        <InputAdornment position="start">
-                          <PhoneIcon />
-                        </InputAdornment>
-                      ),
-                    }}
-                    fullWidth
-                    sx={{ 
-                      '& .MuiInputBase-root': { 
-                        bgcolor: 'action.hover',
-                        '& input': { color: 'text.secondary' }
-                      }
-                    }}
-                  />
-
-                  <Divider />
-                  <Typography variant="h6" color="primary">Second Emergency Contact</Typography>
-                  
-                  <Grid container spacing={2}>
-                    <Grid item xs={12} sm={6}>
-                      <TextField
-                        label="Contact Name"
-                        value={formData.emergency_contact_2_name || 'Not specified'}
-                        InputProps={{ readOnly: true }}
-                        fullWidth
-                        sx={{ 
-                          '& .MuiInputBase-root': { 
-                            bgcolor: 'action.hover',
-                            '& input': { color: 'text.secondary' }
-                          }
-                        }}
-                      />
-                    </Grid>
-                    <Grid item xs={12} sm={6}>
-                      <TextField
-                        label="Relationship"
-                        value={formData.emergency_contact_2_relationship || 'Not specified'}
-                        InputProps={{ readOnly: true }}
-                        fullWidth
-                        sx={{ 
-                          '& .MuiInputBase-root': { 
-                            bgcolor: 'action.hover',
-                            '& input': { color: 'text.secondary' }
-                          }
-                        }}
-                      />
-                    </Grid>
-                  </Grid>
-                  
-                  <TextField
-                    label="Second Emergency Contact Phone"
-                    value={formData.emergency_contact_2_phone || 'Not specified'}
-                    InputProps={{
-                      readOnly: true,
-                      startAdornment: (
-                        <InputAdornment position="start">
-                          <PhoneIcon />
-                        </InputAdornment>
-                      ),
-                    }}
-                    fullWidth
-                    sx={{ 
-                      '& .MuiInputBase-root': { 
-                        bgcolor: 'action.hover',
-                        '& input': { color: 'text.secondary' }
-                      }
-                    }}
-                  />
-                </Stack>
-              )}
-              
-              {tabValue === 3 && (
                 <Stack spacing={3} sx={{ mt: 1 }}>
                   <Typography variant="h6" color="primary">Health and Allergy Information</Typography>
                   
@@ -899,28 +774,22 @@ export default function PersonList() {
   const handleEditPerson = async (person) => {
     setPersonType(person.type);
     
-    // Fetch full person data including health fields (for youth)
-    if (person.type === 'youth' || person.type === 'leader') {
-      try {
-        const response = await apiRequest(`/person/${person.id}`);
-        if (response.ok) {
-          const fullPersonData = await response.json();
-          setEditingPerson({ ...fullPersonData, type: person.type });
-          setFormOpen(true);
-        } else {
-          const errorText = await response.text();
-          alert(`Failed to load person data: ${response.status} - ${response.statusText}\n\nError: ${errorText}`);
-          return;
-        }
-      } catch (error) {
-        console.error('Error fetching full person data:', error);
-        alert(`Network error loading person data: ${error.message}`);
+    // Fetch full person data for all types to ensure we have complete data
+    try {
+      const response = await apiRequest(`/person/${person.id}`);
+      if (response.ok) {
+        const fullPersonData = await response.json();
+        setEditingPerson({ ...fullPersonData, type: person.type });
+        setFormOpen(true);
+      } else {
+        const errorText = await response.text();
+        alert(`Failed to load person data: ${response.status} - ${response.statusText}\n\nError: ${errorText}`);
         return;
       }
-    } else {
-      // For parents, use the list data (no privacy filtering)
-      setEditingPerson(person);
-      setFormOpen(true);
+    } catch (error) {
+      console.error('Error fetching full person data:', error);
+      alert(`Network error loading person data: ${error.message}`);
+      return;
     }
   };
 
@@ -1132,6 +1001,14 @@ function ParentManagementTab({ youthId, onParentAdded }) {
   const [editingRelationship, setEditingRelationship] = useState(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editData, setEditData] = useState({
+    // Parent properties
+    first_name: '',
+    last_name: '',
+    phone_number: '',
+    email: '',
+    address: '',
+    sms_opt_out: false,
+    // Relationship properties
     relationship_type: 'parent',
     is_primary_contact: false
   });
@@ -1300,6 +1177,14 @@ function ParentManagementTab({ youthId, onParentAdded }) {
   const handleEditRelationship = (relationship) => {
     setEditingRelationship(relationship);
     setEditData({
+      // Parent properties
+      first_name: relationship.parent.first_name,
+      last_name: relationship.parent.last_name,
+      phone_number: relationship.parent.phone_number || '',
+      email: relationship.parent.email || '',
+      address: relationship.parent.address || '',
+      sms_opt_out: relationship.parent.sms_opt_out || false,
+      // Relationship properties
       relationship_type: relationship.relationship_type,
       is_primary_contact: relationship.is_primary_contact
     });
@@ -1312,26 +1197,57 @@ function ParentManagementTab({ youthId, onParentAdded }) {
     setSuccess('');
     
     try {
-      const response = await apiRequest(
+      // First, update the parent's information
+      const parentUpdateResponse = await apiRequest(
+        `/person/${editingRelationship.parent.id}`,
+        {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id: editingRelationship.parent.id,
+            first_name: editData.first_name,
+            last_name: editData.last_name,
+            phone_number: editData.phone_number,
+            email: editData.email || '',
+            address: editData.address || '',
+            sms_opt_out: editData.sms_opt_out || false,
+            person_type: 'parent'
+          })
+        }
+      );
+
+      if (!parentUpdateResponse.ok) {
+        const error = await parentUpdateResponse.json();
+        setError(error.detail || 'Failed to update parent information');
+        setLoading(false);
+        return;
+      }
+
+      // Then, update the relationship properties
+      const relationshipUpdateResponse = await apiRequest(
         `/youth/${youthId}/parents/${editingRelationship.parent.id}`,
         {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(editData)
+          body: JSON.stringify({
+            relationship_type: editData.relationship_type,
+            is_primary_contact: editData.is_primary_contact
+          })
         }
       );
 
-      if (response.ok) {
-        setSuccess('Relationship updated successfully!');
+      if (relationshipUpdateResponse.ok) {
+        setSuccess('Parent and relationship updated successfully!');
         setEditDialogOpen(false);
         setEditingRelationship(null);
         fetchLinkedParents();
+        onParentAdded(); // Refresh parent list
       } else {
-        const error = await response.json();
+        const error = await relationshipUpdateResponse.json();
         setError(error.detail || 'Failed to update relationship');
       }
     } catch (err) {
-      setError('Network error updating relationship');
+      setError('Network error updating parent');
     } finally {
       setLoading(false);
     }
@@ -1341,6 +1257,11 @@ function ParentManagementTab({ youthId, onParentAdded }) {
     setEditDialogOpen(false);
     setEditingRelationship(null);
     setEditData({
+      first_name: '',
+      last_name: '',
+      phone_number: '',
+      email: '',
+      address: '',
       relationship_type: 'parent',
       is_primary_contact: false
     });
@@ -1438,14 +1359,98 @@ function ParentManagementTab({ youthId, onParentAdded }) {
         )}
       </Paper>
 
-      {/* Edit Relationship Dialog */}
+      {/* Edit Parent & Relationship Dialog */}
       <Dialog open={editDialogOpen} onClose={handleCancelEdit} maxWidth="sm" fullWidth>
-        <DialogTitle>Edit Parent Relationship</DialogTitle>
+        <DialogTitle>Edit Parent & Relationship</DialogTitle>
         <DialogContent>
           {editingRelationship && (
-            <Stack spacing={3} sx={{ mt: 1 }}>
-              <Typography variant="body2" color="text.secondary">
-                Editing relationship for: {editingRelationship.parent.first_name} {editingRelationship.parent.last_name}
+            <Stack spacing={3} sx={{ mt: 2 }}>
+              <Typography variant="subtitle2" color="primary">
+                Parent Information
+              </Typography>
+              
+              <Grid container spacing={2}>
+                <Grid item xs={6}>
+                  <TextField
+                    label="First Name"
+                    value={editData.first_name}
+                    onChange={(e) => setEditData({...editData, first_name: e.target.value})}
+                    fullWidth
+                    required
+                  />
+                </Grid>
+                <Grid item xs={6}>
+                  <TextField
+                    label="Last Name"
+                    value={editData.last_name}
+                    onChange={(e) => setEditData({...editData, last_name: e.target.value})}
+                    fullWidth
+                    required
+                  />
+                </Grid>
+              </Grid>
+
+              <TextField
+                label="Phone Number"
+                value={editData.phone_number}
+                onChange={(e) => setEditData({...editData, phone_number: e.target.value})}
+                fullWidth
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <PhoneIcon />
+                    </InputAdornment>
+                  ),
+                }}
+              />
+
+              <TextField
+                label="Email"
+                type="email"
+                value={editData.email}
+                onChange={(e) => setEditData({...editData, email: e.target.value})}
+                fullWidth
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <EmailIcon />
+                    </InputAdornment>
+                  ),
+                }}
+              />
+
+              <TextField
+                label="Address"
+                value={editData.address}
+                onChange={(e) => setEditData({...editData, address: e.target.value})}
+                fullWidth
+                multiline
+                rows={2}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <HomeIcon />
+                    </InputAdornment>
+                  ),
+                }}
+              />
+
+              {editData.phone_number && (
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={editData.sms_opt_out}
+                      onChange={(e) => setEditData({...editData, sms_opt_out: e.target.checked})}
+                    />
+                  }
+                  label="Opt out of SMS messages"
+                />
+              )}
+
+              <Divider />
+              
+              <Typography variant="subtitle2" color="primary">
+                Relationship Details
               </Typography>
               
               <FormControl fullWidth>
@@ -1484,7 +1489,7 @@ function ParentManagementTab({ youthId, onParentAdded }) {
           <Button 
             onClick={handleSaveRelationshipEdit} 
             variant="contained" 
-            disabled={loading}
+            disabled={loading || !editData.first_name || !editData.last_name}
           >
             Save Changes
           </Button>

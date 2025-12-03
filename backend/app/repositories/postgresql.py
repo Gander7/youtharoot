@@ -20,6 +20,7 @@ class PostgreSQLPersonRepository(PersonRepository):
             "first_name": db_person.first_name,
             "last_name": db_person.last_name,
             "phone_number": db_person.phone_number,
+            "sms_opt_out": db_person.sms_opt_out,
             "archived_on": db_person.archived_on
         }
         
@@ -209,8 +210,8 @@ class PostgreSQLPersonRepository(PersonRepository):
             db_person.email = person.email
         elif person.person_type == "parent":
             # Parent-specific fields (address already set above)
-            db_person.email = person.email if hasattr(person, 'email') else None
-            db_person.birth_date = person.birth_date if hasattr(person, 'birth_date') else None
+            db_person.email = person.email
+            db_person.birth_date = person.birth_date
         
         self.db.add(db_person)
         self.db.commit()
@@ -498,6 +499,11 @@ class PostgreSQLPersonRepository(PersonRepository):
                 "role": db_person.role,
                 "birth_date": db_person.birth_date,
                 "email": db_person.email
+            })
+        elif db_person.person_type == "parent":
+            result.update({
+                "email": db_person.email,
+                "birth_date": db_person.birth_date
             })
         
         return result

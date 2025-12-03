@@ -86,7 +86,7 @@ async def create_person(
 	except ValueError as e:
 		raise HTTPException(status_code=422, detail=str(e))
 
-@router.get("/person/{person_id}", response_model=Union[Youth, Leader])
+@router.get("/person/{person_id}", response_model=Union[Youth, Leader, Parent])
 async def get_person(
 	person_id: int, 
 	db: Session = Depends(connect_to_db()),

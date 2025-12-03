@@ -269,6 +269,7 @@ This project is licensed under the MIT License. See [LICENSE](LICENSE) for detai
 
 ---
 
+- [ ] Edit Youth on Checking
 - [ ] Get rid of old emergency contacts tab, Rename Parents to Contacts
 - [ ] Kick out when time is up. Session Timeout?
 - [ ] Fix Primary Contact or take out. should be default on new one.
