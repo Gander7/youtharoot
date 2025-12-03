@@ -896,10 +896,32 @@ export default function PersonList() {
     setFormOpen(true);
   };
 
-  const handleEditPerson = (person) => {
+  const handleEditPerson = async (person) => {
     setPersonType(person.type);
-    setEditingPerson(person);
-    setFormOpen(true);
+    
+    // Fetch full person data including health fields (for youth)
+    if (person.type === 'youth' || person.type === 'leader') {
+      try {
+        const response = await apiRequest(`/person/${person.id}`);
+        if (response.ok) {
+          const fullPersonData = await response.json();
+          setEditingPerson({ ...fullPersonData, type: person.type });
+          setFormOpen(true);
+        } else {
+          const errorText = await response.text();
+          alert(`Failed to load person data: ${response.status} - ${response.statusText}\n\nError: ${errorText}`);
+          return;
+        }
+      } catch (error) {
+        console.error('Error fetching full person data:', error);
+        alert(`Network error loading person data: ${error.message}`);
+        return;
+      }
+    } else {
+      // For parents, use the list data (no privacy filtering)
+      setEditingPerson(person);
+      setFormOpen(true);
+    }
   };
 
   const handleSave = () => {
