@@ -239,9 +239,12 @@ export default function CheckIn({ eventId, viewOnly = false }) {
         const leadersResponse = await apiRequest('/person/leaders');
         if (leadersResponse.ok) {
           const leadersData = await leadersResponse.json();
-          allPeopleData.push(...leadersData.map(person => ({ ...person, person_type: 'leader' })));
+          const leadersWithType = leadersData.map(person => ({ ...person, person_type: 'leader' }));
+          console.log('Leaders fetched:', leadersWithType);
+          allPeopleData.push(...leadersWithType);
         }
         
+        console.log('All people data:', allPeopleData);
         setAllPeople(allPeopleData);
       } else {
         // In view-only mode, we don't need all people data
@@ -341,6 +344,8 @@ export default function CheckIn({ eventId, viewOnly = false }) {
               last_name: attendee.last_name,
               grade: attendee.grade,
               school_name: attendee.school_name,
+              role: attendee.role,
+              person_type: attendee.person_type,
               check_in: attendee.check_in,
               check_out: attendee.check_out
             };
@@ -368,6 +373,8 @@ export default function CheckIn({ eventId, viewOnly = false }) {
               last_name: attendee.last_name,
               grade: attendee.grade,
               school_name: attendee.school_name,
+              role: attendee.role,
+              person_type: attendee.person_type,
               check_in: attendee.check_in,
               check_out: attendee.check_out
             };
@@ -758,6 +765,7 @@ export default function CheckIn({ eventId, viewOnly = false }) {
                   </Box>
                 </Box>
                 {/* Move Pick Random Youth button here */}
+                {/* Hidden for now - uncomment to re-enable Random selector
                 {!viewOnly && getCheckedInYouth().length >= 1 && (
                   <Button
                     variant="contained"
@@ -769,6 +777,7 @@ export default function CheckIn({ eventId, viewOnly = false }) {
                     🎯 Random
                   </Button>
                 )}
+                */}
               </Box>
             </CardContent>
           </Card>
@@ -981,8 +990,8 @@ export default function CheckIn({ eventId, viewOnly = false }) {
               <Card key={person.id} sx={{ mb: 1.5 }}>
                 <ListItem>
                   <ListItemAvatar>
-                    <Avatar sx={{ bgcolor: 'primary.main' }}>
-                      <SchoolIcon />
+                    <Avatar sx={{ bgcolor: person.person_type === 'leader' ? 'secondary.main' : 'primary.main' }}>
+                      {person.person_type === 'leader' ? <WorkIcon /> : <SchoolIcon />}
                     </Avatar>
                   </ListItemAvatar>
                   <ListItemText
@@ -1093,7 +1102,11 @@ export default function CheckIn({ eventId, viewOnly = false }) {
             }}
             person={editingPerson}
             onSave={handleSaveEdit}
-            personType={editingPerson.person_type || editingPerson.type || 'youth'}
+            personType={(() => {
+              const type = editingPerson.person_type || editingPerson.type || 'youth';
+              console.log('PersonForm personType:', type, 'from person:', editingPerson);
+              return type;
+            })()}
           />
         )}
 

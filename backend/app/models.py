@@ -24,6 +24,7 @@ class Youth(Person):
 	school_name: Optional[str] = None
 	birth_date: datetime.date
 	email: Optional[str] = ""
+	person_type: str = "youth"
 	emergency_contact_name: Optional[str] = ""
 	emergency_contact_phone: Optional[str] = ""
 	emergency_contact_relationship: Optional[str] = ""
@@ -36,6 +37,7 @@ class Youth(Person):
 class Leader(Person):
 	role: str
 	birth_date: Optional[datetime.date] = None
+	person_type: str = "leader"
 
 class Parent(Person):
 	email: Optional[str] = None
