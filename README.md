@@ -268,7 +268,10 @@ This project is licensed under the MIT License. See [LICENSE](LICENSE) for detai
 
 
 ---
-
+- [ ] Uncaught (in promise) ReferenceError: animate is not defined
+- [ ] Check in/out history
+- [ ] window not changing, maybe no dialogs?
+- [ ] Move to DynamoDB?
 - [ ] Edit Youth on Checking
 - [ ] Get rid of old emergency contacts tab, Rename Parents to Contacts
 - [ ] Kick out when time is up. Session Timeout?

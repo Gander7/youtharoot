@@ -22,7 +22,12 @@ import {
   Alert,
   Snackbar,
   Dialog,
-  DialogContent
+  DialogContent,
+  DialogTitle,
+  DialogActions,
+  Grid,
+  FormControlLabel,
+  Checkbox
 } from '@mui/material';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import {
@@ -33,12 +38,14 @@ import {
   CheckCircle as CheckInIcon,
   ExitToApp as CheckOutIcon,
   Event as EventIcon,
-  ArrowBack as BackIcon
+  ArrowBack as BackIcon,
+  Edit as EditIcon
 } from '@mui/icons-material';
 import { apiRequest, authStore } from '../stores/auth';
 import { useStore } from '@nanostores/react';
 import ErrorBoundary from './ErrorBoundary.jsx';
 import ApiErrorBoundary from './ApiErrorBoundary.jsx';
+import PersonForm from './PersonForm';
 
 const darkTheme = createTheme({
   palette: {
@@ -192,6 +199,8 @@ export default function CheckIn({ eventId, viewOnly = false }) {
   const [loading, setLoading] = useState(true);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
   const [checkingOutAll, setCheckingOutAll] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editingPerson, setEditingPerson] = useState(null);
   
   // Get current user from auth store
   const auth = useStore(authStore);
@@ -651,6 +660,41 @@ export default function CheckIn({ eventId, viewOnly = false }) {
     }
   };
 
+  const handleEditPerson = async (person) => {
+    // Fetch full person data
+    try {
+      const response = await apiRequest(`/person/${person.id}`);
+      if (response.ok) {
+        const fullPerson = await response.json();
+        console.log('Full person data from API:', fullPerson);
+        console.log('Person type fields:', {
+          person_type: fullPerson.person_type,
+          type: fullPerson.type
+        });
+        setEditingPerson(fullPerson);
+        setEditDialogOpen(true);
+      }
+    } catch (error) {
+      console.error('Error fetching person details:', error);
+      setSnackbar({ 
+        open: true, 
+        message: 'Failed to load person details', 
+        severity: 'error' 
+      });
+    }
+  };
+
+  const handleSaveEdit = () => {
+    setSnackbar({ 
+      open: true, 
+      message: 'Person updated successfully!', 
+      severity: 'success' 
+    });
+    setEditDialogOpen(false);
+    setEditingPerson(null);
+    fetchData(); // Refresh data
+  };
+
   if (loading) {
     return (
       <ThemeProvider theme={darkTheme}>
@@ -992,40 +1036,65 @@ export default function CheckIn({ eventId, viewOnly = false }) {
                     }
                   />
                   <ListItemSecondaryAction>
-                    {!viewOnly && filter === 'available' ? (
-                      <Button
-                        variant="contained"
-                        color="success"
-                        size="small"
-                        startIcon={<CheckInIcon />}
-                        onClick={() => handleCheckIn(person)}
-                        sx={{ borderRadius: 2 }}
-                      >
-                        Check In
-                      </Button>
-                    ) : !viewOnly ? (
-                      <Button
-                        variant="outlined"
-                        color="warning"
-                        size="small"
-                        startIcon={<CheckOutIcon />}
-                        onClick={() => handleCheckOut(person)}
-                        disabled={!!person.check_out}
-                        sx={{ borderRadius: 2 }}
-                      >
-                        {person.check_out ? 'Checked Out' : 'Check Out'}
-                      </Button>
-                    ) : (
-                      // View-only mode - show status instead of buttons
-                      <Typography variant="body2" color="text.secondary">
-                        {person.check_out ? 'Attended' : 'Still checked in'}
-                      </Typography>
-                    )}
+                    <Stack direction="row" spacing={1}>
+                      {!viewOnly && (
+                        <IconButton
+                          size="small"
+                          onClick={() => handleEditPerson(person)}
+                          sx={{ color: 'primary.main' }}
+                        >
+                          <EditIcon />
+                        </IconButton>
+                      )}
+                      {!viewOnly && filter === 'available' ? (
+                        <Button
+                          variant="contained"
+                          color="success"
+                          size="small"
+                          startIcon={<CheckInIcon />}
+                          onClick={() => handleCheckIn(person)}
+                          sx={{ borderRadius: 2 }}
+                        >
+                          Check In
+                        </Button>
+                      ) : !viewOnly ? (
+                        <Button
+                          variant="outlined"
+                          color="warning"
+                          size="small"
+                          startIcon={<CheckOutIcon />}
+                          onClick={() => handleCheckOut(person)}
+                          disabled={!!person.check_out}
+                          sx={{ borderRadius: 2 }}
+                        >
+                          {person.check_out ? 'Checked Out' : 'Check Out'}
+                        </Button>
+                      ) : (
+                        // View-only mode - show status instead of buttons
+                        <Typography variant="body2" color="text.secondary">
+                          {person.check_out ? 'Attended' : 'Still checked in'}
+                        </Typography>
+                      )}
+                    </Stack>
                   </ListItemSecondaryAction>
                 </ListItem>
               </Card>
             ))}
           </List>
+        )}
+
+        {/* Edit Person Dialog using PersonForm component */}
+        {editingPerson && (
+          <PersonForm
+            open={editDialogOpen}
+            onClose={() => {
+              setEditDialogOpen(false);
+              setEditingPerson(null);
+            }}
+            person={editingPerson}
+            onSave={handleSaveEdit}
+            personType={editingPerson.person_type || editingPerson.type || 'youth'}
+          />
         )}
 
         {/* Snackbar for notifications */}
