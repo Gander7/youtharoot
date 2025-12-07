@@ -208,7 +208,7 @@ function PersonSelectionDialog({ open, onClose, onConfirm, availablePeople, load
   );
 }
 
-function GroupMemberManager({ open, onClose, group, onMembershipChange }) {
+function GroupMemberManager({ open, onClose, group, onMembershipChange, getToken }) {
   const [members, setMembers] = useState([]);
   const [availablePeople, setAvailablePeople] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -223,7 +223,7 @@ function GroupMemberManager({ open, onClose, group, onMembershipChange }) {
       setLoading(true);
       setError(null);
       
-      const response = await apiRequest(`/groups/${group.id}/members`);
+      const response = await apiRequest(`/groups/${group.id}/members`, {}, getToken);
       if (response.ok) {
         const membersData = await response.json();
         setMembers(membersData);
@@ -236,7 +236,7 @@ function GroupMemberManager({ open, onClose, group, onMembershipChange }) {
     } finally {
       setLoading(false);
     }
-  }, [group]);
+  }, [group, getToken]);
 
   useEffect(() => {
     if (open && group) {
@@ -293,7 +293,7 @@ function GroupMemberManager({ open, onClose, group, onMembershipChange }) {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ person_id: selectedPersonIds[0] })
-        });
+        }, getToken);
         
         if (!response.ok) {
           const errorData = await response.json();
@@ -305,7 +305,7 @@ function GroupMemberManager({ open, onClose, group, onMembershipChange }) {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ person_ids: selectedPersonIds })
-        });
+        }, getToken);
         
         if (!response.ok) {
           const errorData = await response.json();
@@ -334,7 +334,7 @@ function GroupMemberManager({ open, onClose, group, onMembershipChange }) {
     try {
       const response = await apiRequest(`/groups/${group.id}/members/${member.person_id}`, {
         method: 'DELETE'
-      });
+      }, getToken);
       
       if (!response.ok) {
         throw new Error('Failed to remove member');

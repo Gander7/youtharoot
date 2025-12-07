@@ -93,14 +93,13 @@ class MessageGroupDB(Base):
     id = Column(BigInteger, primary_key=True, autoincrement=True, index=True)
     name = Column(String(100), nullable=False, unique=True, index=True)
     description = Column(Text, nullable=True)
-    created_by = Column(BigInteger, ForeignKey("users.id"), nullable=False)
+    created_by = Column(String(255), nullable=True)  # Clerk user ID (string)
     is_active = Column(Boolean, default=True, nullable=False)
     
     created_at = Column(DateTime, default=func.now())
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
     
-    # Relationships
-    creator = relationship("UserDB", backref="created_message_groups")
+    # Relationships (removed creator relationship since no FK)
     memberships = relationship("MessageGroupMembershipDB", back_populates="group", cascade="all, delete-orphan")
     messages = relationship("MessageDB", back_populates="group")
 
@@ -115,7 +114,7 @@ class MessageGroupMembershipDB(Base):
     id = Column(BigInteger, primary_key=True, autoincrement=True, index=True)
     group_id = Column(BigInteger, ForeignKey("message_groups.id"), nullable=False)
     person_id = Column(BigInteger, ForeignKey("persons.id"), nullable=False)
-    added_by = Column(BigInteger, ForeignKey("users.id"), nullable=False)
+    added_by = Column(String(255), nullable=True)  # Clerk user ID (string) - no FK
     joined_at = Column(DateTime, default=func.now())
     
     # Unique constraint to prevent duplicate memberships
@@ -123,10 +122,9 @@ class MessageGroupMembershipDB(Base):
         UniqueConstraint('group_id', 'person_id', name='uq_group_person_membership'),
     )
     
-    # Relationships
+    # Relationships (removed added_by_user relationship since no FK)
     group = relationship("MessageGroupDB", back_populates="memberships")
     person = relationship("PersonDB", backref="group_memberships")
-    added_by_user = relationship("UserDB", backref="added_memberships")
 
 
 class MessageDB(Base):

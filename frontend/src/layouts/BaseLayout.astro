@@ -1,12 +1,15 @@
 ---
+import { SignedIn, SignedOut, SignInButton } from "@clerk/astro/components";
 import Navigation from "../components/Navigation.jsx";
+const pageTitle = "Home"
 ---
 <html lang="en">
 <head>
   <meta charset="utf-8" />
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Youtharoot</title>
+  <meta name="generator" content={Astro.generator} />
+  <title>{pageTitle}</title>
 </head>
 <body>
   <style is:global>
@@ -26,7 +29,14 @@ import Navigation from "../components/Navigation.jsx";
     }
   </style>
   
-  <Navigation client:load />
+  <!-- Show Navigation when signed in, otherwise show sign in button -->
+  <SignedIn>
+    <Navigation client:load />
+  </SignedIn>
+  <SignedOut>
+      <SignInButton mode="modal" />
+  </SignedOut>
+  
   <main>
     <slot />
   </main>

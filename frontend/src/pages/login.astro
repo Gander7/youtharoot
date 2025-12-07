@@ -1,36 +1,16 @@
 ---
-import LoginForm from '../components/LoginForm.jsx';
+// Redirect old /login route to new /sign-in
 ---
 
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Login - Youtharoot</title>
+  <meta http-equiv="refresh" content="0; url=/sign-in" />
+  <title>Redirecting...</title>
 </head>
 <body>
-  <style is:global>
-    html, body {
-      margin: 0;
-      padding: 0;
-      min-height: 100vh;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-    }
-  </style>
-  
-  <main>
-    <LoginForm client:load />
-  </main>
+  <script>
+    window.location.href = '/sign-in';
+  </script>
 </body>
 </html>
-
-<style>
-  main {
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  }
-</style>

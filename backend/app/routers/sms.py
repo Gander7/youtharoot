@@ -159,7 +159,7 @@ def get_sms_service(db: Session = Depends(get_db)) -> SMSService:
 @router.post("/send", response_model=SMSSendResponse)
 async def send_individual_sms(
     request: SMSSendRequest,
-    current_user: User = Depends(get_current_user),
+    # current_user: User = Depends(get_current_user),
     sms_service: SMSService = Depends(get_sms_service),
     db: Session = Depends(get_db)
 ):
@@ -221,7 +221,7 @@ async def send_individual_sms(
 @router.post("/send-group", response_model=GroupSMSSendResponse)
 async def send_group_sms(
     request: GroupSMSSendRequest,
-    current_user: User = Depends(get_current_user),
+    # current_user: User = Depends(get_current_user),
     sms_service: SMSService = Depends(get_sms_service),
     db: Session = Depends(get_db)
 ):
@@ -460,7 +460,7 @@ async def get_message_history(
     group_id: Optional[int] = Query(None, description="Filter by group ID"),
     limit: int = Query(50, ge=1, le=100, description="Maximum number of messages"),
     offset: int = Query(0, ge=0, description="Number of messages to skip"),
-    current_user: User = Depends(get_current_user),
+    # current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """
@@ -526,7 +526,7 @@ async def get_top_level_message_history(
     days: int = Query(30, ge=1, le=365, description="Number of days to look back"),
     limit: int = Query(50, ge=1, le=100, description="Maximum number of messages"),
     offset: int = Query(0, ge=0, description="Number of messages to skip"),
-    current_user: User = Depends(get_current_user),
+    # current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """
@@ -672,7 +672,7 @@ async def get_group_message_details(
     group_id: int,
     message_content: str = Query(..., description="Message content to identify the specific group send"),
     send_time: str = Query(..., description="ISO timestamp of when the message was sent"),
-    current_user: User = Depends(get_current_user),
+    # current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """
@@ -761,7 +761,7 @@ async def get_group_message_details(
 @router.get("/status/{message_id}")
 async def get_message_status(
     message_id: int,
-    current_user: User = Depends(get_current_user),
+    # current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """
@@ -877,7 +877,7 @@ async def handle_twilio_webhook(
 async def get_sms_analytics(
     start_date: Optional[date] = Query(None, description="Start date for analytics (YYYY-MM-DD)"),
     end_date: Optional[date] = Query(None, description="End date for analytics (YYYY-MM-DD)"),
-    current_user: User = Depends(get_current_user),
+    # current_user: User = Depends(get_current_user),
     sms_service: SMSService = Depends(get_sms_service),
     db: Session = Depends(get_db)
 ):

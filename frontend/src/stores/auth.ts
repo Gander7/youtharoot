@@ -140,26 +140,57 @@ export function getAuthHeaders(): HeadersInit {
 
 /**
  * Make an authenticated API request
+ * @param endpoint - API endpoint to call
+ * @param options - Fetch options
+ * @param getToken - Optional function to get Clerk session token
  */
-export async function apiRequest(endpoint: string, options: RequestInit = {}) {
-  const headers = {
-    ...getAuthHeaders(),
-    ...options.headers,
+export async function apiRequest(
+  endpoint: string, 
+  options: RequestInit = {},
+  getToken?: () => Promise<string | null>
+) {
+  // Get Clerk token if available, otherwise fall back to old auth
+  let token = null;
+  if (getToken) {
+    console.log('🔐 Calling getToken()...');
+    token = await getToken();
+    console.log('🔐 Token received:', token ? `${token.substring(0, 20)}...` : 'null');
+  } else {
+    // Fall back to old localStorage token for backwards compatibility
+    token = localStorage.getItem('token');
+    console.log('🔐 Using localStorage token:', token ? 'present' : 'null');
+  }
+
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...options.headers as Record<string, string>,
   };
 
+  // Add Bearer token if available
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+    console.log('🔐 Authorization header added');
+  } else {
+    console.log('🔐 No token available, sending request without auth');
+  }
+
+  console.log(`🔐 Making request to: ${API_BASE_URL}${endpoint}`);
   const response = await fetch(`${API_BASE_URL}${endpoint}`, {
     ...options,
     headers,
   });
 
-  // If we get 401, the token is invalid, logout
+  console.log(`🔐 Response status: ${response.status}`);
+
+  // If we get 401, log but don't redirect (for debugging)
   if (response.status === 401) {
-    logout();
-    // Redirect to login if we're in the browser
-    if (typeof window !== 'undefined') {
-      window.location.href = '/login';
-    }
-    throw new Error('Authentication required');
+    console.error('🔐 401 Unauthorized - Authentication failed!');
+    console.error('🔐 Response headers:', Object.fromEntries(response.headers.entries()));
+    // Temporarily disabled redirect for debugging
+    // if (typeof window !== 'undefined') {
+    //   window.location.href = '/sign-in';
+    // }
+    // throw new Error('Authentication required');
   }
 
   return response;

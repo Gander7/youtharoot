@@ -799,7 +799,7 @@ class PostgreSQLMessageGroupRepository(MessageGroupRepository):
             joined_at=db_membership.joined_at
         )
     
-    async def create_group(self, group: MessageGroupCreate, created_by: int) -> MessageGroup:
+    async def create_group(self, group: MessageGroupCreate, created_by: Union[int, str]) -> MessageGroup:
         """Create a new message group"""
         # Check for duplicate name for this user
         if await self.group_name_exists(group.name, created_by):
@@ -810,7 +810,7 @@ class PostgreSQLMessageGroupRepository(MessageGroupRepository):
                 name=group.name,
                 description=group.description,
                 is_active=group.is_active,
-                created_by=created_by
+                created_by=str(created_by)  # Convert to string to support both int and Clerk IDs
             )
             
             self.db.add(db_group)
@@ -833,20 +833,26 @@ class PostgreSQLMessageGroupRepository(MessageGroupRepository):
             return self._db_to_pydantic_group(db_group)
         return None
     
-    async def get_all_groups(self, created_by: int) -> List[MessageGroup]:
+    async def get_all_groups(self, created_by: Optional[Union[int, str]]) -> List[MessageGroup]:
         """Get all message groups for a user"""
-        db_groups = self.db.query(MessageGroupDB).filter(
-            MessageGroupDB.created_by == created_by
-        ).all()
+        query = self.db.query(MessageGroupDB)
         
+        # Filter by created_by if provided (supports both int and string for Clerk IDs)
+        if created_by is not None:
+            query = query.filter(MessageGroupDB.created_by == str(created_by))
+        
+        db_groups = query.all()
         return [self._db_to_pydantic_group(db_group) for db_group in db_groups]
     
-    async def update_group(self, group_id: int, group_update: MessageGroupUpdate, created_by: int) -> Optional[MessageGroup]:
+    async def update_group(self, group_id: int, group_update: MessageGroupUpdate, created_by: Optional[Union[int, str]]) -> Optional[MessageGroup]:
         """Update a message group"""
-        db_group = self.db.query(MessageGroupDB).filter(
-            MessageGroupDB.id == group_id,
-            MessageGroupDB.created_by == created_by
-        ).first()
+        query = self.db.query(MessageGroupDB).filter(MessageGroupDB.id == group_id)
+        
+        # Filter by created_by if provided (supports both int and string for Clerk IDs)
+        if created_by is not None:
+            query = query.filter(MessageGroupDB.created_by == str(created_by))
+        
+        db_group = query.first()
         
         if not db_group:
             return None
@@ -875,12 +881,15 @@ class PostgreSQLMessageGroupRepository(MessageGroupRepository):
             self.db.rollback()
             raise e
     
-    async def delete_group(self, group_id: int, created_by: int) -> bool:
+    async def delete_group(self, group_id: int, created_by: Optional[Union[int, str]]) -> bool:
         """Delete a message group and all its memberships"""
-        db_group = self.db.query(MessageGroupDB).filter(
-            MessageGroupDB.id == group_id,
-            MessageGroupDB.created_by == created_by
-        ).first()
+        query = self.db.query(MessageGroupDB).filter(MessageGroupDB.id == group_id)
+        
+        # Filter by created_by if provided (supports both int and string for Clerk IDs)
+        if created_by is not None:
+            query = query.filter(MessageGroupDB.created_by == str(created_by))
+        
+        db_group = query.first()
         
         if not db_group:
             return False
@@ -894,11 +903,11 @@ class PostgreSQLMessageGroupRepository(MessageGroupRepository):
             self.db.rollback()
             raise e
     
-    async def group_name_exists(self, name: str, created_by: int, exclude_id: Optional[int] = None) -> bool:
+    async def group_name_exists(self, name: str, created_by: Optional[Union[int, str]], exclude_id: Optional[int] = None) -> bool:
         """Check if a group name already exists for a user"""
         query = self.db.query(MessageGroupDB).filter(
             MessageGroupDB.name == name,
-            MessageGroupDB.created_by == created_by
+            MessageGroupDB.created_by == str(created_by) if created_by is not None else None
         )
         
         if exclude_id is not None:
@@ -906,7 +915,7 @@ class PostgreSQLMessageGroupRepository(MessageGroupRepository):
         
         return query.first() is not None
     
-    async def add_member(self, group_id: int, person_id: int, added_by: int) -> Optional[MessageGroupMembership]:
+    async def add_member(self, group_id: int, person_id: int, added_by: Optional[Union[int, str]]) -> Optional[MessageGroupMembership]:
         """Add a person to a message group"""
         # Check if already a member
         if await self.is_member(group_id, person_id):
@@ -916,7 +925,7 @@ class PostgreSQLMessageGroupRepository(MessageGroupRepository):
             db_membership = MessageGroupMembershipDB(
                 group_id=group_id,
                 person_id=person_id,
-                added_by=added_by
+                added_by=0  # Not tracking who added members for now with Clerk
             )
             
             self.db.add(db_membership)
@@ -968,11 +977,12 @@ class PostgreSQLMessageGroupRepository(MessageGroupRepository):
             # Fetch full person details
             person = await person_repo.get_person(membership.person_id)
             if person:
-                # Create appropriate typed person object with person_type field
+                # Create appropriate typed person object
+                # The person models already have person_type set correctly
                 if isinstance(person, Youth):
-                    person_with_type = YouthWithType(**person.model_dump(), person_type="youth")
+                    person_with_type = YouthWithType(**person.model_dump())
                 elif isinstance(person, Leader):
-                    person_with_type = LeaderWithType(**person.model_dump(), person_type="leader")
+                    person_with_type = LeaderWithType(**person.model_dump())
                 elif isinstance(person, Parent):
                     person_with_type = ParentWithType(**person.model_dump())
                 else:
@@ -997,7 +1007,7 @@ class PostgreSQLMessageGroupRepository(MessageGroupRepository):
         
         return db_membership is not None
     
-    async def add_multiple_members(self, group_id: int, person_ids: List[int], added_by: int) -> BulkGroupMembershipResponse:
+    async def add_multiple_members(self, group_id: int, person_ids: List[int], added_by: Optional[Union[int, str]]) -> BulkGroupMembershipResponse:
         """Add multiple people to a message group"""
         added_count = 0
         skipped_count = 0

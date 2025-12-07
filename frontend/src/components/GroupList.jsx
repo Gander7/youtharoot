@@ -136,7 +136,7 @@ function GroupForm({ open, onClose, onSubmit, group = null }) {
   );
 }
 
-function GroupList({ onGroupSelect, onGroupCreated, refreshTrigger }) {
+function GroupList({ onGroupSelect, onGroupCreated, refreshTrigger, userId = null, getToken = null }) {
   const [groups, setGroups] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -144,6 +144,14 @@ function GroupList({ onGroupSelect, onGroupCreated, refreshTrigger }) {
   const [editingGroup, setEditingGroup] = useState(null);
   const [memberManagerOpen, setMemberManagerOpen] = useState(false);
   const [selectedGroupForMembers, setSelectedGroupForMembers] = useState(null);
+
+  // Debug on mount
+  useEffect(() => {
+    console.log('📋 GroupList mounted');
+    console.log('📋 userId:', userId);
+    console.log('📋 getToken type:', typeof getToken);
+    console.log('📋 getToken value:', getToken);
+  }, []);
 
   useEffect(() => {
     loadGroups();
@@ -153,10 +161,14 @@ function GroupList({ onGroupSelect, onGroupCreated, refreshTrigger }) {
     try {
       setLoading(true);
       setError(null);
-      const response = await apiRequest('/groups');
+      console.log('🔍 Loading groups with getToken:', typeof getToken);
+      const response = await apiRequest('/groups', {}, getToken);
+      console.log('🔍 Groups response status:', response.status);
       if (response.ok) {
         const groupsData = await response.json();
         setGroups(groupsData);
+      } else {
+        console.error('🔍 Groups request failed:', response.status, response.statusText);
       }
     } catch (err) {
       setError('Failed to load message groups');
@@ -168,11 +180,17 @@ function GroupList({ onGroupSelect, onGroupCreated, refreshTrigger }) {
 
   const handleCreateGroup = async (formData) => {
     try {
+      // Add Clerk user ID to the request
+      const groupData = {
+        ...formData,
+        created_by: userId
+      };
+      
       const response = await apiRequest('/groups', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
-      });
+        body: JSON.stringify(groupData)
+      }, getToken);
       
       if (response.ok) {
         const newGroup = await response.json();
@@ -195,7 +213,7 @@ function GroupList({ onGroupSelect, onGroupCreated, refreshTrigger }) {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)
-      });
+      }, getToken);
       
       if (response.ok) {
         const updatedGroup = await response.json();
@@ -214,7 +232,7 @@ function GroupList({ onGroupSelect, onGroupCreated, refreshTrigger }) {
     try {
       await apiRequest(`/groups/${groupId}`, {
         method: 'DELETE'
-      });
+      }, getToken);
       
       setGroups(prev => prev.filter(g => g.id !== groupId));
     } catch (err) {
@@ -368,6 +386,7 @@ function GroupList({ onGroupSelect, onGroupCreated, refreshTrigger }) {
         onClose={handleMemberManagerClose}
         group={selectedGroupForMembers}
         onMembershipChange={handleMembershipChange}
+        getToken={getToken}
       />
     </Box>
   );

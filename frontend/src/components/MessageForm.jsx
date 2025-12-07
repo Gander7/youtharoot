@@ -25,7 +25,7 @@ import { Send, Group, Person, FamilyRestroom } from '@mui/icons-material';
 import { apiRequest } from '../stores/auth';
 import SimplePhoneInput from './SimplePhoneInput';
 
-function MessageForm({ selectedGroup, onMessageSent, refreshTrigger }) {
+function MessageForm({ selectedGroup, onMessageSent, refreshTrigger, getToken }) {
   const [messageType, setMessageType] = useState('group'); // 'group' or 'individual'
   const [groups, setGroups] = useState([]);
   const [selectedGroupId, setSelectedGroupId] = useState('');
@@ -51,7 +51,7 @@ function MessageForm({ selectedGroup, onMessageSent, refreshTrigger }) {
 
   const loadGroups = async () => {
     try {
-      const response = await apiRequest('/groups');
+      const response = await apiRequest('/groups', {}, getToken);
       if (response.ok) {
         const groupsData = await response.json();
         setGroups(groupsData.filter(g => g.is_active));
@@ -89,7 +89,7 @@ function MessageForm({ selectedGroup, onMessageSent, refreshTrigger }) {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(requestBody)
-        });
+        }, getToken);
 
         if (response.ok) {
           const result = await response.json();
@@ -115,7 +115,7 @@ function MessageForm({ selectedGroup, onMessageSent, refreshTrigger }) {
             phone_number: phoneNumber.trim(),
             message: message.trim()
           })
-        });
+        }, getToken);
 
         if (response.ok) {
           const result = await response.json();

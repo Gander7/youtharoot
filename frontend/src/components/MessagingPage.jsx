@@ -53,10 +53,17 @@ function TabPanel({ children, value, index, ...other }) {
   );
 }
 
-function MessagingPage() {
+function MessagingContent({ user, getToken }) {
   const [tabValue, setTabValue] = useState(0);
   const [selectedGroup, setSelectedGroup] = useState(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+
+  // Debug: Log what we received
+  useEffect(() => {
+    console.log('📧 MessagingPage mounted');
+    console.log('📧 User:', user);
+    console.log('📧 getToken:', typeof getToken, getToken);
+  }, [user, getToken]);
 
   const handleTabChange = (event, newValue) => {
     setTabValue(newValue);
@@ -103,6 +110,8 @@ function MessagingPage() {
                   onGroupSelect={handleGroupSelect}
                   onGroupCreated={handleGroupCreated}
                   refreshTrigger={refreshTrigger}
+                  userId={user?.id}
+                  getToken={getToken}
                 />
               </ApiErrorBoundary>
             </TabPanel>
@@ -113,6 +122,7 @@ function MessagingPage() {
                   selectedGroup={selectedGroup}
                   onMessageSent={handleMessageSent}
                   refreshTrigger={refreshTrigger}
+                  getToken={getToken}
                 />
               </ApiErrorBoundary>
             </TabPanel>
@@ -131,4 +141,4 @@ function MessagingPage() {
   );
 }
 
-export default MessagingPage;
+export default MessagingContent;

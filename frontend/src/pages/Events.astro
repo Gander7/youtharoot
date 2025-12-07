@@ -1,12 +1,10 @@
 ---
 import EventList from "../components/EventList.jsx";
-import AuthLayout from "../layouts/AuthLayout.astro";
-import Navigation from "../components/Navigation.jsx";
+import ClerkAuthLayout from "../layouts/ClerkAuthLayout.astro";
 ---
 
-<AuthLayout title="Events - Youtharoot">
-  <Navigation client:load />
+<ClerkAuthLayout title="Events - Youtharoot">
   <main>
     <EventList client:load />
   </main>
-</AuthLayout>
+</ClerkAuthLayout>

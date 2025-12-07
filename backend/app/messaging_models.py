@@ -143,7 +143,7 @@ class MessageGroupUpdate(BaseModel):
 class MessageGroup(MessageGroupBase, TimestampMixin):
     """Complete message group model."""
     id: int
-    created_by: int
+    created_by: Optional[str] = None  # Clerk user ID
     member_count: int = 0  # Number of members in the group
 
     model_config = ConfigDict(from_attributes=True)

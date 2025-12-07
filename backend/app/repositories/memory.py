@@ -499,7 +499,7 @@ class InMemoryMessageGroupRepository(MessageGroupRepository):
         self.next_group_id = 1
         self.next_membership_id = 1
     
-    async def create_group(self, group: MessageGroupCreate, created_by: int) -> MessageGroup:
+    async def create_group(self, group: MessageGroupCreate, created_by: Union[int, str]) -> MessageGroup:
         # Check for duplicate name for this user
         if await self.group_name_exists(group.name, created_by):
             raise ValueError(f"Group with name '{group.name}' already exists")
@@ -514,7 +514,7 @@ class InMemoryMessageGroupRepository(MessageGroupRepository):
             name=group.name,
             description=group.description,
             is_active=group.is_active,
-            created_by=created_by,
+            created_by=str(created_by),  # Convert to string to support both int and Clerk IDs
             created_at=now,
             updated_at=now
         )
@@ -522,24 +522,29 @@ class InMemoryMessageGroupRepository(MessageGroupRepository):
         self.groups_store[group_id] = new_group
         return new_group
     
-    async def get_group(self, group_id: int, created_by: int) -> Optional[MessageGroup]:
+    async def get_group(self, group_id: int, created_by: Optional[Union[int, str]]) -> Optional[MessageGroup]:
         group = self.groups_store.get(group_id)
-        if group and group.created_by == created_by:
+        # Filter by created_by if provided (supports both int and string for Clerk IDs)
+        if group and (created_by is None or str(group.created_by) == str(created_by)):
             # Calculate member count
             member_count = len([m for m in self.memberships_store.values() if m.group_id == group.id])
             group.member_count = member_count
             return group
         return None
     
-    async def get_all_groups(self, created_by: int) -> List[MessageGroup]:
-        groups = [group for group in self.groups_store.values() if group.created_by == created_by]
+    async def get_all_groups(self, created_by: Optional[Union[int, str]]) -> List[MessageGroup]:
+        # Filter by created_by if provided (supports both int and string for Clerk IDs)
+        if created_by is not None:
+            groups = [group for group in self.groups_store.values() if str(group.created_by) == str(created_by)]
+        else:
+            groups = list(self.groups_store.values())
         # Calculate member count for each group
         for group in groups:
             member_count = len([m for m in self.memberships_store.values() if m.group_id == group.id])
             group.member_count = member_count
         return groups
     
-    async def update_group(self, group_id: int, group_update: MessageGroupUpdate, created_by: int) -> Optional[MessageGroup]:
+    async def update_group(self, group_id: int, group_update: MessageGroupUpdate, created_by: Optional[Union[int, str]]) -> Optional[MessageGroup]:
         group = await self.get_group(group_id, created_by)
         if not group:
             return None
@@ -561,7 +566,7 @@ class InMemoryMessageGroupRepository(MessageGroupRepository):
         self.groups_store[group_id] = group
         return group
     
-    async def delete_group(self, group_id: int, created_by: int) -> bool:
+    async def delete_group(self, group_id: int, created_by: Optional[Union[int, str]]) -> bool:
         group = await self.get_group(group_id, created_by)
         if not group:
             return False
@@ -578,15 +583,15 @@ class InMemoryMessageGroupRepository(MessageGroupRepository):
         del self.groups_store[group_id]
         return True
     
-    async def group_name_exists(self, name: str, created_by: int, exclude_id: Optional[int] = None) -> bool:
+    async def group_name_exists(self, name: str, created_by: Optional[Union[int, str]], exclude_id: Optional[int] = None) -> bool:
         for group_id, group in self.groups_store.items():
             if (group.name == name and 
-                group.created_by == created_by and 
+                (created_by is None or str(group.created_by) == str(created_by)) and 
                 (exclude_id is None or group_id != exclude_id)):
                 return True
         return False
     
-    async def add_member(self, group_id: int, person_id: int, added_by: int) -> Optional[MessageGroupMembership]:
+    async def add_member(self, group_id: int, person_id: int, added_by: Optional[Union[int, str]]) -> Optional[MessageGroupMembership]:
         # Check if already a member
         if await self.is_member(group_id, person_id):
             raise ValueError("Person is already a member of this group")
@@ -663,7 +668,7 @@ class InMemoryMessageGroupRepository(MessageGroupRepository):
                 return True
         return False
     
-    async def add_multiple_members(self, group_id: int, person_ids: List[int], added_by: int) -> BulkGroupMembershipResponse:
+    async def add_multiple_members(self, group_id: int, person_ids: List[int], added_by: Optional[Union[int, str]]) -> BulkGroupMembershipResponse:
         added_count = 0
         skipped_count = 0
         failed_count = 0

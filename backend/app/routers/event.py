@@ -28,7 +28,7 @@ router = APIRouter()
 async def create_event(
     event: EventCreate, 
     db: Session = Depends(connect_to_db()),
-    current_user: User = Depends(get_current_user_dependency())
+    # current_user: User = Depends(get_current_user_dependency())  # TODO: Re-enable with Clerk
 ):
     repos = get_repositories(db)
     return await repos["event"].create_event(event)
@@ -37,7 +37,7 @@ async def create_event(
 async def get_event(
     event_id: int, 
     db: Session = Depends(connect_to_db()),
-    current_user: User = Depends(get_current_user_dependency())
+    # current_user: User = Depends(get_current_user_dependency())  # TODO: Re-enable with Clerk
 ):
     repos = get_repositories(db)
     event = await repos["event"].get_event(event_id)
@@ -50,7 +50,7 @@ async def get_events(
     days: Optional[int] = Query(None), 
     name: Optional[str] = Query(None), 
     db: Session = Depends(connect_to_db()),
-    current_user: User = Depends(get_current_user_dependency())
+    # current_user: User = Depends(get_current_user_dependency())  # TODO: Re-enable with Clerk
 ):
     import time
     start_time = time.time()
@@ -69,7 +69,7 @@ async def update_event(
     event_id: int, 
     event_update: EventUpdate, 
     db: Session = Depends(connect_to_db()),
-    current_user: User = Depends(get_current_user_dependency())
+    # current_user: User = Depends(get_current_user_dependency())  # TODO: Re-enable with Clerk
 ):
     repos = get_repositories(db)
     try:
@@ -81,7 +81,7 @@ async def update_event(
 async def delete_event(
     event_id: int, 
     db: Session = Depends(connect_to_db()),
-    current_user: User = Depends(get_current_user_dependency())
+    # current_user: User = Depends(get_current_user_dependency())  # TODO: Re-enable with Clerk
 ):
     repos = get_repositories(db)
     try:
@@ -96,7 +96,7 @@ async def delete_event(
 async def can_delete_event(
     event_id: int, 
     db: Session = Depends(connect_to_db()),
-    current_user: User = Depends(get_current_user_dependency())
+    # current_user: User = Depends(get_current_user_dependency())
 ):
     repos = get_repositories(db)
     event = await repos["event"].get_event(event_id)

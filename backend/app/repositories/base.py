@@ -150,31 +150,31 @@ class MessageGroupRepository(ABC):
     """Abstract interface for message group storage"""
     
     @abstractmethod
-    async def create_group(self, group: MessageGroupCreate, created_by: int) -> MessageGroup:
+    async def create_group(self, group: MessageGroupCreate, created_by: Union[int, str]) -> MessageGroup:
         pass
     
     @abstractmethod
-    async def get_group(self, group_id: int, created_by: int) -> Optional[MessageGroup]:
+    async def get_group(self, group_id: int, created_by: Optional[Union[int, str]]) -> Optional[MessageGroup]:
         pass
     
     @abstractmethod
-    async def get_all_groups(self, created_by: int) -> List[MessageGroup]:
+    async def get_all_groups(self, created_by: Optional[Union[int, str]]) -> List[MessageGroup]:
         pass
     
     @abstractmethod
-    async def update_group(self, group_id: int, group_update: MessageGroupUpdate, created_by: int) -> Optional[MessageGroup]:
+    async def update_group(self, group_id: int, group_update: MessageGroupUpdate, created_by: Optional[Union[int, str]]) -> Optional[MessageGroup]:
         pass
     
     @abstractmethod
-    async def delete_group(self, group_id: int, created_by: int) -> bool:
+    async def delete_group(self, group_id: int, created_by: Optional[Union[int, str]]) -> bool:
         pass
     
     @abstractmethod
-    async def group_name_exists(self, name: str, created_by: int, exclude_id: Optional[int] = None) -> bool:
+    async def group_name_exists(self, name: str, created_by: Optional[Union[int, str]], exclude_id: Optional[int] = None) -> bool:
         pass
     
     @abstractmethod
-    async def add_member(self, group_id: int, person_id: int, added_by: int) -> Optional[MessageGroupMembership]:
+    async def add_member(self, group_id: int, person_id: int, added_by: Optional[Union[int, str]]) -> Optional[MessageGroupMembership]:
         pass
     
     @abstractmethod
@@ -195,5 +195,5 @@ class MessageGroupRepository(ABC):
         pass
     
     @abstractmethod
-    async def add_multiple_members(self, group_id: int, person_ids: List[int], added_by: int) -> BulkGroupMembershipResponse:
+    async def add_multiple_members(self, group_id: int, person_ids: List[int], added_by: Optional[Union[int, str]]) -> BulkGroupMembershipResponse:
         pass

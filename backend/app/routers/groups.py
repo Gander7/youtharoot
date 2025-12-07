@@ -28,6 +28,7 @@ from app.messaging_models import (
     BulkGroupMembershipCreate, BulkGroupMembershipResponse,
     AvailableGroupMembers, YouthWithType, LeaderWithType, ParentWithType
 )
+from app.clerk_auth import get_current_clerk_user
 
 
 router = APIRouter(prefix="/groups", tags=["groups"])
@@ -38,12 +39,6 @@ def connect_to_db():
     """Lazily import and return database dependency"""
     from app.database import get_db
     return get_db
-
-
-def get_current_user_lazy():
-    """Lazily import and return current user dependency"""
-    from app.auth import get_current_user
-    return get_current_user
 
 
 def get_repositories(db_session):
@@ -59,13 +54,14 @@ def get_repositories(db_session):
 async def create_group(
     group: MessageGroupCreate,
     db: Session = Depends(connect_to_db()),
-    current_user: User = Depends(get_current_user_lazy())
+    current_user: dict = Depends(get_current_clerk_user)
 ):
     """Create a new message group."""
     repos = get_repositories(db)
     
     try:
-        created_group = await repos["group"].create_group(group, current_user.id)
+        # Pass the Clerk user ID from the authenticated user
+        created_group = await repos["group"].create_group(group, current_user["user_id"])
         return created_group
     except ValueError as e:
         raise HTTPException(
@@ -77,11 +73,12 @@ async def create_group(
 @router.get("", response_model=List[MessageGroup])
 async def list_groups(
     db: Session = Depends(connect_to_db()),
-    current_user: User = Depends(get_current_user_lazy())
+    current_user: dict = Depends(get_current_clerk_user)
 ):
-    """List all groups created by the current user."""
+    """List all groups for the authenticated user."""
     repos = get_repositories(db)
-    groups = await repos["group"].get_all_groups(current_user.id)
+    # Filter by Clerk user ID (stored as string in created_by)
+    groups = await repos["group"].get_all_groups(current_user["user_id"])
     return groups
 
 
@@ -89,11 +86,13 @@ async def list_groups(
 async def get_group(
     group_id: int,
     db: Session = Depends(connect_to_db()),
-    current_user: User = Depends(get_current_user_lazy())
+    current_user: dict = Depends(get_current_clerk_user)
 ):
+    print ("Current user in get_group:", current_user)
     """Get a specific group by ID."""
     repos = get_repositories(db)
-    group = await repos["group"].get_group(group_id, current_user.id)
+    # Filter by Clerk user ID to ensure user can only access their own groups
+    group = await repos["group"].get_group(group_id, current_user["user_id"])
     
     if not group:
         raise HTTPException(
@@ -109,13 +108,13 @@ async def update_group(
     group_id: int,
     group_update: MessageGroupUpdate,
     db: Session = Depends(connect_to_db()),
-    current_user: User = Depends(get_current_user_lazy())
+    current_user: dict = Depends(get_current_clerk_user)
 ):
     """Update a group's details."""
     repos = get_repositories(db)
     
     try:
-        updated_group = await repos["group"].update_group(group_id, group_update, current_user.id)
+        updated_group = await repos["group"].update_group(group_id, group_update, current_user["user_id"])
         if not updated_group:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -133,11 +132,11 @@ async def update_group(
 async def delete_group(
     group_id: int,
     db: Session = Depends(connect_to_db()),
-    current_user: User = Depends(get_current_user_lazy())
+    current_user: dict = Depends(get_current_clerk_user)
 ):
     """Delete a group and all its memberships."""
     repos = get_repositories(db)
-    success = await repos["group"].delete_group(group_id, current_user.id)
+    success = await repos["group"].delete_group(group_id, current_user["user_id"])
     
     if not success:
         raise HTTPException(
@@ -151,13 +150,13 @@ async def add_member_to_group(
     group_id: int,
     membership: MessageGroupMembershipCreate,
     db: Session = Depends(connect_to_db()),
-    current_user: User = Depends(get_current_user_lazy())
+    current_user: dict = Depends(get_current_clerk_user)
 ):
     """Add a person to a group."""
     repos = get_repositories(db)
     
     # Verify group exists and belongs to current user
-    group = await repos["group"].get_group(group_id, current_user.id)
+    group = await repos["group"].get_group(group_id, current_user["user_id"])
     if not group:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -173,7 +172,7 @@ async def add_member_to_group(
         )
     
     try:
-        created_membership = await repos["group"].add_member(group_id, membership.person_id, current_user.id)
+        created_membership = await repos["group"].add_member(group_id, membership.person_id, current_user["user_id"])
         return created_membership
     except ValueError as e:
         raise HTTPException(
@@ -186,13 +185,13 @@ async def add_member_to_group(
 async def list_group_members(
     group_id: int,
     db: Session = Depends(connect_to_db()),
-    current_user: User = Depends(get_current_user_lazy())
+    current_user: dict = Depends(get_current_clerk_user)
 ):
     """List all members of a group with person details."""
     repos = get_repositories(db)
     
     # Verify group exists and belongs to current user
-    group = await repos["group"].get_group(group_id, current_user.id)
+    group = await repos["group"].get_group(group_id, current_user["user_id"])
     if not group:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -209,13 +208,13 @@ async def remove_member_from_group(
     group_id: int,
     person_id: int,
     db: Session = Depends(connect_to_db()),
-    current_user: User = Depends(get_current_user_lazy())
+    current_user: dict = Depends(get_current_clerk_user)
 ):
     """Remove a person from a group."""
     repos = get_repositories(db)
     
     # Verify group exists and belongs to current user
-    group = await repos["group"].get_group(group_id, current_user.id)
+    group = await repos["group"].get_group(group_id, current_user["user_id"])
     if not group:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -236,13 +235,13 @@ async def add_multiple_members_to_group(
     group_id: int,
     bulk_membership: BulkGroupMembershipCreate,
     db: Session = Depends(connect_to_db()),
-    current_user: User = Depends(get_current_user_lazy())
+    current_user: dict = Depends(get_current_clerk_user)
 ):
     """Add multiple people to a group at once."""
     repos = get_repositories(db)
     
     # Verify group exists and belongs to current user
-    group = await repos["group"].get_group(group_id, current_user.id)
+    group = await repos["group"].get_group(group_id, current_user["user_id"])
     if not group:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -250,7 +249,7 @@ async def add_multiple_members_to_group(
         )
     
     # Add multiple members
-    result = await repos["group"].add_multiple_members(group_id, bulk_membership.person_ids, current_user.id)
+    result = await repos["group"].add_multiple_members(group_id, bulk_membership.person_ids, current_user["user_id"])
     return result
 
 
@@ -258,13 +257,13 @@ async def add_multiple_members_to_group(
 async def get_available_members(
     group_id: int,
     db: Session = Depends(connect_to_db()),
-    current_user: User = Depends(get_current_user_lazy())
+    current_user: dict = Depends(get_current_clerk_user)
 ):
     """Get all persons available for group membership, categorized by type."""
     repos = get_repositories(db)
     
     # Verify group exists and belongs to current user
-    group = await repos["group"].get_group(group_id, current_user.id)
+    group = await repos["group"].get_group(group_id, current_user["user_id"])
     if not group:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
