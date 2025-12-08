@@ -96,7 +96,7 @@ class HistoryHeaderMessage(BaseModel):
     message_type: str  # 'individual' or 'group'
     content: str
     created_at: str
-    sent_by: int
+    sent_by: Optional[str] = None
     
     # Individual message fields
     recipient_name: Optional[str] = None
