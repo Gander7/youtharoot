@@ -46,7 +46,7 @@ async def get_current_clerk_user(request: Request) -> dict:
         request_state = sdk.authenticate_request(
             httpx_request,
             AuthenticateRequestOptions(
-                authorized_parties=['http://localhost:4321', 'https://youtharoot.app']
+                authorized_parties=['http://localhost:4321', 'https://www.youtharoot.app']
             )
         )
         
