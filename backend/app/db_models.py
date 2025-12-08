@@ -139,7 +139,7 @@ class MessageDB(Base):
     content = Column(Text, nullable=False)
     subject = Column(String(200), nullable=True)  # For email messages
     group_id = Column(BigInteger, ForeignKey("message_groups.id"), nullable=True)  # Nullable for individual messages
-    sent_by = Column(BigInteger, ForeignKey("users.id"), nullable=False)
+    sent_by = Column(String(255), nullable=True)  # Clerk user ID (string) - no FK
     status = Column(String(20), default="queued", nullable=False, index=True)  # queued, sending, sent, delivered, failed
     
     # Individual message recipient (for non-group messages and tracking in group messages)
@@ -161,7 +161,6 @@ class MessageDB(Base):
     
     # Relationships
     group = relationship("MessageGroupDB", back_populates="messages")
-    sender = relationship("UserDB", backref="sent_messages")
 
 
 class MessageTemplateDB(Base):
@@ -175,7 +174,7 @@ class MessageTemplateDB(Base):
     name = Column(String(100), nullable=False, index=True)
     content = Column(Text, nullable=False)
     category = Column(String(50), nullable=True, index=True)  # 'event', 'reminder', 'announcement', etc.
-    created_by = Column(BigInteger, ForeignKey("users.id"), nullable=False)
+    created_by = Column(String(255), nullable=True)  # Clerk user ID (string) - no FK
     is_active = Column(Boolean, default=True, nullable=False)
     
     created_at = Column(DateTime, default=func.now())
@@ -185,9 +184,6 @@ class MessageTemplateDB(Base):
     __table_args__ = (
         UniqueConstraint('name', 'created_by', name='uq_template_name_per_user'),
     )
-    
-    # Relationships
-    creator = relationship("UserDB", backref="message_templates")
 
 
 class ParentYouthRelationshipDB(Base):

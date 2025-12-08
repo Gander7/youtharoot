@@ -604,7 +604,7 @@ async def get_top_level_message_history(
             if representative.group_id:
                 from app.repositories import get_group_repository
                 group_repo = get_group_repository(db)
-                group = await group_repo.get_group(representative.group_id, current_user.id)
+                group = await group_repo.get_group(representative.group_id, current_user["user_id"])
                 if group:
                     group_name = group.name
             
