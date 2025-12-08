@@ -15,7 +15,7 @@ function AuthenticatedContent({ children }) {
   
   // Debug logging
   useEffect(() => {
-    console.log('🔵 AuthenticatedContent:', { 
+    console.debug('🔵 AuthenticatedContent:', { 
       isLoaded, 
       hasUser: !!user, 
       userId: user?.id,
