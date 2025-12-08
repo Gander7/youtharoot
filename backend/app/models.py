@@ -63,6 +63,11 @@ class Event(BaseModel):
 	end_datetime: Optional[datetime.datetime] = None
 	youth: List[EventPerson] = []
 	leaders: List[EventPerson] = []
+	# Attendance counts for optimized queries
+	youth_count: int = 0
+	leaders_count: int = 0
+	youth_checked_out: int = 0
+	leaders_checked_out: int = 0
 
 	class Config:
 		json_encoders = {

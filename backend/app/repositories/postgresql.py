@@ -579,6 +579,9 @@ class PostgreSQLEventRepository(EventRepository):
     
     async def get_events(self, days: Optional[int] = None, name: Optional[str] = None) -> List[Event]:
         import time
+        from sqlalchemy import func, case
+        from app.db_models import EventPersonDB
+        
         start_time = time.time()
         
         query = self.db.query(EventDB)
@@ -593,7 +596,74 @@ class PostgreSQLEventRepository(EventRepository):
         db_events = query.all()
         query_time = time.time()
         
-        result = [self._db_to_pydantic(db_event) for db_event in db_events]
+        # Fetch all attendance data in one query with counts
+        event_ids = [e.id for e in db_events]
+        
+        if event_ids:
+            # Build aggregated attendance query
+            attendance_query = self.db.query(
+                EventPersonDB.event_id,
+                EventPersonDB.person_type,
+                func.count(EventPersonDB.id).label('total_count'),
+                func.count(case((EventPersonDB.check_out.isnot(None), 1))).label('checked_out_count')
+            ).filter(
+                EventPersonDB.event_id.in_(event_ids)
+            ).group_by(
+                EventPersonDB.event_id,
+                EventPersonDB.person_type
+            ).all()
+            
+            # Build attendance map
+            attendance_map = {}
+            for event_id, person_type, total, checked_out in attendance_query:
+                if event_id not in attendance_map:
+                    attendance_map[event_id] = {
+                        'youth_count': 0,
+                        'leaders_count': 0,
+                        'youth_checked_out': 0,
+                        'leaders_checked_out': 0
+                    }
+                
+                if person_type == 'youth':
+                    attendance_map[event_id]['youth_count'] = total
+                    attendance_map[event_id]['youth_checked_out'] = checked_out
+                else:
+                    attendance_map[event_id]['leaders_count'] = total
+                    attendance_map[event_id]['leaders_checked_out'] = checked_out
+            
+            attendance_time = time.time()
+            print(f"⏱️ Attendance aggregation query took {attendance_time - query_time:.3f}s")
+        else:
+            attendance_map = {}
+        
+        # Convert events with attendance counts (no individual EventPerson queries)
+        result = []
+        for db_event in db_events:
+            attendance = attendance_map.get(db_event.id, {
+                'youth_count': 0,
+                'leaders_count': 0,
+                'youth_checked_out': 0,
+                'leaders_checked_out': 0
+            })
+            
+            result.append(Event(
+                id=db_event.id,
+                date=db_event.date,
+                name=db_event.name,
+                desc=db_event.desc,
+                start_time=db_event.start_time,
+                end_time=db_event.end_time,
+                location=db_event.location,
+                start_datetime=db_event.start_datetime,
+                end_datetime=db_event.end_datetime,
+                youth=[],  # Empty for list view optimization
+                leaders=[],  # Empty for list view optimization
+                youth_count=attendance['youth_count'],
+                leaders_count=attendance['leaders_count'],
+                youth_checked_out=attendance['youth_checked_out'],
+                leaders_checked_out=attendance['leaders_checked_out']
+            ))
+        
         end_time = time.time()
         
         print(f"⏱️ Event query took {query_time - start_time:.3f}s, conversion took {end_time - query_time:.3f}s, total: {end_time - start_time:.3f}s")

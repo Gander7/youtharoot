@@ -359,9 +359,6 @@ export default function EventList() {
         
         setEvents(data);
         
-        // Fetch attendance data for each event
-        await fetchAttendanceData(data);
-        
         const totalTime = performance.now() - startTime;
         console.log(`✅ Total fetchEvents took ${totalTime}ms`);
       }
@@ -532,34 +529,28 @@ export default function EventList() {
   };
 
   const getAttendeeCount = (event) => {
+    // Use counts from backend if available, fallback to array length
+    if (event.youth_count !== undefined && event.leaders_count !== undefined) {
+      return event.youth_count + event.leaders_count;
+    }
     return (event.youth?.length || 0) + (event.leaders?.length || 0);
   };
 
-  const fetchAttendanceData = async (eventsData) => {
-    const attendanceMap = {};
-    
-    // Fetch attendance for each event that might need it
-    await Promise.all(eventsData.map(async (event) => {
-      try {
-        const attendanceResponse = await apiRequest(`/event/${event.id}/attendance`);
-        if (attendanceResponse.ok) {
-          const attendanceData = await attendanceResponse.json();
-          attendanceMap[event.id] = attendanceData;
-        }
-      } catch (error) {
-        console.error(`Error fetching attendance for event ${event.id}:`, error);
-        attendanceMap[event.id] = [];
-      }
-    }));
-    
-    setEventAttendance(attendanceMap);
-  };
+  // Removed fetchAttendanceData - attendance counts now come from /events endpoint
 
-  const hasEveryoneCheckedOut = (eventId) => {
-    const attendance = eventAttendance[eventId] || [];
-    if (attendance.length === 0) return true; // No one checked in
+  const hasEveryoneCheckedOut = (event) => {
+    // Use counts from backend if available
+    if (event.youth_count !== undefined && event.leaders_count !== undefined) {
+      const totalCount = event.youth_count + event.leaders_count;
+      const totalCheckedOut = (event.youth_checked_out || 0) + (event.leaders_checked_out || 0);
+      
+      if (totalCount === 0) return true; // No one checked in
+      return totalCount === totalCheckedOut; // Everyone checked out
+    }
     
-    // Check if all attendees have been checked out
+    // Fallback to eventAttendance state for backward compatibility
+    const attendance = eventAttendance[event.id] || [];
+    if (attendance.length === 0) return true;
     return attendance.every(attendee => attendee.check_out);
   };
 
@@ -606,7 +597,7 @@ export default function EventList() {
     if (!isEventEnded(event)) return true;
     
     // If event has ended, only allow management if someone is still checked in
-    return !hasEveryoneCheckedOut(event.id);
+    return !hasEveryoneCheckedOut(event);
   };
 
   const canViewAttendance = (event) => {
@@ -624,7 +615,7 @@ export default function EventList() {
     if (nowHalifax < eventStartOfDayHalifax) return false;
     
     // If event has ended and everyone is checked out, show view-only
-    return isEventEnded(event) && hasEveryoneCheckedOut(event.id);
+    return isEventEnded(event) && hasEveryoneCheckedOut(event);
   };
 
   const handleCheckIn = (event) => {

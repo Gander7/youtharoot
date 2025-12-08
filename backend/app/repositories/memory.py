@@ -338,12 +338,28 @@ class InMemoryEventRepository(EventRepository):
         if name:
             events = [e for e in events if name.lower() in e.name.lower()]
         
+        # Add attendance counts to events
+        events_with_counts = []
+        for event in events:
+            youth_count = len(event.youth)
+            leaders_count = len(event.leaders)
+            youth_checked_out = sum(1 for y in event.youth if y.check_out is not None)
+            leaders_checked_out = sum(1 for l in event.leaders if l.check_out is not None)
+            
+            # Create event with counts
+            event_dict = event.model_dump()
+            event_dict['youth_count'] = youth_count
+            event_dict['leaders_count'] = leaders_count
+            event_dict['youth_checked_out'] = youth_checked_out
+            event_dict['leaders_checked_out'] = leaders_checked_out
+            events_with_counts.append(Event(**event_dict))
+        
         filter_time = time.time()
         
         print(f"🧠 Memory repo: list creation took {list_time - start_time:.3f}s, filtering took {filter_time - list_time:.3f}s, total: {filter_time - start_time:.3f}s")
-        print(f"🧠 Memory repo: {len(events)} events in store")
+        print(f"🧠 Memory repo: {len(events_with_counts)} events in store")
         
-        return events
+        return events_with_counts
     
     async def update_event(self, event_id: int, event_update: EventUpdate) -> Event:
         if event_id not in self.store:
