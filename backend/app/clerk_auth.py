@@ -46,17 +46,18 @@ async def get_current_clerk_user(request: Request) -> dict:
         request_state = sdk.authenticate_request(
             httpx_request,
             AuthenticateRequestOptions(
-                authorized_parties=['http://localhost:4321', 'http://localhost:4322', 'https://youtharoot.app']
+                authorized_parties=['http://localhost:4321', 'https://youtharoot.app']
             )
         )
         
         # Check if user is signed in
         if not request_state.is_signed_in:
             print(f"🔐 Authentication failed: user not signed in")
+            print("Reason:", request_state.reason)
+            print("Token claims (unverified):", request_state.payload)
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Not authenticated",
-                reason=request_state.reason
+                detail="Not authenticated" + (f": {request_state.reason}" if request_state.reason else "")
             )
         
         # Extract user ID from the JWT payload
