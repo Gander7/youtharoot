@@ -131,6 +131,7 @@ function MessagingContent({ user, getToken }) {
               <ApiErrorBoundary>
                 <MessageHistory 
                   refreshTrigger={refreshTrigger}
+                  getToken={getToken}
                 />
               </ApiErrorBoundary>
             </TabPanel>

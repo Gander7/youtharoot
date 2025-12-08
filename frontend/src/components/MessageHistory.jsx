@@ -96,7 +96,7 @@ function MessageStatusChip({ status }) {
   );
 }
 
-function GroupMessageDetailsDialog({ open, onClose, groupId, messageContent, sendTime }) {
+function GroupMessageDetailsDialog({ open, onClose, groupId, messageContent, sendTime, getToken }) {
   const [loading, setLoading] = useState(false);
   const [recipients, setRecipients] = useState([]);
   const [error, setError] = useState(null);
@@ -117,7 +117,7 @@ function GroupMessageDetailsDialog({ open, onClose, groupId, messageContent, sen
         send_time: sendTime
       });
       
-      const response = await apiRequest(`/api/sms/history/group/${groupId}/details?${params}`);
+      const response = await apiRequest(`/api/sms/history/group/${groupId}/details?${params}`, {}, getToken);
       if (response.ok) {
         const data = await response.json();
         setRecipients(data);
@@ -343,7 +343,7 @@ function TopLevelMessageCard({ message, onViewDetails }) {
   );
 }
 
-function MessageHistory({ refreshTrigger }) {
+function MessageHistory({ refreshTrigger, getToken }) {
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -373,7 +373,7 @@ function MessageHistory({ refreshTrigger }) {
       });
 
       console.log('Loading messages from:', `/api/sms/history/top-level?${params}`);
-      const response = await apiRequest(`/api/sms/history/top-level?${params}`);
+      const response = await apiRequest(`/api/sms/history/top-level?${params}`, {}, getToken);
       if (response.ok) {
         const data = await response.json();
         console.log('Received message data:', data);
@@ -467,6 +467,7 @@ function MessageHistory({ refreshTrigger }) {
         groupId={selectedGroupMessage?.group_id}
         messageContent={selectedGroupMessage?.content}
         sendTime={selectedGroupMessage?.created_at}
+        getToken={getToken}
       />
     </Box>
   );
