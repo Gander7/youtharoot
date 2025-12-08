@@ -268,10 +268,10 @@ This project is licensed under the MIT License. See [LICENSE](LICENSE) for detai
 
 
 ---
-- [ ] DEPLOY MIGRATIONS TO PROD!!!
-  - Local: `cd backend && ../venv/bin/python migrations/remove_membership_added_by_fkey.py`
-  - Railway: `railway run python migrations/remove_membership_added_by_fkey.py`
-- [ ] Uncaught (in promise) ReferenceError: animate is not defined
+- [ ] Check People double Load
+- [ ] Protect People and Event end points
+- [ ] Test Messaging
+- [ ] Spinner: Uncaught (in promise) ReferenceError: animate is not defined
 - [ ] Check in/out history
 - [ ] window not changing, maybe no dialogs?
 - [ ] Move to DynamoDB?
