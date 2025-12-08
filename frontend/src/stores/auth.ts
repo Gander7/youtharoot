@@ -152,13 +152,13 @@ export async function apiRequest(
   // Get Clerk token if available, otherwise fall back to old auth
   let token = null;
   if (getToken) {
-    console.log('🔐 Calling getToken()...');
+    console.debug('🔐 Calling getToken()...');
     token = await getToken();
-    console.log('🔐 Token received:', token ? `${token.substring(0, 20)}...` : 'null');
+    console.debug('🔐 Token received:', token ? `${token.substring(0, 20)}...` : 'null');
   } else {
     // Fall back to old localStorage token for backwards compatibility
     token = localStorage.getItem('token');
-    console.log('🔐 Using localStorage token:', token ? 'present' : 'null');
+    console.debug('🔐 Using localStorage token:', token ? 'present' : 'null');
   }
 
   const headers: Record<string, string> = {
@@ -169,28 +169,26 @@ export async function apiRequest(
   // Add Bearer token if available
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
-    console.log('🔐 Authorization header added');
+    console.debug('🔐 Authorization header added');
   } else {
     console.log('🔐 No token available, sending request without auth');
   }
 
-  console.log(`🔐 Making request to: ${API_BASE_URL}${endpoint}`);
+  console.debug(`🔐 Making request to: ${API_BASE_URL}${endpoint}`);
   const response = await fetch(`${API_BASE_URL}${endpoint}`, {
     ...options,
     headers,
   });
 
-  console.log(`🔐 Response status: ${response.status}`);
+  console.debug(`🔐 Response status: ${response.status}`);
 
-  // If we get 401, log but don't redirect (for debugging)
+  // If we get 401, redirect to sign-in
   if (response.status === 401) {
     console.error('🔐 401 Unauthorized - Authentication failed!');
-    console.error('🔐 Response headers:', Object.fromEntries(response.headers.entries()));
-    // Temporarily disabled redirect for debugging
-    // if (typeof window !== 'undefined') {
-    //   window.location.href = '/sign-in';
-    // }
-    // throw new Error('Authentication required');
+    if (typeof window !== 'undefined') {
+      window.location.href = '/sign-in';
+    }
+    throw new Error('Authentication required');
   }
 
   return response;

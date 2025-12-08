@@ -6,10 +6,12 @@ Clerk issues JWTs that we can verify using their public keys.
 """
 import os
 import httpx
+import logging
 from fastapi import Request, HTTPException, status
 from clerk_backend_api import Clerk
 from clerk_backend_api.security.types import AuthenticateRequestOptions
 
+logging.basicConfig(level=logging.INFO)
 
 async def get_current_clerk_user(request: Request) -> dict:
     """
@@ -52,9 +54,9 @@ async def get_current_clerk_user(request: Request) -> dict:
         
         # Check if user is signed in
         if not request_state.is_signed_in:
-            print(f"🔐 Authentication failed: user not signed in")
-            print("Reason:", request_state.reason)
-            print("Token claims (unverified):", request_state.payload)
+            logging.debug(f"🔐 Authentication failed: user not signed in")
+            logging.debug("Reason:", request_state.reason)
+            logging.debug("Token claims (unverified):", request_state.payload)
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Not authenticated" + (f": {request_state.reason}" if request_state.reason else "")
@@ -72,7 +74,7 @@ async def get_current_clerk_user(request: Request) -> dict:
                 detail="Invalid session: missing user ID"
             )
         
-        print(f"🔐 Authentication successful: user_id={user_id}, session_id={session_id}")
+        logging.debug(f"🔐 Authentication successful: user_id={user_id}, session_id={session_id}")
         
         return {
             "user_id": user_id,
@@ -82,7 +84,7 @@ async def get_current_clerk_user(request: Request) -> dict:
     except HTTPException:
         raise
     except Exception as e:
-        print(f"🔐 Authentication error: {type(e).__name__}: {str(e)}")
+        logging.error(f"🔐 Authentication error: {type(e).__name__}: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=f"Authentication failed: {str(e)}"
