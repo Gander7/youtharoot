@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { navigate } from 'astro:transitions/client';
 import {
   Box,
   Card,
@@ -619,17 +620,11 @@ export default function EventList({ getToken = null }) {
   };
 
   const handleCheckIn = (event) => {
-    // Navigate to check-in page with eventId as query parameter
-    if (typeof window !== 'undefined') {
-      window.location.href = `/checkin?eventId=${event.id}`;
-    }
+    navigate(`/checkin?eventId=${event.id}`);
   };
 
   const handleViewAttendance = (event) => {
-    // Navigate to check-in page with read-only mode
-    if (typeof window !== 'undefined') {
-      window.location.href = `/checkin?eventId=${event.id}&viewOnly=true`;
-    }
+    navigate(`/checkin?eventId=${event.id}&viewOnly=true`);
   };
 
   return (

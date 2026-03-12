@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { navigate } from 'astro:transitions/client';
 import {
   Box,
   Card,
@@ -609,7 +610,7 @@ export default function CheckIn({ eventId, viewOnly = false, getToken = null }) 
   const handleGoBack = () => {
     // If there was a bulk checkout that resulted in everyone being checked out,
     // the localStorage flag will already be set by handleCheckOutAll
-    window.history.back();
+    navigate('/Events');
   };
 
   const getCheckedOutCount = () => {
