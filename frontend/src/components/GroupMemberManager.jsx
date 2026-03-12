@@ -250,9 +250,9 @@ function GroupMemberManager({ open, onClose, group, onMembershipChange, getToken
       
       // Fetch youth, leaders, and parents
       const [youthResponse, leadersResponse, parentsResponse] = await Promise.all([
-        apiRequest('/person/youth'),
-        apiRequest('/person/leaders'),
-        apiRequest('/parents')
+        apiRequest('/person/youth', {}, getToken),
+        apiRequest('/person/leaders', {}, getToken),
+        apiRequest('/parents', {}, getToken)
       ]);
       
       if (youthResponse.ok && leadersResponse.ok && parentsResponse.ok) {
