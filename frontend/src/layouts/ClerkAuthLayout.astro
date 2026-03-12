@@ -1,4 +1,7 @@
 ---
+import { ViewTransitions } from 'astro:transitions';
+import NavigationIsland from '../components/NavigationIsland.jsx';
+
 interface Props {
   title?: string;
 }
@@ -12,6 +15,7 @@ const { title = 'Youtharoot' } = Astro.props;
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>{title}</title>
+  <ViewTransitions />
 </head>
 <body>
   <style is:global>
@@ -31,6 +35,7 @@ const { title = 'Youtharoot' } = Astro.props;
     }
   </style>
 
+  <NavigationIsland client:only="react" transition:persist="global-nav" />
   <slot />
 </body>
 </html>

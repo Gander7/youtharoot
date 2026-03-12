@@ -1,4 +1,6 @@
 ---
+import { ViewTransitions } from 'astro:transitions';
+import NavigationIsland from '../components/NavigationIsland.jsx';
 import IndexWrapper from "../components/IndexWrapper.jsx";
 ---
 
@@ -8,6 +10,7 @@ import IndexWrapper from "../components/IndexWrapper.jsx";
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Home - Youtharoot</title>
+  <ViewTransitions />
 </head>
 <body>
   <style is:global>
@@ -27,6 +30,7 @@ import IndexWrapper from "../components/IndexWrapper.jsx";
     }
   </style>
 
+  <NavigationIsland client:only="react" transition:persist="global-nav" />
   <IndexWrapper client:only="react" />
 </body>
 </html>

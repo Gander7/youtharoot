@@ -43,52 +43,27 @@ export default function Navigation() {
     else setValue(0);
   }, [currentPath]);
 
-  const navigate = (path) => {
-    if (typeof window !== 'undefined') {
-      window.location.href = path;
-    }
-  };
-
   if (isMobile) {
+    const paths = ['/', '/Events', '/People', '/Messaging'];
     return (
-      <Paper 
-        sx={{ 
-          position: 'fixed', 
-          bottom: 0, 
-          left: 0, 
-          right: 0, 
+      <Paper
+        sx={{
+          position: 'fixed',
+          bottom: 0,
+          left: 0,
+          right: 0,
           zIndex: 1000,
           bgcolor: 'background.paper',
           borderTop: 1,
           borderColor: 'divider'
-        }} 
+        }}
         elevation={3}
       >
-        <BottomNavigation
-          value={value}
-          onChange={(event, newValue) => {
-            setValue(newValue);
-            const paths = ['/', '/Events', '/People', '/Messaging'];
-            navigate(paths[newValue]);
-          }}
-          showLabels
-        >
-          <BottomNavigationAction 
-            label="Home" 
-            icon={<HomeIcon />} 
-          />
-          <BottomNavigationAction 
-            label="Events" 
-            icon={<EventIcon />} 
-          />
-          <BottomNavigationAction 
-            label="People" 
-            icon={<PeopleIcon />} 
-          />
-          <BottomNavigationAction 
-            label="Messages" 
-            icon={<MessageIcon />} 
-          />
+        <BottomNavigation value={value} showLabels>
+          <BottomNavigationAction component="a" href="/" label="Home" icon={<HomeIcon />} />
+          <BottomNavigationAction component="a" href="/Events" label="Events" icon={<EventIcon />} />
+          <BottomNavigationAction component="a" href="/People" label="People" icon={<PeopleIcon />} />
+          <BottomNavigationAction component="a" href="/Messaging" label="Messages" icon={<MessageIcon />} />
         </BottomNavigation>
       </Paper>
     );
@@ -98,41 +73,45 @@ export default function Navigation() {
     <AppBar position="static" sx={{ bgcolor: 'background.paper', color: 'text.primary' }}>
       <Container maxWidth="lg">
         <Toolbar>
-          <Typography 
-            variant="h6" 
-            component="div" 
+          <Typography
+            variant="h6"
+            component="div"
             sx={{ flexGrow: 1, fontWeight: 'bold', color: 'primary.main' }}
           >
             Youtharoot
           </Typography>
           <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-            <Button 
-              color="inherit" 
-              onClick={() => navigate('/')}
+            <Button
+              component="a"
+              href="/"
+              color="inherit"
               variant={currentPath === '/' ? 'contained' : 'text'}
               sx={{ borderRadius: 2 }}
             >
               Home
             </Button>
-            <Button 
-              color="inherit" 
-              onClick={() => navigate('/Events')}
+            <Button
+              component="a"
+              href="/Events"
+              color="inherit"
               variant={currentPath.includes('/Events') ? 'contained' : 'text'}
               sx={{ borderRadius: 2 }}
             >
               Events
             </Button>
-            <Button 
-              color="inherit" 
-              onClick={() => navigate('/People')}
+            <Button
+              component="a"
+              href="/People"
+              color="inherit"
               variant={currentPath.includes('/People') ? 'contained' : 'text'}
               sx={{ borderRadius: 2 }}
             >
               People
             </Button>
-            <Button 
-              color="inherit" 
-              onClick={() => navigate('/Messaging')}
+            <Button
+              component="a"
+              href="/Messaging"
+              color="inherit"
               variant={currentPath.includes('/Messaging') ? 'contained' : 'text'}
               sx={{ borderRadius: 2 }}
             >
