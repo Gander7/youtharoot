@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException, Query, Depends
 from typing import Optional
 from app.models import Event, EventCreate, EventUpdate, User
+from app.clerk_auth import get_current_clerk_user
 from sqlalchemy.orm import Session
 import datetime
 
@@ -9,11 +10,6 @@ def connect_to_db():
     """Lazily import and return database dependency"""
     from app.database import get_db
     return get_db
-
-def get_current_user_dependency():
-    """Lazily import and return current user dependency"""
-    from app.auth import get_current_user
-    return get_current_user
 
 def get_repositories(db_session):
     """Lazily import and return repository instances"""
@@ -26,18 +22,18 @@ router = APIRouter()
 
 @router.post("/event", response_model=Event)
 async def create_event(
-    event: EventCreate, 
+    event: EventCreate,
     db: Session = Depends(connect_to_db()),
-    # current_user: User = Depends(get_current_user_dependency())  # TODO: Re-enable with Clerk
+    current_user: dict = Depends(get_current_clerk_user),
 ):
     repos = get_repositories(db)
     return await repos["event"].create_event(event)
 
 @router.get("/event/{event_id}", response_model=Event)
 async def get_event(
-    event_id: int, 
+    event_id: int,
     db: Session = Depends(connect_to_db()),
-    # current_user: User = Depends(get_current_user_dependency())  # TODO: Re-enable with Clerk
+    current_user: dict = Depends(get_current_clerk_user),
 ):
     repos = get_repositories(db)
     event = await repos["event"].get_event(event_id)
@@ -47,10 +43,10 @@ async def get_event(
 
 @router.get("/events", response_model=list[Event])
 async def get_events(
-    days: Optional[int] = Query(None), 
-    name: Optional[str] = Query(None), 
+    days: Optional[int] = Query(None),
+    name: Optional[str] = Query(None),
     db: Session = Depends(connect_to_db()),
-    # current_user: User = Depends(get_current_user_dependency())  # TODO: Re-enable with Clerk
+    current_user: dict = Depends(get_current_clerk_user),
 ):
     import time
     start_time = time.time()
@@ -66,10 +62,10 @@ async def get_events(
 
 @router.put("/event/{event_id}", response_model=Event)
 async def update_event(
-    event_id: int, 
-    event_update: EventUpdate, 
+    event_id: int,
+    event_update: EventUpdate,
     db: Session = Depends(connect_to_db()),
-    # current_user: User = Depends(get_current_user_dependency())  # TODO: Re-enable with Clerk
+    current_user: dict = Depends(get_current_clerk_user),
 ):
     repos = get_repositories(db)
     try:
@@ -79,9 +75,9 @@ async def update_event(
 
 @router.delete("/event/{event_id}")
 async def delete_event(
-    event_id: int, 
+    event_id: int,
     db: Session = Depends(connect_to_db()),
-    # current_user: User = Depends(get_current_user_dependency())  # TODO: Re-enable with Clerk
+    current_user: dict = Depends(get_current_clerk_user),
 ):
     repos = get_repositories(db)
     try:
@@ -94,9 +90,9 @@ async def delete_event(
 
 @router.get("/event/{event_id}/can-delete")
 async def can_delete_event(
-    event_id: int, 
+    event_id: int,
     db: Session = Depends(connect_to_db()),
-    # current_user: User = Depends(get_current_user_dependency())
+    current_user: dict = Depends(get_current_clerk_user),
 ):
     repos = get_repositories(db)
     event = await repos["event"].get_event(event_id)

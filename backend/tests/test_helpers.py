@@ -6,6 +6,7 @@ from fastapi.testclient import TestClient
 from app.main import app
 from app.models import User
 from app.auth import get_current_user
+from app.clerk_auth import get_current_clerk_user
 from app.database import init_database
 from app.repositories import init_repositories
 
@@ -27,8 +28,13 @@ def mock_current_user():
 
 
 def mock_current_admin():
-    """Mock function to replace get_current_admin_user dependency.""" 
+    """Mock function to replace get_current_admin_user dependency."""
     return create_test_user(role="admin")
+
+
+def mock_clerk_user():
+    """Mock function to replace get_current_clerk_user dependency."""
+    return {"user_id": "test_clerk_user_id", "session_id": "test_session_id"}
 
 
 class AuthenticatedTestClient:
@@ -50,8 +56,9 @@ class AuthenticatedTestClient:
     def enable_auth_override(self):
         """Enable authentication dependency override."""
         if not self.auth_enabled:
-            # Override the authentication dependency
+            # Override both legacy and Clerk authentication dependencies
             self.app.dependency_overrides[get_current_user] = mock_current_user
+            self.app.dependency_overrides[get_current_clerk_user] = mock_clerk_user
             self.auth_enabled = True
         
         # Ensure repositories are initialized
@@ -64,9 +71,11 @@ class AuthenticatedTestClient:
     def disable_auth_override(self):
         """Disable authentication dependency override."""
         if self.auth_enabled:
-            # Remove the override
+            # Remove both legacy and Clerk overrides
             if get_current_user in self.app.dependency_overrides:
                 del self.app.dependency_overrides[get_current_user]
+            if get_current_clerk_user in self.app.dependency_overrides:
+                del self.app.dependency_overrides[get_current_clerk_user]
             self.auth_enabled = False
         
         # Create new client without overrides
