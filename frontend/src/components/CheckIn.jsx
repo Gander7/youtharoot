@@ -1102,6 +1102,7 @@ export default function CheckIn({ eventId, viewOnly = false, getToken = null }) 
             }}
             person={editingPerson}
             onSave={handleSaveEdit}
+            getToken={getToken}
             personType={(() => {
               const type = editingPerson.person_type || editingPerson.type || 'youth';
               console.log('PersonForm personType:', type, 'from person:', editingPerson);
