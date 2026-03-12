@@ -995,7 +995,7 @@ class PostgreSQLMessageGroupRepository(MessageGroupRepository):
             db_membership = MessageGroupMembershipDB(
                 group_id=group_id,
                 person_id=person_id,
-                added_by=0  # Not tracking who added members for now with Clerk
+                added_by=str(added_by) if added_by else None
             )
             
             self.db.add(db_membership)

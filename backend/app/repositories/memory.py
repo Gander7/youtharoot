@@ -620,7 +620,7 @@ class InMemoryMessageGroupRepository(MessageGroupRepository):
             id=membership_id,
             group_id=group_id,
             person_id=person_id,
-            added_by=added_by,
+            added_by=str(added_by) if added_by else None,
             joined_at=datetime.datetime.now(datetime.timezone.utc)
         )
         

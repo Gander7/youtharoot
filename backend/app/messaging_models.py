@@ -164,7 +164,7 @@ class MessageGroupMembershipCreate(BaseModel):
 class MessageGroupMembership(MessageGroupMembershipBase):
     """Complete group membership model."""
     id: int
-    added_by: int
+    added_by: Optional[str]
     joined_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
