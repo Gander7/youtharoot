@@ -1,10 +1,8 @@
 ---
-import PersonList from "../components/PersonList.jsx";
+import PersonListWrapper from "../components/PersonListWrapper.jsx";
 import ClerkAuthLayout from "../layouts/ClerkAuthLayout.astro";
 ---
 
 <ClerkAuthLayout title="People - Youtharoot">
-  <main>
-    <PersonList client:only="react" />
-  </main>
+  <PersonListWrapper client:only="react" />
 </ClerkAuthLayout>

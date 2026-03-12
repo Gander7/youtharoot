@@ -1,10 +1,8 @@
 ---
-import EventList from "../components/EventList.jsx";
+import EventListWrapper from "../components/EventListWrapper.jsx";
 import ClerkAuthLayout from "../layouts/ClerkAuthLayout.astro";
 ---
 
 <ClerkAuthLayout title="Events - Youtharoot">
-  <main>
-    <EventList client:load />
-  </main>
+  <EventListWrapper client:only="react" />
 </ClerkAuthLayout>

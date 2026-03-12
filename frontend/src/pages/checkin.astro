@@ -1,10 +1,8 @@
 ---
-import CheckInPage from "../components/CheckInPage.jsx";
+import CheckInPageWrapper from "../components/CheckInPageWrapper.jsx";
 import ClerkAuthLayout from "../layouts/ClerkAuthLayout.astro";
 ---
 
 <ClerkAuthLayout title="Check-In - Youtharoot">
-  <main>
-    <CheckInPage client:load />
-  </main>
+  <CheckInPageWrapper client:only="react" />
 </ClerkAuthLayout>
