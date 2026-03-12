@@ -87,7 +87,7 @@ const darkTheme = createTheme({
   },
 });
 
-export default function CheckIn({ eventId, viewOnly = false }) {
+export default function CheckIn({ eventId, viewOnly = false, getToken = null }) {
   // --- Card Flip Random Selector ---
   const [randomSelectorOpen, setRandomSelectorOpen] = useState(false);
   const [isSpinning, setIsSpinning] = useState(false);
@@ -210,14 +210,14 @@ export default function CheckIn({ eventId, viewOnly = false }) {
     setLoading(true);
     try {
       // Fetch event details
-      const eventResponse = await apiRequest(`/event/${eventId}`);
+      const eventResponse = await apiRequest(`/event/${eventId}`, {}, getToken);
       if (eventResponse.ok) {
         const eventData = await eventResponse.json();
         setEvent(eventData);
       }
 
       // Fetch attendance data
-      const attendanceResponse = await apiRequest(`/event/${eventId}/attendance`);
+      const attendanceResponse = await apiRequest(`/event/${eventId}/attendance`, {}, getToken);
       if (attendanceResponse.ok) {
         const attendanceData = await attendanceResponse.json();
         setAttendees(attendanceData);
@@ -227,16 +227,16 @@ export default function CheckIn({ eventId, viewOnly = false }) {
       if (!viewOnly) {
         // Fetch all people (youth and leaders)
         const allPeopleData = [];
-        
+
         // Fetch youth
-        const youthResponse = await apiRequest('/person/youth');
+        const youthResponse = await apiRequest('/person/youth', {}, getToken);
         if (youthResponse.ok) {
           const youthData = await youthResponse.json();
           allPeopleData.push(...youthData.map(person => ({ ...person, person_type: 'youth' })));
         }
-        
+
         // Fetch leaders
-        const leadersResponse = await apiRequest('/person/leaders');
+        const leadersResponse = await apiRequest('/person/leaders', {}, getToken);
         if (leadersResponse.ok) {
           const leadersData = await leadersResponse.json();
           const leadersWithType = leadersData.map(person => ({ ...person, person_type: 'leader' }));
@@ -403,7 +403,7 @@ export default function CheckIn({ eventId, viewOnly = false }) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ person_id: person.id })
-      });
+      }, getToken);
 
       if (response.ok) {
         setSnackbar({ 
@@ -431,7 +431,7 @@ export default function CheckIn({ eventId, viewOnly = false }) {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ person_id: person.id })
-      });
+      }, getToken);
 
       if (response.ok) {
         setSnackbar({ 
@@ -562,7 +562,7 @@ export default function CheckIn({ eventId, viewOnly = false }) {
       const response = await apiRequest(`/event/${eventId}/checkout-all`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' }
-      });
+      }, getToken);
 
       if (response.ok) {
         const result = await response.json();
@@ -670,7 +670,7 @@ export default function CheckIn({ eventId, viewOnly = false }) {
   const handleEditPerson = async (person) => {
     // Fetch full person data
     try {
-      const response = await apiRequest(`/person/${person.id}`);
+      const response = await apiRequest(`/person/${person.id}`, {}, getToken);
       if (response.ok) {
         const fullPerson = await response.json();
         console.log('Full person data from API:', fullPerson);

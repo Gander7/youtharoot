@@ -149,16 +149,12 @@ export async function apiRequest(
   options: RequestInit = {},
   getToken?: () => Promise<string | null>
 ) {
-  // Get Clerk token if available, otherwise fall back to old auth
+  // Get Clerk token if getToken function is provided
   let token = null;
   if (getToken) {
     console.debug('🔐 Calling getToken()...');
     token = await getToken();
     console.debug('🔐 Token received:', token ? `${token.substring(0, 20)}...` : 'null');
-  } else {
-    // Fall back to old localStorage token for backwards compatibility
-    token = localStorage.getItem('token');
-    console.debug('🔐 Using localStorage token:', token ? 'present' : 'null');
   }
 
   const headers: Record<string, string> = {

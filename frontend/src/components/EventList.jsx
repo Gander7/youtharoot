@@ -83,7 +83,7 @@ const darkTheme = createTheme({
   },
 });
 
-const EventForm = ({ open, onClose, event, onSave }) => {
+const EventForm = ({ open, onClose, event, onSave, getToken = null }) => {
   // Get today's date in YYYY-MM-DD format in local timezone
   const getLocalDateString = (date = new Date()) => {
     const year = date.getFullYear();
@@ -153,7 +153,7 @@ const EventForm = ({ open, onClose, event, onSave }) => {
         method: method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(eventData),
-      });
+      }, getToken);
       
       if (response.ok) {
         onSave();
@@ -266,7 +266,7 @@ const EventForm = ({ open, onClose, event, onSave }) => {
   );
 };
 
-const DeleteConfirmDialog = ({ open, onClose, event, onConfirm }) => {
+const DeleteConfirmDialog = ({ open, onClose, event, onConfirm, getToken = null }) => {
   const [canDelete, setCanDelete] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -279,7 +279,7 @@ const DeleteConfirmDialog = ({ open, onClose, event, onConfirm }) => {
   const checkCanDelete = async () => {
     setLoading(true);
     try {
-      const response = await apiRequest(`/event/${event.id}/can-delete`);
+      const response = await apiRequest(`/event/${event.id}/can-delete`, {}, getToken);
       if (response.ok) {
         const data = await response.json();
         setCanDelete(data);
@@ -329,7 +329,7 @@ const DeleteConfirmDialog = ({ open, onClose, event, onConfirm }) => {
   );
 };
 
-export default function EventList() {
+export default function EventList({ getToken = null }) {
   const [events, setEvents] = useState([]);
   const [filteredEvents, setFilteredEvents] = useState([]);
   const [eventAttendance, setEventAttendance] = useState({}); // Store attendance data for each event
@@ -347,7 +347,7 @@ export default function EventList() {
       const fetchStart = performance.now();
       console.log(`📡 Making API request to: /events`);
       
-      const response = await apiRequest(`/events`);
+      const response = await apiRequest(`/events`, {}, getToken);
       const fetchEnd = performance.now();
       console.log(`📡 Fetch completed in ${fetchEnd - fetchStart}ms, status: ${response.status}`);
       
@@ -460,7 +460,7 @@ export default function EventList() {
     try {
       const response = await apiRequest(`/event/${deletingEvent.id}`, {
         method: 'DELETE',
-      });
+      }, getToken);
       
       if (response.ok) {
         fetchEvents(); // Refresh the list
@@ -783,6 +783,7 @@ export default function EventList() {
           onClose={() => setFormOpen(false)}
           event={editingEvent}
           onSave={handleSave}
+          getToken={getToken}
         />
 
         {/* Delete Confirmation Dialog */}
@@ -794,6 +795,7 @@ export default function EventList() {
           }}
           event={deletingEvent}
           onConfirm={confirmDelete}
+          getToken={getToken}
         />
 
         {/* Floating Action Button for Mobile */}
