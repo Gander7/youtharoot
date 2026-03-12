@@ -35,7 +35,7 @@ const { title = 'Youtharoot' } = Astro.props;
     }
   </style>
 
-  <NavigationIsland client:only="react" transition:persist="global-nav" />
+  <NavigationIsland client:only="react" transition:animate="none" />
   <slot />
 </body>
 </html>
