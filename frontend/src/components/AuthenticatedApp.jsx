@@ -1,15 +1,14 @@
 import React, { useEffect } from 'react';
-import { SignedIn, SignedOut, useUser, useAuth } from '@clerk/clerk-react';
+import { SignedIn, SignedOut, useAuth } from '@clerk/astro/react';
 import ErrorBoundary from './ErrorBoundary.jsx';
 
 function AuthenticatedContent({ children }) {
-  const { user } = useUser();
   const { getToken } = useAuth();
 
   // Clone children and inject user and getToken props if it's a React element
   const childrenWithProps = React.Children.map(children, child => {
     if (React.isValidElement(child)) {
-      return React.cloneElement(child, { user, getToken });
+      return React.cloneElement(child, { getToken });
     }
     return child;
   });

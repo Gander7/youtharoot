@@ -1,6 +1,5 @@
 import React from 'react';
-import { useUser } from '@clerk/clerk-react';
-import { UserButton } from '@clerk/clerk-react';
+import { UserButton } from '@clerk/astro/react';
 import {
   AppBar,
   Toolbar,
@@ -26,8 +25,6 @@ export default function Navigation() {
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [value, setValue] = React.useState(0);
   const [currentPath, setCurrentPath] = React.useState('/');
-  
-  const { user } = useUser();
   
   React.useEffect(() => {
     // Update current path on client side only
