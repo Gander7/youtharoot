@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Request, HTTPException, Depends, Query, status
 from typing import Union, List, Optional
 from app.models import Youth, Leader, Parent, Person, User, PersonCreate, ParentYouthRelationshipCreate, ParentYouthRelationshipUpdate
+from app.clerk_auth import get_current_clerk_user
 from sqlalchemy.orm import Session
 import datetime
 
@@ -11,11 +12,6 @@ def connect_to_db():
     """Lazily import and return database dependency"""
     from app.database import get_db
     return get_db
-
-def get_current_user_lazy():
-    """Lazily import and return current user dependency"""
-    from app.auth import get_current_user
-    return get_current_user
 
 def get_repositories(db_session):
     """Lazily import and return repository instances"""
@@ -35,7 +31,7 @@ PERSON_NOT_FOUND = "person_not_found"
 @router.get("/person/youth", response_model=list[Youth])
 async def get_all_non_archived_youth(
 	db: Session = Depends(connect_to_db()),
-	# current_user: User = Depends(get_current_user_lazy())  # TODO: Re-enable with Clerk
+	current_user: dict = Depends(get_current_clerk_user),
 ):
 	repos = get_repositories(db)
 	youth_list = await repos["person"].get_all_youth()
@@ -54,7 +50,7 @@ async def get_all_non_archived_youth(
 @router.get("/person/leaders", response_model=list[Leader])
 async def get_all_non_archived_leaders(
 	db: Session = Depends(connect_to_db()),
-	# current_user: User = Depends(get_current_user_lazy())  # TODO: Re-enable with Clerk
+	current_user: dict = Depends(get_current_clerk_user),
 ):
 	try:
 		repos = get_repositories(db)
@@ -73,9 +69,9 @@ async def get_all_non_archived_leaders(
 
 @router.post("/person", response_model=Union[Youth, Leader])
 async def create_person(
-	person: Union[Youth, Leader], 
+	person: Union[Youth, Leader],
 	db: Session = Depends(connect_to_db()),
-	# current_user: User = Depends(get_current_user_lazy())  # TODO: Re-enable with Clerk
+	current_user: dict = Depends(get_current_clerk_user),
 ):
 	repos = get_repositories(db)
 	try:
@@ -88,9 +84,9 @@ async def create_person(
 
 @router.get("/person/{person_id}", response_model=Union[Youth, Leader, Parent])
 async def get_person(
-	person_id: int, 
+	person_id: int,
 	db: Session = Depends(connect_to_db()),
-	# current_user: User = Depends(get_current_user_lazy())  # TODO: Re-enable with Clerk
+	current_user: dict = Depends(get_current_clerk_user),
 ):
 	repos = get_repositories(db)
 	person = await repos["person"].get_person(person_id)
@@ -105,10 +101,10 @@ async def get_person(
 
 @router.put("/person/{person_id}", response_model=Union[Youth, Leader, Parent])
 async def update_person(
-	person_id: int, 
-	person: Union[Youth, Leader, Parent], 
+	person_id: int,
+	person: Union[Youth, Leader, Parent],
 	db: Session = Depends(connect_to_db()),
-	# current_user: User = Depends(get_current_user_lazy())
+	current_user: dict = Depends(get_current_clerk_user),
 ):
 	repos = get_repositories(db)
 	try:
@@ -121,9 +117,9 @@ async def update_person(
 
 @router.delete("/person/{person_id}")
 async def archive_person(
-	person_id: int, 
+	person_id: int,
 	db: Session = Depends(connect_to_db()),
-	# current_user: User = Depends(get_current_user_lazy())
+	current_user: dict = Depends(get_current_clerk_user),
 ):
 	repos = get_repositories(db)
 	await repos["person"].archive_person(person_id)
@@ -134,7 +130,7 @@ async def archive_person(
 async def create_parent(
 	parent: PersonCreate,
 	db: Session = Depends(connect_to_db()),
-	# current_user: User = Depends(get_current_user_lazy())
+	current_user: dict = Depends(get_current_clerk_user),
 ):
 	"""Create a new parent using the unified person system."""
 	repos = get_repositories(db)
@@ -151,7 +147,7 @@ async def create_parent(
 @router.get("/parents", response_model=List[Parent])
 async def get_all_parents(
 	db: Session = Depends(connect_to_db()),
-	# current_user: User = Depends(get_current_user_lazy())
+	current_user: dict = Depends(get_current_clerk_user),
 ):
 	"""Get all non-archived parents."""
 	try:
@@ -175,7 +171,7 @@ async def get_all_parents(
 async def get_parent_by_id(
 	parent_id: int,
 	db: Session = Depends(connect_to_db()),
-	# current_user: User = Depends(get_current_user_lazy())
+	current_user: dict = Depends(get_current_clerk_user),
 ):
 	"""Get a specific parent by ID."""
 	try:
@@ -209,7 +205,7 @@ async def get_parent_by_id(
 async def search_parents(
 	query: str = Query(..., description="Search query for parent name, phone, or email"),
 	db: Session = Depends(connect_to_db()),
-	# current_user: User = Depends(get_current_user_lazy())
+	current_user: dict = Depends(get_current_clerk_user),
 ):
 	"""Search parents by name, phone, or email."""
 	try:
@@ -234,7 +230,7 @@ async def link_parent_to_youth(
 	youth_id: int,
 	relationship: ParentYouthRelationshipCreate,
 	db: Session = Depends(connect_to_db()),
-	# current_user: User = Depends(get_current_user_lazy())
+	current_user: dict = Depends(get_current_clerk_user),
 ):
 	"""Create a parent-youth relationship."""
 	try:
@@ -261,7 +257,7 @@ async def link_parent_to_youth(
 async def get_parents_for_youth(
 	youth_id: int,
 	db: Session = Depends(connect_to_db()),
-	# current_user: User = Depends(get_current_user_lazy())
+	current_user: dict = Depends(get_current_clerk_user),
 ):
 	"""Get all parents for a specific youth with relationship details."""
 	try:
@@ -279,7 +275,7 @@ async def unlink_parent_from_youth(
 	youth_id: int,
 	parent_id: int,
 	db: Session = Depends(connect_to_db()),
-	# current_user: User = Depends(get_current_user_lazy())
+	current_user: dict = Depends(get_current_clerk_user),
 ):
 	"""Remove a parent-youth relationship."""
 	try:
@@ -301,7 +297,7 @@ async def update_parent_youth_relationship(
 	parent_id: int,
 	update_data: ParentYouthRelationshipUpdate,
 	db: Session = Depends(connect_to_db()),
-	# current_user: User = Depends(get_current_user_lazy())
+	current_user: dict = Depends(get_current_clerk_user),
 ):
 	"""Update a parent-youth relationship."""
 	try:
@@ -323,7 +319,7 @@ async def update_parent_youth_relationship(
 async def get_youth_for_parent(
 	parent_id: int,
 	db: Session = Depends(connect_to_db()),
-	# current_user: User = Depends(get_current_user_lazy())
+	current_user: dict = Depends(get_current_clerk_user),
 ):
 	"""Get all youth for a specific parent with relationship details."""
 	try:

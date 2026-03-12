@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
 from typing import Optional
-from app.models import User
+from app.clerk_auth import get_current_clerk_user
 from sqlalchemy.orm import Session
 import datetime
 from datetime import timezone
@@ -11,11 +11,6 @@ def connect_to_db():
     """Lazily import and return database dependency"""
     from app.database import get_db
     return get_db
-
-def get_current_user_lazy():
-    """Lazily import and return current user dependency"""
-    from app.auth import get_current_user
-    return get_current_user
 
 def get_repositories(db_session):
     """Lazily import and return repository instances"""
@@ -35,10 +30,10 @@ class CheckOutRequest(BaseModel):
 
 @router.post("/event/{event_id}/checkin")
 async def check_in_person(
-    event_id: int, 
-    request: CheckInRequest, 
+    event_id: int,
+    request: CheckInRequest,
     db: Session = Depends(connect_to_db()),
-    # current_user: User = Depends(get_current_user_lazy())
+    current_user: dict = Depends(get_current_clerk_user),
 ):
     """Check in a person to an event"""
     try:
@@ -116,10 +111,10 @@ async def check_in_person(
 
 @router.put("/event/{event_id}/checkout")
 async def check_out_person(
-    event_id: int, 
-    request: CheckOutRequest, 
+    event_id: int,
+    request: CheckOutRequest,
     db: Session = Depends(connect_to_db()),
-    # current_user: User = Depends(get_current_user_lazy())
+    current_user: dict = Depends(get_current_clerk_user),
 ):
     """Check out a person from an event"""
     try:
@@ -184,9 +179,9 @@ async def check_out_person(
 
 @router.put("/event/{event_id}/checkout-all")
 async def check_out_all_people(
-    event_id: int, 
+    event_id: int,
     db: Session = Depends(connect_to_db()),
-    # current_user: User = Depends(get_current_user_lazy())
+    current_user: dict = Depends(get_current_clerk_user),
 ):
     """Check out all people who are still checked in to an event"""
     try:
@@ -285,9 +280,9 @@ async def check_out_all_people(
 
 @router.get("/event/{event_id}/attendance")
 async def get_event_attendance(
-    event_id: int, 
+    event_id: int,
     db: Session = Depends(connect_to_db()),
-    # current_user: User = Depends(get_current_user_lazy())
+    current_user: dict = Depends(get_current_clerk_user),
 ):
     """Get all attendance records for an event"""
     try:

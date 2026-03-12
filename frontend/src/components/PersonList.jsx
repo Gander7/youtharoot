@@ -290,7 +290,7 @@ const PersonForm = ({ open, onClose, person, onSave, personType }) => {
         method: method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(personData),
-      });
+      }, getToken);
       
       console.log('📡 Response received:', {
         ok: response.ok,
@@ -459,8 +459,9 @@ const PersonForm = ({ open, onClose, person, onSave, personType }) => {
               )}
 
               {tabValue === 1 && (
-                <ParentManagementTab 
+                <ParentManagementTab
                   youthId={person?.id}
+                  getToken={getToken}
                   onParentAdded={() => {
                     // Refresh parent list
                     console.log('Parent added to youth');
@@ -685,7 +686,7 @@ const PersonForm = ({ open, onClose, person, onSave, personType }) => {
   );
 };
 
-export default function PersonList() {
+export default function PersonList({ getToken = null }) {
   const [persons, setPersons] = useState([]);
   const [filteredPersons, setFilteredPersons] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -699,21 +700,21 @@ export default function PersonList() {
       const allPersons = [];
       
       // Fetch youth
-      const youthResponse = await apiRequest('/person/youth');
+      const youthResponse = await apiRequest('/person/youth', {}, getToken);
       if (youthResponse.ok) {
         const youthData = await youthResponse.json();
         allPersons.push(...youthData.map(p => ({ ...p, type: 'youth' })));
       }
       
       // Fetch leaders
-      const leadersResponse = await apiRequest('/person/leaders');
+      const leadersResponse = await apiRequest('/person/leaders', {}, getToken);
       if (leadersResponse.ok) {
         const leadersData = await leadersResponse.json();
         allPersons.push(...leadersData.map(p => ({ ...p, type: 'leader' })));
       }
 
       // Fetch parents
-      const parentsResponse = await apiRequest('/parents');
+      const parentsResponse = await apiRequest('/parents', {}, getToken);
       if (parentsResponse.ok) {
         const parentsData = await parentsResponse.json();
         allPersons.push(...parentsData.map(p => ({ ...p, type: 'parent' })));
@@ -776,7 +777,7 @@ export default function PersonList() {
     
     // Fetch full person data for all types to ensure we have complete data
     try {
-      const response = await apiRequest(`/person/${person.id}`);
+      const response = await apiRequest(`/person/${person.id}`, {}, getToken);
       if (response.ok) {
         const fullPersonData = await response.json();
         setEditingPerson({ ...fullPersonData, type: person.type });
@@ -989,7 +990,7 @@ export default function PersonList() {
 }
 
 // Parent Management Tab Component
-function ParentManagementTab({ youthId, onParentAdded }) {
+function ParentManagementTab({ youthId, onParentAdded, getToken = null }) {
   const [linkedParents, setLinkedParents] = useState([]);
   const [availableParents, setAvailableParents] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -1033,7 +1034,7 @@ function ParentManagementTab({ youthId, onParentAdded }) {
 
   const fetchLinkedParents = async () => {
     try {
-      const response = await apiRequest(`/youth/${youthId}/parents`);
+      const response = await apiRequest(`/youth/${youthId}/parents`, {}, getToken);
       if (response.ok) {
         const parents = await response.json();
         setLinkedParents(parents);
@@ -1045,7 +1046,7 @@ function ParentManagementTab({ youthId, onParentAdded }) {
 
   const fetchAvailableParents = async () => {
     try {
-      const response = await apiRequest('/parents');
+      const response = await apiRequest('/parents', {}, getToken);
       if (response.ok) {
         const allParents = await response.json();
         setAvailableParents(allParents);
@@ -1069,7 +1070,7 @@ function ParentManagementTab({ youthId, onParentAdded }) {
           relationship_type: relationshipType,
           is_primary_contact: linkedParents.length === 0 // First parent is primary
         })
-      });
+      }, getToken);
 
       if (response.ok) {
         setSuccess('Parent linked successfully!');
@@ -1104,7 +1105,7 @@ function ParentManagementTab({ youthId, onParentAdded }) {
           address: newParentData.address,
           person_type: 'parent'
         })
-      });
+      }, getToken);
 
       if (createResponse.ok) {
         const newParent = await createResponse.json();
@@ -1118,7 +1119,7 @@ function ParentManagementTab({ youthId, onParentAdded }) {
             relationship_type: newParentData.relationship_type,
             is_primary_contact: newParentData.is_primary_contact
           })
-        });
+        }, getToken);
 
         if (linkResponse.ok) {
           setSuccess('Parent created and linked successfully!');
@@ -1158,7 +1159,7 @@ function ParentManagementTab({ youthId, onParentAdded }) {
     try {
       const response = await apiRequest(`/youth/${youthId}/parents/${parentId}`, {
         method: 'DELETE'
-      });
+      }, getToken);
 
       if (response.ok) {
         setSuccess('Parent unlinked successfully!');
@@ -1213,7 +1214,8 @@ function ParentManagementTab({ youthId, onParentAdded }) {
             sms_opt_out: editData.sms_opt_out || false,
             person_type: 'parent'
           })
-        }
+        },
+        getToken
       );
 
       if (!parentUpdateResponse.ok) {
@@ -1233,7 +1235,8 @@ function ParentManagementTab({ youthId, onParentAdded }) {
             relationship_type: editData.relationship_type,
             is_primary_contact: editData.is_primary_contact
           })
-        }
+        },
+        getToken
       );
 
       if (relationshipUpdateResponse.ok) {

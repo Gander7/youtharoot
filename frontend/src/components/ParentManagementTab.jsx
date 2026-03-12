@@ -40,7 +40,7 @@ import {
 } from '@mui/icons-material';
 import { apiRequest } from '../stores/auth';
 
-export default function ParentManagementTab({ youthId, onParentAdded }) {
+export default function ParentManagementTab({ youthId, onParentAdded, getToken = null }) {
   const [linkedParents, setLinkedParents] = useState([]);
   const [availableParents, setAvailableParents] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -84,7 +84,7 @@ export default function ParentManagementTab({ youthId, onParentAdded }) {
 
   const fetchLinkedParents = async () => {
     try {
-      const response = await apiRequest(`/youth/${youthId}/parents`);
+      const response = await apiRequest(`/youth/${youthId}/parents`, {}, getToken);
       if (response.ok) {
         const parents = await response.json();
         setLinkedParents(parents);
@@ -96,7 +96,7 @@ export default function ParentManagementTab({ youthId, onParentAdded }) {
 
   const fetchAvailableParents = async () => {
     try {
-      const response = await apiRequest('/parents');
+      const response = await apiRequest('/parents', {}, getToken);
       if (response.ok) {
         const allParents = await response.json();
         setAvailableParents(allParents);
@@ -120,7 +120,7 @@ export default function ParentManagementTab({ youthId, onParentAdded }) {
           relationship_type: relationshipType,
           is_primary_contact: linkedParents.length === 0 // First parent is primary
         })
-      });
+      }, getToken);
 
       if (response.ok) {
         setSuccess('Parent linked successfully!');
@@ -155,7 +155,7 @@ export default function ParentManagementTab({ youthId, onParentAdded }) {
           address: newParentData.address,
           person_type: 'parent'
         })
-      });
+      }, getToken);
 
       if (createResponse.ok) {
         const newParent = await createResponse.json();
@@ -169,7 +169,7 @@ export default function ParentManagementTab({ youthId, onParentAdded }) {
             relationship_type: newParentData.relationship_type,
             is_primary_contact: newParentData.is_primary_contact
           })
-        });
+        }, getToken);
 
         if (linkResponse.ok) {
           setSuccess('Parent created and linked successfully!');
@@ -209,7 +209,7 @@ export default function ParentManagementTab({ youthId, onParentAdded }) {
     try {
       const response = await apiRequest(`/youth/${youthId}/parents/${parentId}`, {
         method: 'DELETE'
-      });
+      }, getToken);
 
       if (response.ok) {
         setSuccess('Parent unlinked successfully!');
@@ -264,7 +264,8 @@ export default function ParentManagementTab({ youthId, onParentAdded }) {
             sms_opt_out: editData.sms_opt_out || false,
             person_type: 'parent'
           })
-        }
+        },
+        getToken
       );
 
       if (!parentUpdateResponse.ok) {
@@ -284,7 +285,8 @@ export default function ParentManagementTab({ youthId, onParentAdded }) {
             relationship_type: editData.relationship_type,
             is_primary_contact: editData.is_primary_contact
           })
-        }
+        },
+        getToken
       );
 
       if (relationshipUpdateResponse.ok) {

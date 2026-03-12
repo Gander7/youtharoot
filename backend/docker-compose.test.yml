@@ -1,6 +1,6 @@
 services:
   test-postgres:
-    image: postgres:15-alpine
+    image: postgres:17.6-alpine
     container_name: youth-attendance-test-db
     environment:
       POSTGRES_DB: test_youth_attendance

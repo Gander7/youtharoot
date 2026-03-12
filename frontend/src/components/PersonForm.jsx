@@ -25,7 +25,7 @@ import {
 import { apiRequest } from '../stores/auth';
 import ParentManagementTab from './ParentManagementTab';
 
-const PersonForm = ({ open, onClose, person, onSave, personType }) => {
+const PersonForm = ({ open, onClose, person, onSave, personType, getToken = null }) => {
   console.log('PersonForm received:', { person, personType });
   
   const [formData, setFormData] = useState({
@@ -222,7 +222,7 @@ const PersonForm = ({ open, onClose, person, onSave, personType }) => {
         method: method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(personData),
-      });
+      }, getToken);
       
       console.log('📡 Response received:', {
         ok: response.ok,
@@ -390,8 +390,9 @@ const PersonForm = ({ open, onClose, person, onSave, personType }) => {
               )}
 
               {tabValue === 1 && (
-                <ParentManagementTab 
+                <ParentManagementTab
                   youthId={person?.id}
+                  getToken={getToken}
                   onParentAdded={() => {
                     // Refresh parent list
                     console.log('Parent added to youth');
