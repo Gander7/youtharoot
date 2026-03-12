@@ -95,7 +95,7 @@ const darkTheme = createTheme({
   },
 });
 
-const PersonForm = ({ open, onClose, person, onSave, personType }) => {
+const PersonForm = ({ open, onClose, person, onSave, personType, getToken = null }) => {
   const [formData, setFormData] = useState({
     first_name: '',
     last_name: '',
@@ -966,6 +966,7 @@ export default function PersonList({ getToken = null }) {
           person={editingPerson}
           onSave={handleSave}
           personType={personType}
+          getToken={getToken}
         />
 
         {/* Floating Action Button for Mobile */}
