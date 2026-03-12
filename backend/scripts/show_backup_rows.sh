@@ -64,19 +64,15 @@ PGPASSWORD="$DB_PASS" psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d postgres
 }
 # Restore backup to temporary database (quietly)
 TEMP_DATABASE_URL="postgresql://$DB_USER:$DB_PASS@$DB_HOST:$DB_PORT/$TEMP_DB"
-pg_restore --no-owner --no-privileges --dbname="$TEMP_DATABASE_URL" "$BACKUP_FILE" 2>/dev/null || {
+pg_restore --no-owner --no-privileges --dbname="$TEMP_DATABASE_URL" "$BACKUP_FILE" || {
     echo "❌ Failed to restore backup to temporary database"
     exit 1
 }
 
-# Get row counts from restored backup
+# Get row counts from all tables in restored backup
 PGPASSWORD="$DB_PASS" psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$TEMP_DB" -q -c "
-SELECT 'events' as \"Table\", count(*) as \"Rows\" FROM events
-UNION ALL
-SELECT 'event_persons' as \"Table\", count(*) as \"Rows\" FROM event_persons  
-UNION ALL
-SELECT 'persons' as \"Table\", count(*) as \"Rows\" FROM persons
-UNION ALL
-SELECT 'users' as \"Table\", count(*) as \"Rows\" FROM users
-ORDER BY \"Table\";
+SELECT table_name AS \"Table\", (xpath('/row/cnt/text()', query_to_xml(format('SELECT count(*) AS cnt FROM %I', table_name), false, true, '')))[1]::text::int AS \"Rows\"
+FROM information_schema.tables
+WHERE table_schema = 'public' AND table_type = 'BASE TABLE'
+ORDER BY table_name;
 " 2>/dev/null
