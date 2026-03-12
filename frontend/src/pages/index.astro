@@ -1,27 +1,32 @@
 ---
-import ClerkAuthLayout from "../layouts/ClerkAuthLayout.astro";
+import IndexWrapper from "../components/IndexWrapper.jsx";
 ---
 
-<ClerkAuthLayout title="Home - Youtharoot">
-  <main>
-    <div style="max-width: 600px; margin: 0 auto; padding: 2rem; text-align: center;">
-      <h1>Welcome to Youtharoot</h1>
-      <p>Manage your youth group events and people efficiently.</p>
-      
-      <div style="display: flex; gap: 1rem; justify-content: center; margin-top: 2rem; flex-wrap: wrap;">
-        <a href="/Events" style="text-decoration: none;">
-          <div style="background: #242424; padding: 2rem; border-radius: 12px; min-width: 200px;">
-            <h3 style="margin: 0 0 1rem 0; color: #90caf9;">📅 Events</h3>
-            <p style="margin: 0; color: #b0b0b0;">View and manage upcoming events</p>
-          </div>
-        </a>
-        <a href="/People" style="text-decoration: none;">
-          <div style="background: #242424; padding: 2rem; border-radius: 12px; min-width: 200px;">
-            <h3 style="margin: 0 0 1rem 0; color: #f48fb1;">👥 People</h3>
-            <p style="margin: 0; color: #b0b0b0;">Manage youth and leaders</p>
-          </div>
-        </a>
-      </div>
-    </div>
-  </main>
-</AuthLayout>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Home - Youtharoot</title>
+</head>
+<body>
+  <style is:global>
+    html, body {
+      background: #181818 !important;
+      color: #f5f5f5 !important;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      padding-bottom: 70px;
+    }
+    @media (min-width: 600px) {
+      body {
+        padding-bottom: 0;
+      }
+    }
+  </style>
+
+  <IndexWrapper client:only="react" />
+</body>
+</html>

@@ -1,6 +1,4 @@
 ---
-import AuthenticatedApp from "../components/AuthenticatedApp.jsx";
-
 interface Props {
   title?: string;
 }
@@ -32,9 +30,7 @@ const { title = 'Youtharoot' } = Astro.props;
       }
     }
   </style>
-  
-  <AuthenticatedApp client:only="react">
-    <slot />
-  </AuthenticatedApp>
+
+  <slot />
 </body>
 </html>
