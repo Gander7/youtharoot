@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import CheckIn from './CheckIn.jsx';
 
-const CheckInPage = () => {
+const CheckInPage = ({ getToken = null }) => {
   const [eventId, setEventId] = useState(null);
   const [viewOnly, setViewOnly] = useState(false);
 
@@ -28,7 +28,7 @@ const CheckInPage = () => {
     );
   }
 
-  return <CheckIn eventId={eventId} viewOnly={viewOnly} />;
+  return <CheckIn eventId={eventId} viewOnly={viewOnly} getToken={getToken} />;
 };
 
 export default CheckInPage;
