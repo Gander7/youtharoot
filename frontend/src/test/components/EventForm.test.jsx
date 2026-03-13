@@ -5,9 +5,6 @@ import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 // Mock the auth store and API functions
 vi.mock('../../stores/auth', () => ({
   apiRequest: vi.fn(),
-  authStore: {
-    get: () => ({ isAuthenticated: true, user: { role: 'admin' } })
-  }
 }));
 
 // We'll test the EventForm component logic by creating a simplified version
