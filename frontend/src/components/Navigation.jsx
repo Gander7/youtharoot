@@ -80,7 +80,8 @@ export default function Navigation({ currentPath: currentPathProp = null, userBu
               href="/"
               color="inherit"
               variant={currentPath === '/' ? 'contained' : 'text'}
-              sx={{ borderRadius: 2, minWidth: 100, px: 2 }}
+              disableElevation
+              sx={{ borderRadius: 2, minWidth: 100, px: 2, height: 36 }}
             >
               Home
             </Button>
@@ -89,7 +90,8 @@ export default function Navigation({ currentPath: currentPathProp = null, userBu
               href="/Events"
               color="inherit"
               variant={currentPath.includes('/Events') ? 'contained' : 'text'}
-              sx={{ borderRadius: 2, minWidth: 100, px: 2 }}
+              disableElevation
+              sx={{ borderRadius: 2, minWidth: 100, px: 2, height: 36 }}
             >
               Events
             </Button>
@@ -98,7 +100,8 @@ export default function Navigation({ currentPath: currentPathProp = null, userBu
               href="/People"
               color="inherit"
               variant={currentPath.includes('/People') ? 'contained' : 'text'}
-              sx={{ borderRadius: 2, minWidth: 100, px: 2 }}
+              disableElevation
+              sx={{ borderRadius: 2, minWidth: 100, px: 2, height: 36 }}
             >
               People
             </Button>
@@ -107,7 +110,8 @@ export default function Navigation({ currentPath: currentPathProp = null, userBu
               href="/Messaging"
               color="inherit"
               variant={currentPath.includes('/Messaging') ? 'contained' : 'text'}
-              sx={{ borderRadius: 2, minWidth: 100, px: 2 }}
+              disableElevation
+              sx={{ borderRadius: 2, minWidth: 100, px: 2, height: 36 }}
             >
               Messages
             </Button>
