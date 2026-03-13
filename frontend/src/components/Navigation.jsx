@@ -20,7 +20,7 @@ import {
   Message as MessageIcon
 } from '@mui/icons-material';
 
-export default function Navigation({ currentPath: currentPathProp = null }) {
+export default function Navigation({ currentPath: currentPathProp = null, userButtonKey = 0 }) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [value, setValue] = React.useState(0);
@@ -104,7 +104,7 @@ export default function Navigation({ currentPath: currentPathProp = null }) {
             </Button>
             <Button
               component="a"
-              href="/Messaging"
+              href="/Messages"
               color="inherit"
               variant={currentPath.includes('/Messaging') ? 'contained' : 'text'}
               sx={{ borderRadius: 2, minWidth: 90 }}
@@ -113,7 +113,7 @@ export default function Navigation({ currentPath: currentPathProp = null }) {
             </Button>
             
             {/* Clerk User Button */}
-            <Box sx={{ ml: 2 }}>
+            <Box sx={{ ml: 2 }} key={userButtonKey}>
               <UserButton afterSignOutUrl="/sign-in" />
             </Box>
           </Box>
