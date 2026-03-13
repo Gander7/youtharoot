@@ -28,15 +28,9 @@ import IndexWrapper from "../components/IndexWrapper.jsx";
         padding-bottom: 0;
       }
     }
-    ::view-transition-old(global-nav),
-    ::view-transition-new(global-nav) {
-      animation: none;
-    }
   </style>
 
-  <div style="view-transition-name: global-nav">
-    <NavigationIsland client:only="react" />
-  </div>
+  <NavigationIsland client:only="react" transition:persist="global-nav" />
   <IndexWrapper client:only="react" />
 </body>
 </html>
