@@ -16,7 +16,6 @@ import {
 import {
   Event as EventIcon,
   People as PeopleIcon,
-  Home as HomeIcon,
   Message as MessageIcon
 } from '@mui/icons-material';
 
@@ -31,10 +30,10 @@ export default function Navigation({ currentPath: currentPathProp = null, userBu
   }, [currentPathProp]);
 
   React.useEffect(() => {
-    if (currentPath.includes('/Events')) setValue(1);
-    else if (currentPath.includes('/People')) setValue(2);
-    else if (currentPath.includes('/Messaging')) setValue(3);
-    else setValue(0);
+    if (currentPath.includes('/Events')) setValue(0);
+    else if (currentPath.includes('/People')) setValue(1);
+    else if (currentPath.includes('/Messaging')) setValue(2);
+    else setValue(-1);
   }, [currentPath]);
 
   if (isMobile) {
@@ -54,7 +53,6 @@ export default function Navigation({ currentPath: currentPathProp = null, userBu
         elevation={3}
       >
         <BottomNavigation value={value} showLabels>
-          <BottomNavigationAction component="a" href="/" label="Home" icon={<HomeIcon />} />
           <BottomNavigationAction component="a" href="/Events" label="Events" icon={<EventIcon />} />
           <BottomNavigationAction component="a" href="/People" label="People" icon={<PeopleIcon />} />
           <BottomNavigationAction component="a" href="/Messaging" label="Messages" icon={<MessageIcon />} />
@@ -69,22 +67,13 @@ export default function Navigation({ currentPath: currentPathProp = null, userBu
         <Toolbar>
           <Typography
             variant="h6"
-            component="div"
-            sx={{ flexGrow: 1, fontWeight: 'bold', color: 'primary.main' }}
+            component="a"
+            href="/"
+            sx={{ flexGrow: 1, fontWeight: 'bold', color: 'primary.main', textDecoration: 'none' }}
           >
             Youtharoot
           </Typography>
           <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-            <Button
-              component="a"
-              href="/"
-              color="inherit"
-              variant={currentPath === '/' ? 'contained' : 'text'}
-              disableElevation
-              sx={{ borderRadius: 2, minWidth: 100, px: 2, height: 36 }}
-            >
-              Home
-            </Button>
             <Button
               component="a"
               href="/Events"
