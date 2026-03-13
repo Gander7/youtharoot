@@ -9,17 +9,19 @@ const darkTheme = createTheme({
 });
 
 export default function NavigationIsland() {
-  const [navKey, setNavKey] = useState(0);
+  const [currentPath, setCurrentPath] = useState(
+    typeof window !== 'undefined' ? window.location.pathname : '/'
+  );
 
   useEffect(() => {
-    const refresh = () => setNavKey(k => k + 1);
+    const refresh = () => setCurrentPath(window.location.pathname);
     document.addEventListener('astro:after-swap', refresh);
     return () => document.removeEventListener('astro:after-swap', refresh);
   }, []);
 
   return (
     <ThemeProvider theme={darkTheme}>
-      <Navigation key={navKey} />
+      <Navigation currentPath={currentPath} />
     </ThemeProvider>
   );
 }

@@ -20,18 +20,15 @@ import {
   Message as MessageIcon
 } from '@mui/icons-material';
 
-export default function Navigation() {
+export default function Navigation({ currentPath: currentPathProp = null }) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [value, setValue] = React.useState(0);
-  const [currentPath, setCurrentPath] = React.useState('/');
-  
+  const [currentPath, setCurrentPath] = React.useState(currentPathProp ?? (typeof window !== 'undefined' ? window.location.pathname : '/'));
+
   React.useEffect(() => {
-    // Update current path on client side only
-    if (typeof window !== 'undefined') {
-      setCurrentPath(window.location.pathname);
-    }
-  }, []);
+    if (currentPathProp !== null) setCurrentPath(currentPathProp);
+  }, [currentPathProp]);
 
   React.useEffect(() => {
     if (currentPath.includes('/Events')) setValue(1);
