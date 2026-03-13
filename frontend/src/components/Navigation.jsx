@@ -114,7 +114,7 @@ export default function Navigation({ currentPath: currentPathProp = null, userBu
             
             {/* Clerk User Button */}
             <Box sx={{ ml: 2 }} key={userButtonKey}>
-              <UserButton afterSignOutUrl="/sign-in" />
+              <UserButton />
             </Box>
           </Box>
         </Toolbar>

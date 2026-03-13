@@ -6,7 +6,7 @@ import clerk from "@clerk/astro";
 
 // https://astro.build/config
 export default defineConfig({
-  integrations: [react(), clerk()],
+  integrations: [react(), clerk({ afterSignOutUrl: '/sign-in' })],
   adapter: vercel(),
   output: 'server'
 });
