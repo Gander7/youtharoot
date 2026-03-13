@@ -42,8 +42,8 @@ import {
   ArrowBack as BackIcon,
   Edit as EditIcon
 } from '@mui/icons-material';
-import { apiRequest, authStore } from '../stores/auth';
-import { useStore } from '@nanostores/react';
+import { apiRequest } from '../stores/auth';
+import { useUser } from '@clerk/astro/react';
 import ErrorBoundary from './ErrorBoundary.jsx';
 import ApiErrorBoundary from './ApiErrorBoundary.jsx';
 import PersonForm from './PersonForm';
@@ -203,8 +203,8 @@ export default function CheckIn({ eventId, viewOnly = false, getToken = null }) 
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editingPerson, setEditingPerson] = useState(null);
   
-  // Get current user from auth store
-  const auth = useStore(authStore);
+  // Get current user from Clerk
+  const { user } = useUser();
 
   // Fetch event details and youth data
   const fetchData = async () => {
@@ -512,7 +512,7 @@ export default function CheckIn({ eventId, viewOnly = false, getToken = null }) 
   };
 
   const isAdmin = () => {
-    return auth.user?.role === 'admin';
+    return user?.publicMetadata?.role === 'admin';
   };
 
   const isEventEnded = () => {
