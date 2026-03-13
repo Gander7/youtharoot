@@ -83,7 +83,7 @@ export default function Navigation() {
               href="/"
               color="inherit"
               variant={currentPath === '/' ? 'contained' : 'text'}
-              sx={{ borderRadius: 2 }}
+              sx={{ borderRadius: 2, minWidth: 90 }}
             >
               Home
             </Button>
@@ -92,7 +92,7 @@ export default function Navigation() {
               href="/Events"
               color="inherit"
               variant={currentPath.includes('/Events') ? 'contained' : 'text'}
-              sx={{ borderRadius: 2 }}
+              sx={{ borderRadius: 2, minWidth: 90 }}
             >
               Events
             </Button>
@@ -101,7 +101,7 @@ export default function Navigation() {
               href="/People"
               color="inherit"
               variant={currentPath.includes('/People') ? 'contained' : 'text'}
-              sx={{ borderRadius: 2 }}
+              sx={{ borderRadius: 2, minWidth: 90 }}
             >
               People
             </Button>
@@ -110,7 +110,7 @@ export default function Navigation() {
               href="/Messaging"
               color="inherit"
               variant={currentPath.includes('/Messaging') ? 'contained' : 'text'}
-              sx={{ borderRadius: 2 }}
+              sx={{ borderRadius: 2, minWidth: 90 }}
             >
               Messages
             </Button>
