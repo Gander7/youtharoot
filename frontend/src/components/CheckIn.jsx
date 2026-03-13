@@ -43,7 +43,6 @@ import {
   Edit as EditIcon
 } from '@mui/icons-material';
 import { apiRequest } from '../stores/auth';
-import { useUser } from '@clerk/clerk-react';
 import ErrorBoundary from './ErrorBoundary.jsx';
 import ApiErrorBoundary from './ApiErrorBoundary.jsx';
 import PersonForm from './PersonForm';
@@ -203,9 +202,6 @@ export default function CheckIn({ eventId, viewOnly = false, getToken = null }) 
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editingPerson, setEditingPerson] = useState(null);
   
-  // Get current user from Clerk
-  const { user } = useUser();
-
   // Fetch event details and youth data
   const fetchData = async () => {
     setLoading(true);
@@ -512,7 +508,7 @@ export default function CheckIn({ eventId, viewOnly = false, getToken = null }) 
   };
 
   const isAdmin = () => {
-    return user?.publicMetadata?.role === 'admin';
+    return window.Clerk?.user?.publicMetadata?.role === 'admin';
   };
 
   const isEventEnded = () => {
