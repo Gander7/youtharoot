@@ -33,9 +33,15 @@ const { title = 'Youtharoot' } = Astro.props;
         padding-bottom: 0;
       }
     }
+    ::view-transition-old(global-nav),
+    ::view-transition-new(global-nav) {
+      animation: none;
+    }
   </style>
 
-  <NavigationIsland client:only="react" transition:animate="none" />
+  <div style="view-transition-name: global-nav">
+    <NavigationIsland client:only="react" />
+  </div>
   <slot />
 </body>
 </html>

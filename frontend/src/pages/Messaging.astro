@@ -30,9 +30,15 @@ const title = 'SMS Messaging - Youtharoot';
         padding-bottom: 0;
       }
     }
+    ::view-transition-old(global-nav),
+    ::view-transition-new(global-nav) {
+      animation: none;
+    }
   </style>
 
-  <NavigationIsland client:only="react" transition:animate="none" />
+  <div style="view-transition-name: global-nav">
+    <NavigationIsland client:only="react" />
+  </div>
   <MessagingPageWrapper client:only="react" />
 </body>
 </html>
