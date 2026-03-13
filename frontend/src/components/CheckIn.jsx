@@ -43,7 +43,7 @@ import {
   Edit as EditIcon
 } from '@mui/icons-material';
 import { apiRequest } from '../stores/auth';
-import { useUser } from '@clerk/astro/react';
+import { useUser } from '@clerk/clerk-react';
 import ErrorBoundary from './ErrorBoundary.jsx';
 import ApiErrorBoundary from './ApiErrorBoundary.jsx';
 import PersonForm from './PersonForm';
