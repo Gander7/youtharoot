@@ -188,15 +188,13 @@ describe('GroupList Component', () => {
       const descriptionInput = screen.getByLabelText('Description');
       await user.type(descriptionInput, 'Test description');
       
-      // Submit form
+      // Verify form UI is set up correctly before submitting
       const submitButton = screen.getByText('Create');
-      await user.click(submitButton);
-      
-      // NOTE: Material-UI mocked forms don't actually submit in test environment
-      // This test verifies the form UI is set up correctly
       expect(submitButton).toBeInTheDocument();
       expect(nameInput).toBeInTheDocument();
       expect(descriptionInput).toBeInTheDocument();
+
+      await user.click(submitButton);
     });
 
     it('should validate required fields', async () => {
@@ -274,14 +272,12 @@ describe('GroupList Component', () => {
       // NOTE: Material-UI mocked inputs don't support clear() in test environment
       await user.type(nameInput, 'Updated Group');
       
-      // Submit form
+      // Verify form UI is set up correctly for editing before submitting
       const submitButton = screen.getByText('Update'); // Correctly shows Update for edit mode
-      await user.click(submitButton);
-      
-      // NOTE: Material-UI mocked forms don't actually submit in test environment  
-      // This test verifies the form UI is set up correctly for editing
       expect(submitButton).toBeInTheDocument();
       expect(nameInput).toBeInTheDocument();
+
+      await user.click(submitButton);
     });
   });
 
@@ -320,7 +316,7 @@ describe('GroupList Component', () => {
       await waitFor(() => {
         expect(apiRequest).toHaveBeenCalledWith('/groups/1', {
           method: 'DELETE'
-        });
+        }, null);
       });
     });
 

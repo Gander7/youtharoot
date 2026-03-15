@@ -363,6 +363,8 @@ const PersonForm = ({ open, onClose, person, onSave, personType, getToken = null
                     label="Phone Number"
                     value={formData.phone_number}
                     onChange={(e) => setFormData({ ...formData, phone_number: e.target.value })}
+                    placeholder="(416) 555-1234"
+                    helperText="Canadian format: (416) 555-1234"
                     InputProps={{
                       startAdornment: (
                         <InputAdornment position="start">

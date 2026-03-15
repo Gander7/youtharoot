@@ -205,15 +205,15 @@ describe('PersonList Component - SMS Opt-Out Features', () => {
       render(<PersonList />);
       
       await waitFor(() => {
-        expect(apiRequest).toHaveBeenCalledWith('/person/youth');
+        expect(apiRequest).toHaveBeenCalledWith('/person/youth', {}, null);
       });
     });
 
     it('should call leaders API endpoint on mount', async () => {
       render(<PersonList />);
-      
+
       await waitFor(() => {
-        expect(apiRequest).toHaveBeenCalledWith('/person/leaders');
+        expect(apiRequest).toHaveBeenCalledWith('/person/leaders', {}, null);
       });
     });
   });

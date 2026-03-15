@@ -78,7 +78,7 @@ vi.mock('@mui/material', () => ({
     { 'data-testid': 'chip', color, icon, variant, size, ...props },
     label
   ),
-  CircularProgress: createMockComponent('CircularProgress'),
+  CircularProgress: (props) => React.createElement('div', { 'data-testid': 'circularprogress', role: 'progressbar', ...props }),
   Collapse: createMockComponent('Collapse'),
   Container: ({ children, maxWidth, ...props }) => {
     // Filter out Material-UI specific props to avoid DOM warnings
@@ -280,9 +280,12 @@ vi.mock('@mui/icons-material', () => ({
   Refresh: createMockComponent('Refresh'),
   School: createMockComponent('School'),
   Search: createMockComponent('Search'),
+  Schedule: createMockComponent('Schedule'),
   Send: createMockComponent('Send'),
+  Visibility: createMockComponent('Visibility'),
   Warning: createMockComponent('Warning'),
   Work: createMockComponent('Work'),
+  Close: createMockComponent('Close'),
 }))
 
 // Mock @mui/material/styles

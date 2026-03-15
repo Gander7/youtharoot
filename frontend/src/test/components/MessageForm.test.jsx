@@ -196,7 +196,7 @@ describe('MessageForm Component', () => {
       render(<MessageForm {...mockProps} />);
       
       await waitFor(() => {
-        expect(apiRequest).toHaveBeenCalledWith('/groups');
+        expect(apiRequest).toHaveBeenCalledWith('/groups', {}, undefined);
       });
     });
 
@@ -309,7 +309,7 @@ describe('MessageForm Component', () => {
             group_id: 1,
             message: 'Test group message'
           })
-        });
+        }, undefined);
         expect(mockProps.onMessageSent).toHaveBeenCalled();
       });
     });
@@ -371,7 +371,7 @@ describe('MessageForm Component', () => {
             phone_number: '(555) 123-4567',
             message: 'Test individual message'
           })
-        });
+        }, undefined);
         expect(mockProps.onMessageSent).toHaveBeenCalled();
       });
     });

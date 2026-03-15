@@ -218,7 +218,7 @@ describe('GroupMemberManager Component', () => {
       });
       
       // Verify API call
-      expect(apiRequest).toHaveBeenCalledWith(`/groups/${mockGroup.id}/members`);
+      expect(apiRequest).toHaveBeenCalledWith(`/groups/${mockGroup.id}/members`, {}, undefined);
     });
 
     it('should display member details correctly', async () => {
@@ -287,7 +287,8 @@ describe('GroupMemberManager Component', () => {
         expect(screen.getByText('Alice Williams')).toBeInTheDocument();
         
         // Should NOT show existing members in the add dialog
-        const addDialog = screen.getByRole('dialog', { name: /add member/i });
+        const addDialogTitle = screen.getByText('Add Members');
+        const addDialog = addDialogTitle.closest('[role="dialog"]');
         expect(within(addDialog).queryByText('John Doe')).not.toBeInTheDocument();
         expect(within(addDialog).queryByText('Jane Smith')).not.toBeInTheDocument();
       });
@@ -324,13 +325,13 @@ describe('GroupMemberManager Component', () => {
         expect(screen.getByText('Bob Johnson')).toBeInTheDocument();
       });
       
-      const bobOption = screen.getByText('Bob Johnson');
-      await user.click(bobOption);
-      
+      const bobCheckbox = screen.getByRole('checkbox', { name: /bob johnson/i });
+      await user.click(bobCheckbox);
+
       // Confirm addition
       const confirmButton = screen.getByText('Add Selected');
       await user.click(confirmButton);
-      
+
       // Verify API call
       await waitFor(() => {
         expect(apiRequest).toHaveBeenCalledWith(
@@ -339,7 +340,8 @@ describe('GroupMemberManager Component', () => {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ person_id: 103 })
-          })
+          }),
+          undefined
         );
       });
       
@@ -395,7 +397,8 @@ describe('GroupMemberManager Component', () => {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ person_ids: [103, 104] })
-          })
+          }),
+          undefined
         );
       });
     });
@@ -441,7 +444,8 @@ describe('GroupMemberManager Component', () => {
       await waitFor(() => {
         expect(apiRequest).toHaveBeenCalledWith(
           `/groups/${mockGroup.id}/members/101`,
-          { method: 'DELETE' }
+          { method: 'DELETE' },
+          undefined
         );
       });
       
@@ -519,12 +523,12 @@ describe('GroupMemberManager Component', () => {
         expect(screen.getByText('Bob Johnson')).toBeInTheDocument();
       });
       
-      const bobOption = screen.getByText('Bob Johnson');
-      await user.click(bobOption);
-      
+      const bobCheckbox = screen.getByRole('checkbox', { name: /bob johnson/i });
+      await user.click(bobCheckbox);
+
       const confirmButton = screen.getByText('Add Selected');
       await user.click(confirmButton);
-      
+
       // Should display error
       await waitFor(() => {
         expect(screen.getByText('Person already in group')).toBeInTheDocument();
