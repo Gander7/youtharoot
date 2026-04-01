@@ -32,7 +32,9 @@ class PersonDB(Base):
     emergency_contact_2_relationship = Column(String(50), nullable=True)
     allergies = Column(Text, nullable=True)
     other_considerations = Column(Text, nullable=True)
-    
+    parental_permission_2026 = Column(Boolean, default=False, nullable=False, server_default='false')
+    photo_consent_2026 = Column(Boolean, default=False, nullable=False, server_default='false')
+
     # Leader-specific fields
     role = Column(String(100), nullable=True)
     
