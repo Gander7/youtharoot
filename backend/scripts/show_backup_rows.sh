@@ -42,6 +42,11 @@ if [ -z "${DATABASE_URL:-}" ]; then
     exit 1
 fi
 
+if [[ "$DATABASE_URL" != *"@localhost:5433"* ]]; then
+    echo "❌ DATABASE_URL does not point to localhost. Refusing to run against a non-local database."
+    exit 1
+fi
+
 # Extract connection details
 DB_HOST=$(echo "$DATABASE_URL" | sed -n 's|.*://[^@]*@\([^:/]*\).*|\1|p')
 DB_PORT=$(echo "$DATABASE_URL" | sed -n 's|.*://[^@]*@[^:]*:\([0-9]*\)/.*|\1|p')
@@ -56,10 +61,10 @@ cleanup() {
 }
 trap cleanup EXIT
 
-# Create temporary database (silently)
-PGPASSWORD="$DB_PASS" psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d postgres \
-    -q -c "CREATE DATABASE \"$TEMP_DB\";" 2>/dev/null || {
-    echo "❌ Failed to create temporary database"
+# Create temporary database
+CREATE_DB_ERROR=$(PGPASSWORD="$DB_PASS" psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d postgres \
+    -q -c "CREATE DATABASE \"$TEMP_DB\";" 2>&1) || {
+    echo "❌ Failed to create temporary database: $CREATE_DB_ERROR"
     exit 1
 }
 # Restore backup to temporary database (quietly)
