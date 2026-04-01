@@ -93,11 +93,16 @@ vi.mock('@mui/material', () => ({
   Divider: createMockComponent('Divider'),
   Fab: createMockComponent('Fab'),
   FormControl: createMockComponent('FormControl'),
-  FormControlLabel: ({ label, control, ...props }) => 
-    React.createElement('div', { 'data-testid': 'formcontrollabel', ...props }, 
-      control, 
-      React.createElement('span', {}, label)
-    ),
+  FormControlLabel: ({ label, control, ...props }) => {
+    const inputId = typeof label === 'string' ? label.toLowerCase().replace(/\s+/g, '-') : undefined;
+    const controlWithId = inputId && control
+      ? React.cloneElement(control, { id: inputId })
+      : control;
+    return React.createElement('div', { 'data-testid': 'formcontrollabel', ...props },
+      controlWithId,
+      React.createElement('label', { htmlFor: inputId }, label)
+    );
+  },
   FormLabel: createMockComponent('FormLabel'),
   Grid: createMockComponent('Grid'),
   IconButton: createMockComponent('IconButton'),
