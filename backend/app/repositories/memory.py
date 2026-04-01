@@ -97,6 +97,8 @@ class InMemoryPersonRepository(PersonRepository):
             "emergency_contact_2_relationship": person.emergency_contact_2_relationship,
             "allergies": person.allergies,
             "other_considerations": person.other_considerations,
+            "parental_permission_2026": person.parental_permission_2026 or False,
+            "photo_consent_2026": person.photo_consent_2026 or False,
             # Leader-specific fields
             "role": person.role,
         }
