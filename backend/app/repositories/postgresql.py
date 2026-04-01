@@ -38,7 +38,9 @@ class PostgreSQLPersonRepository(PersonRepository):
                 emergency_contact_2_phone=db_person.emergency_contact_2_phone or "",
                 emergency_contact_2_relationship=db_person.emergency_contact_2_relationship or "",
                 allergies=db_person.allergies or "",
-                other_considerations=db_person.other_considerations or ""
+                other_considerations=db_person.other_considerations or "",
+                parental_permission_2026=db_person.parental_permission_2026 or False,
+                photo_consent_2026=db_person.photo_consent_2026 or False
             )
         elif db_person.person_type == "parent":
             return Parent(
@@ -65,7 +67,7 @@ class PostgreSQLPersonRepository(PersonRepository):
             archived_on=person.archived_on,
             person_type=person_type
         )
-        
+
         if isinstance(person, Youth):
             db_person.grade = person.grade
             db_person.school_name = person.school_name
@@ -79,6 +81,8 @@ class PostgreSQLPersonRepository(PersonRepository):
             db_person.emergency_contact_2_relationship = person.emergency_contact_2_relationship
             db_person.allergies = person.allergies
             db_person.other_considerations = person.other_considerations
+            db_person.parental_permission_2026 = person.parental_permission_2026 or False
+            db_person.photo_consent_2026 = person.photo_consent_2026 or False
         elif isinstance(person, Parent):
             db_person.email = person.email
             db_person.address = person.address
@@ -126,7 +130,7 @@ class PostgreSQLPersonRepository(PersonRepository):
         db_person.last_name = person.last_name
         db_person.phone_number = person.phone_number
         db_person.sms_opt_out = getattr(person, 'sms_opt_out', False)
-        
+
         if isinstance(person, Youth):
             db_person.grade = person.grade
             db_person.school_name = person.school_name
@@ -140,6 +144,8 @@ class PostgreSQLPersonRepository(PersonRepository):
             db_person.emergency_contact_2_relationship = person.emergency_contact_2_relationship
             db_person.allergies = person.allergies
             db_person.other_considerations = person.other_considerations
+            db_person.parental_permission_2026 = person.parental_permission_2026 or False
+            db_person.photo_consent_2026 = person.photo_consent_2026 or False
         elif isinstance(person, Leader):
             db_person.role = person.role
             db_person.birth_date = getattr(person, 'birth_date', None)

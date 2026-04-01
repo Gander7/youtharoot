@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Request, HTTPException, Depends, Query, status
 from typing import Union, List, Optional
-from app.models import Youth, Leader, Parent, Person, User, PersonCreate, ParentYouthRelationshipCreate, ParentYouthRelationshipUpdate
+from app.models import Youth, Leader, Parent, Person, User, PersonCreate, PersonUpdate, ParentYouthRelationshipCreate, ParentYouthRelationshipUpdate
 from app.clerk_auth import get_current_clerk_user
 from sqlalchemy.orm import Session
 import datetime
@@ -102,12 +102,23 @@ async def get_person(
 @router.put("/person/{person_id}", response_model=Union[Youth, Leader, Parent])
 async def update_person(
 	person_id: int,
-	person: Union[Youth, Leader, Parent],
+	person: Union[Youth, Leader, Parent, PersonUpdate],
 	db: Session = Depends(connect_to_db()),
 	current_user: dict = Depends(get_current_clerk_user),
 ):
 	repos = get_repositories(db)
 	try:
+		# If PersonUpdate was provided (partial), fetch existing person and merge
+		if isinstance(person, PersonUpdate):
+			existing = await repos["person"].get_person(person_id)
+			if not existing:
+				raise ValueError("Person not found")
+			# Merge PersonUpdate fields into existing person
+			update_data = person.model_dump(exclude_unset=True)
+			existing_data = existing.model_dump()
+			existing_data.update(update_data)
+			person = type(existing)(**existing_data)
+
 		updated_person = await repos["person"].update_person(person_id, person)
 		result = updated_person.model_dump()
 		result.pop("archived_on", None)
