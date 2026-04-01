@@ -101,6 +101,8 @@ const PersonForm = ({ open, onClose, person, onSave, personType, getToken = null
     last_name: '',
     phone_number: '',
     sms_opt_out: false,
+    parental_permission_2026: false,
+    photo_consent_2026: false,
     grade: '',
     school_name: '',
     birth_date: '',
@@ -146,7 +148,7 @@ const PersonForm = ({ open, onClose, person, onSave, personType, getToken = null
     // Convert null/undefined values to appropriate defaults
     Object.keys(baseData).forEach(key => {
       if (baseData[key] === null || baseData[key] === undefined) {
-        if (key === 'sms_opt_out') {
+        if (key === 'sms_opt_out' || key === 'parental_permission_2026' || key === 'photo_consent_2026') {
           baseData[key] = false;
         } else if (key === 'grade') {
           baseData[key] = '';
@@ -170,6 +172,8 @@ const PersonForm = ({ open, onClose, person, onSave, personType, getToken = null
         last_name: '',
         phone_number: '',
         sms_opt_out: false,
+        parental_permission_2026: false,
+        photo_consent_2026: false,
         grade: '',
         school_name: '',
         birth_date: '',
@@ -189,7 +193,7 @@ const PersonForm = ({ open, onClose, person, onSave, personType, getToken = null
       // Convert null/undefined values to appropriate defaults
       Object.keys(baseData).forEach(key => {
         if (baseData[key] === null || baseData[key] === undefined) {
-          if (key === 'sms_opt_out') {
+          if (key === 'sms_opt_out' || key === 'parental_permission_2026' || key === 'photo_consent_2026') {
             baseData[key] = false;
           } else if (key === 'grade') {
             baseData[key] = '';
@@ -251,6 +255,8 @@ const PersonForm = ({ open, onClose, person, onSave, personType, getToken = null
       personData.emergency_contact_2_relationship = formData.emergency_contact_2_relationship || '';
       personData.allergies = formData.allergies || '';
       personData.other_considerations = formData.other_considerations || '';
+      personData.parental_permission_2026 = formData.parental_permission_2026 || false;
+      personData.photo_consent_2026 = formData.photo_consent_2026 || false;
     } else if (personType === 'leader') {
       console.log(formData);
       personData.role = formData.role;
@@ -424,6 +430,32 @@ const PersonForm = ({ open, onClose, person, onSave, personType, getToken = null
                             />
                           }
                           label="SMS Opt out"
+                        />
+                      </Grid>
+                    )}
+                    {personType === 'youth' && (
+                      <Grid item xs={6} sm={6}>
+                        <FormControlLabel
+                          control={
+                            <Checkbox
+                              checked={formData.parental_permission_2026}
+                              onChange={(e) => setFormData({ ...formData, parental_permission_2026: e.target.checked })}
+                            />
+                          }
+                          label="Parental Permission"
+                        />
+                      </Grid>
+                    )}
+                    {personType === 'youth' && (
+                      <Grid item xs={6} sm={6}>
+                        <FormControlLabel
+                          control={
+                            <Checkbox
+                              checked={formData.photo_consent_2026}
+                              onChange={(e) => setFormData({ ...formData, photo_consent_2026: e.target.checked })}
+                            />
+                          }
+                          label="Photo Consent"
                         />
                       </Grid>
                     )}
