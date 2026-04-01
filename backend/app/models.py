@@ -33,6 +33,8 @@ class Youth(Person):
 	emergency_contact_2_relationship: Optional[str] = ""
 	allergies: Optional[str] = ""
 	other_considerations: Optional[str] = ""
+	parental_permission_2026: bool = False
+	photo_consent_2026: bool = False
 
 class Leader(Person):
 	role: str
@@ -166,7 +168,9 @@ class PersonCreate(BaseModel):
 	emergency_contact_2_relationship: Optional[str] = None
 	allergies: Optional[str] = None
 	other_considerations: Optional[str] = None
-	
+	parental_permission_2026: Optional[bool] = False
+	photo_consent_2026: Optional[bool] = False
+
 	# Leader-specific fields (optional for parents/youth)
 	role: Optional[str] = None
 	
@@ -205,10 +209,12 @@ class PersonUpdate(BaseModel):
 	emergency_contact_2_relationship: Optional[str] = None
 	allergies: Optional[str] = None
 	other_considerations: Optional[str] = None
-	
+	parental_permission_2026: Optional[bool] = None
+	photo_consent_2026: Optional[bool] = None
+
 	# Leader-specific fields
 	role: Optional[str] = None
-	
+
 	@field_validator('first_name', 'last_name')
 	@classmethod
 	def validate_names(cls, v):
