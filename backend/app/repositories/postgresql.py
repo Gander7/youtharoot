@@ -204,6 +204,8 @@ class PostgreSQLPersonRepository(PersonRepository):
             db_person.emergency_contact_2_relationship = person.emergency_contact_2_relationship
             db_person.allergies = person.allergies
             db_person.other_considerations = person.other_considerations
+            db_person.parental_permission_2026 = person.parental_permission_2026 or False
+            db_person.photo_consent_2026 = person.photo_consent_2026 or False
         elif person.person_type == "leader":
             db_person.role = person.role
             db_person.birth_date = person.birth_date
@@ -492,7 +494,9 @@ class PostgreSQLPersonRepository(PersonRepository):
                 "emergency_contact_2_phone": db_person.emergency_contact_2_phone,
                 "emergency_contact_2_relationship": db_person.emergency_contact_2_relationship,
                 "allergies": db_person.allergies,
-                "other_considerations": db_person.other_considerations
+                "other_considerations": db_person.other_considerations,
+                "parental_permission_2026": db_person.parental_permission_2026 or False,
+                "photo_consent_2026": db_person.photo_consent_2026 or False,
             })
         elif db_person.person_type == "leader":
             result.update({
